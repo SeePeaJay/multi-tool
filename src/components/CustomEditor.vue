@@ -70,9 +70,9 @@ const BlockId = Node.create({
 const domParser = new DOMParser();
 const editor = useEditor({
   content: `
-        <h2>
-          Hi there,
-        </h2>
+        <h1>
+          Hello World
+        </h1>
         <p>
           this is a <em>basic</em> example of <strong>tiptap</strong>. Sure, there are all kind of basic text styles you’d probably expect from a text editor. But wait until you see the lists:
         </p>
@@ -125,8 +125,22 @@ const editor = useEditor({
 </template>
 
 <style lang="scss">
-/* Basic editor styles */
+/* This controls the editor container. */
+#app > div {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-y: scroll; // placing this here, rather than in .tiptap, moves the scrollbar to the window, but elements within the .tiptap div can overflow
+}
+
+/* This controls the editor. */
 .tiptap {
+  width: 75%;
+  height: calc(100vh - 40px);
+  margin: 8px 0 8px;
+
+  /* Creates spacing between each block. */
   > * + * {
     margin-top: 0.75em;
   }
@@ -179,6 +193,16 @@ const editor = useEditor({
     border: none;
     border-top: 2px solid rgba(#0d0d0d, 0.1);
     margin: 2rem 0;
+  }
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+@media screen and (min-width: 1200px) {
+  .tiptap {
+    width: 50%;
   }
 }
 </style>

@@ -127,18 +127,16 @@ const editor = useEditor({
 <style lang="scss">
 /* This controls the editor container. */
 #app > div {
-  height: 100vh;
+  height: calc(100vh - 40px); // 40px is the current height of the navbar
   display: flex;
   justify-content: center;
-  align-items: center;
   overflow-y: scroll; // placing this here, rather than in .tiptap, moves the scrollbar to the window, but elements within the .tiptap div can overflow
 }
 
 /* This controls the editor. */
 .tiptap {
   width: 75%;
-  height: calc(100vh - 40px);
-  margin: 8px 0 8px;
+  margin: 8px 0 8px; // to give some spacing for the actual editor
 
   /* Creates spacing between each block. */
   > * + * {

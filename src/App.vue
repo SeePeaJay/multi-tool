@@ -1,11 +1,26 @@
 <script setup lang="ts">
-// import { RouterLink, RouterView } from "vue-router";
+import { RouterView } from "vue-router";
 import NavBar from "./components/NavBar.vue";
-import CustomEditor from "./components/CustomEditor.vue";
 </script>
 
 <template>
   <NavBar />
-  <CustomEditor />
-  <!--  <RouterView />-->
+  <RouterView />
 </template>
+
+<style lang="scss">
+/* This handles generic icons and buttons. */
+.pressable {
+  color: var(--inactive-color);
+
+  &:hover {
+    cursor: pointer;
+    color: var(--default-color);
+  }
+
+  &.disabled {
+    cursor: default;
+    color: var(--disabled-color);
+  }
+}
+</style>

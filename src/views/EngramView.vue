@@ -3,5 +3,9 @@ import CustomEditor from "@/components/CustomEditor.vue";
 </script>
 
 <template>
-  <CustomEditor />
+  <div class="view-container">
+    <div class="view-area">
+      <CustomEditor />
+    </div>
+  </div>
 </template>

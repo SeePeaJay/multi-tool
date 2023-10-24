@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { watch } from "vue";
 import { Node } from "@tiptap/core";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import { Plugin } from "prosemirror-state";
 import { nanoid } from "nanoid";
+
+const props = defineProps({ modelValue: String });
+const emit = defineEmits(["update:modelValue"]);
 
 /* Create custom node to add block id to "block" nodes - https://github.com/ueberdosis/tiptap/issues/1041#issuecomment-917610594 */
 const BlockType = {
@@ -67,38 +71,10 @@ const BlockId = Node.create({
   },
 });
 
+/* Editor setup */
 const domParser = new DOMParser();
 const editor = useEditor({
-  content: `
-        <h1>
-          Hello World
-        </h1>
-        <p>
-          this is a <em>basic</em> example of <strong>tiptap</strong>. Sure, there are all kind of basic text styles you’d probably expect from a text editor. But wait until you see the lists:
-        </p>
-        <ul>
-          <li>
-            That’s a bullet list with one …
-          </li>
-          <li>
-            … or two list items.
-          </li>
-        </ul>
-        <p>
-          Isn’t that great? And all of that is editable. But wait, there’s more. Let’s try a code block:
-        </p>
-        <pre><code class="language-css">body {
-  display: none;
-}</code></pre>
-        <p>
-          I know, I know, this is impressive. It’s only the tip of the iceberg though. Give it a try and click a little bit around. Don’t forget to check the other examples too.
-        </p>
-        <blockquote>
-          Wow, that’s amazing. Good work, boy! 👏
-          <br />
-          — Mom
-        </blockquote>
-      `,
+  content: props.modelValue,
   extensions: [BlockId, StarterKit],
   onUpdate({ editor }) {
     const blockIds: string[] = editor.getJSON().content?.map((x) => x.attrs?.blockId) || [];
@@ -110,14 +86,22 @@ const editor = useEditor({
       blocks[blockIds[i]] = blocksInHtml[i];
     }
 
-    // console.log(blockIds);
-    // console.log(blocksInHtml);
-    console.log(blocks);
-    console.log(editor.getJSON().content);
-    // console.log(editor.view.state.selection.$from.parent);
-    // console.log(editor.view.state.selection.$to.parent);
+    emit("update:modelValue", editor.getHTML());
+    // console.log(editor.getJSON());
   },
 });
+
+watch(
+  () => props.modelValue,
+  (newValue, oldValue) => {
+    if (newValue === oldValue) {
+      return;
+    }
+
+    const newContent = newValue || "";
+    editor.value?.commands.setContent(newContent, false);
+  },
+);
 </script>
 
 <template>
@@ -125,19 +109,8 @@ const editor = useEditor({
 </template>
 
 <style lang="scss">
-/* This controls the editor container. */
-#app > div {
-  height: calc(100vh - 40px); // 40px is the current height of the navbar
-  display: flex;
-  justify-content: center;
-  overflow-y: scroll; // placing this here, rather than in .tiptap, moves the scrollbar to the window, but elements within the .tiptap div can overflow
-}
-
 /* This controls the editor. */
 .tiptap {
-  width: 75%;
-  margin: 8px 0 8px; // to give some spacing for the actual editor
-
   /* Creates spacing between each block. */
   > * + * {
     margin-top: 0.75em;
@@ -196,11 +169,5 @@ const editor = useEditor({
 
 .ProseMirror:focus {
   outline: none;
-}
-
-@media screen and (min-width: 1200px) {
-  .tiptap {
-    width: 50%;
-  }
 }
 </style>

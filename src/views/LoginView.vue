@@ -1,7 +1,9 @@
 <script setup lang="ts"></script>
 
 <template>
-  <div class="login">
-    <h1>This is an login page</h1>
+  <div class="view-container">
+    <div class="view-area">
+      <h1>Login</h1>
+    </div>
   </div>
 </template>

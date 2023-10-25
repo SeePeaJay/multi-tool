@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { watch } from "vue";
 import { Node } from "@tiptap/core";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import { Plugin } from "prosemirror-state";
 import { nanoid } from "nanoid";
+import { useEditorStore } from "@/stores/editor";
 
-const props = defineProps({ modelValue: String });
-const emit = defineEmits(["update:modelValue"]);
+const editorStore = useEditorStore();
 
 /* Create custom node to add block id to "block" nodes - https://github.com/ueberdosis/tiptap/issues/1041#issuecomment-917610594 */
 const BlockType = {
@@ -74,7 +73,7 @@ const BlockId = Node.create({
 /* Editor setup */
 const domParser = new DOMParser();
 const editor = useEditor({
-  content: props.modelValue,
+  content: editorStore.blocksInHtml,
   extensions: [BlockId, StarterKit],
   onUpdate({ editor }) {
     const blockIds: string[] = editor.getJSON().content?.map((x) => x.attrs?.blockId) || [];
@@ -86,22 +85,10 @@ const editor = useEditor({
       blocks[blockIds[i]] = blocksInHtml[i];
     }
 
-    emit("update:modelValue", editor.getHTML());
+    editorStore.setBlocksInHtml(editor.getHTML());
     // console.log(editor.getJSON());
   },
 });
-
-watch(
-  () => props.modelValue,
-  (newValue, oldValue) => {
-    if (newValue === oldValue) {
-      return;
-    }
-
-    const newContent = newValue || "";
-    editor.value?.commands.setContent(newContent, false);
-  },
-);
 </script>
 
 <template>

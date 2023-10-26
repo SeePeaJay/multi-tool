@@ -2,11 +2,18 @@
 import { Node } from "@tiptap/core";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
+import Document from "@tiptap/extension-document";
+import Placeholder from "@tiptap/extension-placeholder";
 import { Plugin } from "prosemirror-state";
 import { nanoid } from "nanoid";
 import { useEditorStore } from "@/stores/editor";
 
 const editorStore = useEditorStore();
+
+/* Custom Document to force title */
+const CustomDocument = Document.extend({
+  content: "heading block*",
+});
 
 /* Create custom node to add block id to "block" nodes - https://github.com/ueberdosis/tiptap/issues/1041#issuecomment-917610594 */
 const BlockType = {
@@ -74,7 +81,20 @@ const BlockId = Node.create({
 const domParser = new DOMParser();
 const editor = useEditor({
   content: editorStore.blocksInHtml,
-  extensions: [BlockId, StarterKit],
+  extensions: [
+    CustomDocument,
+    BlockId,
+    StarterKit.configure({ document: false }),
+    Placeholder.configure({
+      placeholder: ({ node }) => {
+        if (node.type.name === "heading") {
+          return "What’s the title?";
+        }
+
+        return "Can you add some further context?";
+      },
+    }),
+  ],
   onUpdate({ editor }) {
     const blockIds: string[] = editor.getJSON().content?.map((x) => x.attrs?.blockId) || [];
     const blocksInHtml = Array.from(domParser.parseFromString(editor.getHTML(), "text/html").body.children).map(
@@ -86,7 +106,7 @@ const editor = useEditor({
     }
 
     editorStore.setBlocksInHtml(editor.getHTML());
-    // console.log(editor.getJSON());
+    // console.log(editor.getHTML());
   },
 });
 </script>
@@ -151,6 +171,15 @@ const editor = useEditor({
     border: none;
     border-top: 2px solid rgba(#0d0d0d, 0.1);
     margin: 2rem 0;
+  }
+
+  /* Placeholder (on every new line) */
+  .is-empty::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: #ced4da;
+    pointer-events: none;
+    height: 0;
   }
 }
 

@@ -4,13 +4,13 @@ import { defineStore } from "pinia";
 export const useEditorStore = defineStore("editor", () => {
   // const blockContents = ref({} as { [id: string]: string });
   const blocksInHtml = ref(`
-        <h1>
+        <h1 id="aaaaaaaa">
           Hello World
         </h1>
-        <p>
+        <p id="aaaaaaab">
           this is a <em>basic</em> example of <strong>tiptap</strong>. Sure, there are all kind of basic text styles you’d probably expect from a text editor. But wait until you see the lists:
         </p>
-        <ul>
+        <ul id="aaaaaaac">
           <li>
             That’s a bullet list with one …
           </li>
@@ -18,16 +18,16 @@ export const useEditorStore = defineStore("editor", () => {
             … or two list items.
           </li>
         </ul>
-        <p>
+        <p id="aaaaaaad">
           Isn’t that great? And all of that is editable. But wait, there’s more. Let’s try a code block:
         </p>
-        <pre><code class="language-css">body {
+        <pre id="aaaaaaae"><code class="language-css">body {
   display: none;
 }</code></pre>
-        <p>
+        <p id="aaaaaaaf">
           I know, I know, this is impressive. It’s only the tip of the iceberg though. Give it a try and click a little bit around. Don’t forget to check the other examples too.
         </p>
-        <blockquote>
+        <blockquote id="aaaaaaag">
           Wow, that’s amazing. Good work, boy! 👏
           <br />
           — Mom

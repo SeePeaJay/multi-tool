@@ -35,6 +35,10 @@ import NavBar from "./components/NavBar.vue";
 .view-area {
   width: 75%;
   margin: 8px 0 8px; // to give some spacing for the actual view
+
+  > * + * {
+    margin-top: 0.75em;
+  }
 }
 
 @media screen and (min-width: 1200px) {

@@ -25,8 +25,8 @@ const submitForm = () => {
   <div class="view-container">
     <div class="view-area">
       <div>
-        <h1>Login</h1>
-        <span>Welcome back</span>
+        <h1>Sign Up</h1>
+        <span>Just a few things to get started</span>
       </div>
       <div class="form-control w-full max-w-xs">
         <label class="label">
@@ -37,9 +37,13 @@ const submitForm = () => {
           <span class="label-text">Password</span>
         </label>
         <input type="password" class="input input-bordered w-full max-w-xs" />
+        <label class="label">
+          <span class="label-text">Confirm Password</span>
+        </label>
+        <input type="password" class="input input-bordered w-full max-w-xs" />
         <label class="label"></label>
         <button class="btn">Submit</button>
-        <span>Don't have an account? <RouterLink class="pressable link" to="/signup"> Sign Up</RouterLink></span>
+        <span>Already a user? <RouterLink class="pressable link" to="/login"> Login</RouterLink></span>
       </div>
     </div>
   </div>

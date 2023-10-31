@@ -147,7 +147,7 @@ const CustomBlockQuote = BlockQuote.extend({
 });
 const CustomHorizontalRule = HorizontalRule.extend({
   renderHTML({ node }) {
-    return ["hr", { id: node.attrs.blockId }, 0];
+    return ["hr", { id: node.attrs.blockId }];
   },
 });
 

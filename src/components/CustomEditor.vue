@@ -10,6 +10,7 @@ import OrderedList from "@tiptap/extension-ordered-list";
 import CodeBlock from "@tiptap/extension-code-block";
 import BlockQuote from "@tiptap/extension-blockquote";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
+import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Plugin } from "prosemirror-state";
 import { nanoid } from "nanoid";
@@ -163,15 +164,8 @@ const editor = useEditor({
     CustomCodeBlock,
     CustomBlockQuote,
     CustomHorizontalRule,
-    StarterKit.configure({
-      document: false,
-      heading: false,
-      paragraph: false,
-      bulletList: false,
-      orderedList: false,
-      codeBlock: false,
-      blockquote: false,
-      horizontalRule: false,
+    Link.extend({ inclusive: false }).configure({
+      autolink: true,
     }),
     Placeholder.configure({
       placeholder: ({ node }) => {
@@ -181,6 +175,16 @@ const editor = useEditor({
 
         return "Can you add some further context?";
       },
+    }),
+    StarterKit.configure({
+      document: false,
+      heading: false,
+      paragraph: false,
+      bulletList: false,
+      orderedList: false,
+      codeBlock: false,
+      blockquote: false,
+      horizontalRule: false,
     }),
   ],
   onSelectionUpdate({ editor }) {

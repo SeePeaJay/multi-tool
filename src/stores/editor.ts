@@ -8,7 +8,7 @@ export const useEditorStore = defineStore("editor", () => {
           Hello World
         </h1>
         <p id="aaaaaaab">
-          this is a <em>basic</em> example of <strong>tiptap</strong>. Sure, there are all kind of basic text styles you’d probably expect from a text editor. But wait until you see the lists:
+          this is a <em>basic</em> example of <strong>tiptap</strong>. Sure, there are all kind of basic text styles you’d probably expect from a text editor. But wait until you see the lists: <span class="engram-link" data-target="dog" data-is-tag>#dog</span> <span class="engram-link" data-target="cat">cat</span>
         </p>
         <ul id="aaaaaaac">
           <li>

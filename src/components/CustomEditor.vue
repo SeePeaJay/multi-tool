@@ -15,6 +15,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { Plugin } from "prosemirror-state";
 import { nanoid } from "nanoid";
 import { useEditorStore } from "@/stores/editor";
+import { EngramLink } from "@/utils/engram-link";
 
 const editorStore = useEditorStore();
 
@@ -155,6 +156,16 @@ const CustomHorizontalRule = HorizontalRule.extend({
 const editor = useEditor({
   content: editorStore.blocksInHtml,
   extensions: [
+    StarterKit.configure({
+      document: false,
+      heading: false,
+      paragraph: false,
+      bulletList: false,
+      orderedList: false,
+      codeBlock: false,
+      blockquote: false,
+      horizontalRule: false,
+    }),
     BlockId,
     CustomDocument,
     CustomHeading,
@@ -164,6 +175,7 @@ const editor = useEditor({
     CustomCodeBlock,
     CustomBlockQuote,
     CustomHorizontalRule,
+    EngramLink,
     Link.extend({ inclusive: false }).configure({
       autolink: true,
     }),
@@ -176,19 +188,9 @@ const editor = useEditor({
         return "Can you add some further context?";
       },
     }),
-    StarterKit.configure({
-      document: false,
-      heading: false,
-      paragraph: false,
-      bulletList: false,
-      orderedList: false,
-      codeBlock: false,
-      blockquote: false,
-      horizontalRule: false,
-    }),
   ],
   onSelectionUpdate({ editor }) {
-    console.log(editor.getJSON());
+    // console.log(editor.getJSON());
     // let { from, to } = editor.view.state.selection;
     //
     // let selectedNodes: any[] = [];

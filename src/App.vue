@@ -26,10 +26,9 @@ import NavBar from "./components/NavBar.vue";
 
 /* This handles the container and area of each view. Follows the same style as the editor. */
 .view-container {
-  height: calc(100vh - 40px); // 40px is the current height of the navbar
   display: flex;
   justify-content: center;
-  overflow-y: scroll; // placing this here, rather than in .view-area, moves the scrollbar to the window, but elements within the .view-area div can overflow
+  overflow-y: scroll;
 }
 
 .view-area {

@@ -21,6 +21,14 @@ nav {
   width: 100%;
   height: 40px;
 
+  position: sticky;
+  top: 0;
+
+  /* TODO: make this behave like google's search bar ? */
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  z-index: 99;
+
   display: flex;
   justify-content: space-between;
   align-items: center;

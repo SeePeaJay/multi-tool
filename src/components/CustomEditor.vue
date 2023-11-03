@@ -1,156 +1,23 @@
 <script setup lang="ts">
-import { Node } from "@tiptap/core";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
-import Document from "@tiptap/extension-document";
-import Heading from "@tiptap/extension-heading";
-import Paragraph from "@tiptap/extension-paragraph";
-import BulletList from "@tiptap/extension-bullet-list";
-import OrderedList from "@tiptap/extension-ordered-list";
-import CodeBlock from "@tiptap/extension-code-block";
-import BlockQuote from "@tiptap/extension-blockquote";
-import HorizontalRule from "@tiptap/extension-horizontal-rule";
-import Link from "@tiptap/extension-link";
-import Placeholder from "@tiptap/extension-placeholder";
-import { Plugin } from "prosemirror-state";
-import { nanoid } from "nanoid";
 import { useEditorStore } from "@/stores/editor";
-import { EngramLink } from "@/utils/engram-link";
+import {
+  BlockId,
+  CustomDocument,
+  CustomHeading,
+  CustomParagraph,
+  CustomBulletList,
+  CustomOrderedList,
+  CustomCodeBlock,
+  CustomBlockQuote,
+  CustomHorizontalRule,
+  EngramLink,
+  AutoLink,
+  BlockPlaceholder,
+} from "@/utils/editor-extensions";
 
 const editorStore = useEditorStore();
-
-/* Create custom node to render block id and create it for new blocks - https://github.com/ueberdosis/tiptap/issues/1041#issuecomment-917610594 */
-const BlockType = {
-  HEADING: "heading",
-  PARAGRAPH: "paragraph",
-  BULLETLIST: "bulletList",
-  ORDEREDLIST: "orderedList",
-  CODEBLOCK: "codeBlock",
-  BLOCKQUOTE: "blockquote",
-  HORIZONTALRULE: "horizontalRule",
-};
-const nodeTypesThatShouldHaveBlockId = {
-  [BlockType.HEADING]: true,
-  [BlockType.PARAGRAPH]: true,
-  [BlockType.BULLETLIST]: true,
-  [BlockType.ORDEREDLIST]: true,
-  [BlockType.CODEBLOCK]: true,
-  [BlockType.BLOCKQUOTE]: true,
-  [BlockType.HORIZONTALRULE]: true,
-};
-const BlockId = Node.create({
-  name: "blockId",
-  addGlobalAttributes() {
-    return [
-      {
-        types: Object.keys(nodeTypesThatShouldHaveBlockId),
-        attributes: {
-          blockId: {
-            default: null,
-            rendered: false,
-            keepOnSplit: false,
-            /* This bit uses input HTML to store block id as a node attribute https://stackoverflow.com/a/76668447 */
-            parseHTML: (element) => {
-              return element.hasAttribute("id") ? element.getAttribute("id") : null;
-            },
-          },
-        },
-      },
-    ];
-  },
-  /* This snippet generates a unique ID for every new block, even if it results from splitting an existing block in the middle (by default attributes would be copied) - https://discuss.prosemirror.net/t/reset-some-node-attributes-when-split-paragraph/3471/2 */
-  addProseMirrorPlugins() {
-    return [
-      new Plugin({
-        appendTransaction: (_transactions, oldState, newState) => {
-          // no changes
-          if (newState.doc === oldState.doc) {
-            return;
-          }
-
-          const tr = newState.tr;
-          let visitedBlockIds: Record<string, boolean> = {};
-
-          newState.doc.descendants((node, pos, parent) => {
-            if (
-              node.isBlock &&
-              parent === newState.doc &&
-              (!node.attrs.blockId || visitedBlockIds[node.attrs.blockId]) &&
-              nodeTypesThatShouldHaveBlockId[node.type.name]
-            ) {
-              const newBlockId = nanoid(8);
-              tr.setNodeMarkup(pos, undefined, {
-                ...node.attrs,
-                blockId: newBlockId,
-              });
-
-              visitedBlockIds[newBlockId] = true;
-            } else if (node.isBlock && node.attrs.blockId) {
-              visitedBlockIds[node.attrs.blockId] = true;
-            }
-          });
-
-          return tr;
-        },
-      }),
-    ];
-  },
-});
-
-/* Custom document to force title */
-const CustomDocument = Document.extend({
-  content: "heading block*",
-});
-
-/* Custom block nodes to render id */
-const CustomHeading = Heading.extend({
-  renderHTML({ node }) {
-    const hasLevel = this.options.levels.includes(node.attrs.level);
-    const level = hasLevel ? node.attrs.level : this.options.levels[0];
-
-    return [`h${level}`, { id: node.attrs.blockId }, 0];
-  },
-});
-const CustomParagraph = Paragraph.extend({
-  renderHTML({ node }) {
-    return ["p", { id: node.attrs.blockId }, 0];
-  },
-});
-const CustomBulletList = BulletList.extend({
-  renderHTML({ node }) {
-    return ["ul", { id: node.attrs.blockId }, 0];
-  },
-});
-const CustomOrderedList = OrderedList.extend({
-  renderHTML({ node }) {
-    return ["ol", { id: node.attrs.blockId }, 0];
-  },
-});
-const CustomCodeBlock = CodeBlock.extend({
-  renderHTML({ node }) {
-    return [
-      "pre",
-      { id: node.attrs.blockId },
-      [
-        "code",
-        {
-          class: node.attrs.language ? this.options.languageClassPrefix + node.attrs.language : null,
-        },
-        0,
-      ],
-    ];
-  },
-});
-const CustomBlockQuote = BlockQuote.extend({
-  renderHTML({ node }) {
-    return ["blockquote", { id: node.attrs.blockId }, 0];
-  },
-});
-const CustomHorizontalRule = HorizontalRule.extend({
-  renderHTML({ node }) {
-    return ["hr", { id: node.attrs.blockId }];
-  },
-});
 
 /* Editor setup */
 const editor = useEditor({
@@ -176,18 +43,8 @@ const editor = useEditor({
     CustomBlockQuote,
     CustomHorizontalRule,
     EngramLink,
-    Link.extend({ inclusive: false }).configure({
-      autolink: true,
-    }),
-    Placeholder.configure({
-      placeholder: ({ node }) => {
-        if (node.type.name === "heading") {
-          return "What’s the title?";
-        }
-
-        return "Can you add some further context?";
-      },
-    }),
+    AutoLink,
+    BlockPlaceholder,
   ],
   onSelectionUpdate({ editor }) {
     // console.log(editor.getJSON());

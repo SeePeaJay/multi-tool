@@ -89,6 +89,11 @@ const editor = useEditor({
     margin-top: 0.75em;
   }
 
+  /* Creates a margin above scrolled elements to avoid overlap with navbar */
+  > * {
+    scroll-margin-top: 40px; // = height of navbar
+  }
+
   ul,
   ol {
     padding: 0 1rem;

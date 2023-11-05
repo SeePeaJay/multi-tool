@@ -72,7 +72,7 @@ const editor = useEditor({
   },
   onUpdate({ editor }) {
     editorStore.setBlocksInHtml(editor.getHTML());
-    console.log(editor.getJSON());
+    console.log(editor.getJSON()?.content?.map((block) => block?.attrs?.blockId));
   },
 });
 </script>

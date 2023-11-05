@@ -12,7 +12,21 @@ import { nanoid } from "nanoid";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 
-/* Custom node to render block id and create it for new blocks - https://github.com/ueberdosis/tiptap/issues/1041#issuecomment-917610594 */
+function getBlockIdForBlockTypeChange(oldBlockIds: string[], newBlockIds: string[]) {
+  /* If lengths are different, then current transaction should not change the block type (should create a new block with no content) */
+  if (oldBlockIds.length !== newBlockIds.length) {
+    return null;
+  }
+
+  /* Otherwise, if a block id is missing, then current transaction should ONLY change the block type of ONE single block (and said block id is the one that should be used). I think it's safe to assume this because you can't multi-select in Tiptap to change the type of multiple blocks at once. */
+  for (let i = 0; i < oldBlockIds.length; i++) {
+    if (oldBlockIds[i] !== newBlockIds[i]) {
+      return oldBlockIds[i];
+    }
+  }
+
+  return null;
+}
 const BlockType = {
   HEADING: "heading",
   PARAGRAPH: "paragraph",
@@ -31,6 +45,8 @@ const nodeTypesThatShouldHaveBlockId = {
   [BlockType.BLOCKQUOTE]: true,
   [BlockType.HORIZONTALRULE]: true,
 };
+
+/* Custom node to render block id and create it for new blocks - https://github.com/ueberdosis/tiptap/issues/1041#issuecomment-917610594 */
 export const BlockId = Node.create({
   name: "blockId",
   addGlobalAttributes() {
@@ -64,22 +80,27 @@ export const BlockId = Node.create({
           const tr = newState.tr;
           const visitedBlockIds: Record<string, boolean> = {};
 
-          newState.doc.descendants((node, pos, parent) => {
-            if (
-              node.isBlock &&
-              parent === newState.doc &&
-              (!node.attrs.blockId || visitedBlockIds[node.attrs.blockId]) &&
-              nodeTypesThatShouldHaveBlockId[node.type.name]
-            ) {
-              const newBlockId = nanoid(8);
-              tr.setNodeMarkup(pos, undefined, {
-                ...node.attrs,
-                blockId: newBlockId,
-              });
+          const blockIdsBeforeInput = oldState.doc.content.content.map((block: any) => block.attrs.blockId);
+          const blockIdsRightAfterInput = newState.doc.content.content.map((block: any) => block.attrs.blockId);
+          const blockIdForBlockTypeChange = getBlockIdForBlockTypeChange(blockIdsBeforeInput, blockIdsRightAfterInput);
 
-              visitedBlockIds[newBlockId] = true;
-            } else if (node.isBlock && node.attrs.blockId) {
-              visitedBlockIds[node.attrs.blockId] = true;
+          newState.doc.descendants((node, pos, parent) => {
+            if (node.isBlock) {
+              if (
+                parent === newState.doc &&
+                (!node.attrs.blockId || visitedBlockIds[node.attrs.blockId]) &&
+                nodeTypesThatShouldHaveBlockId[node.type.name]
+              ) {
+                const blockId = blockIdForBlockTypeChange || nanoid(8); // if block id is missing, then it may be due to a change in block type, in which case we just use the same block id before the transaction
+
+                tr.setNodeMarkup(pos, undefined, {
+                  ...node.attrs,
+                  blockId,
+                });
+                visitedBlockIds[blockId] = true;
+              } else if (node.attrs.blockId) {
+                visitedBlockIds[node.attrs.blockId] = true;
+              }
             }
           });
 

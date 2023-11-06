@@ -7,10 +7,10 @@ import OrderedList from "@tiptap/extension-ordered-list";
 import CodeBlock from "@tiptap/extension-code-block";
 import BlockQuote from "@tiptap/extension-blockquote";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
-import { Plugin } from "prosemirror-state";
-import { nanoid } from "nanoid";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import { Plugin } from "prosemirror-state";
+import { nanoid } from "nanoid";
 
 function getBlockIdForBlockTypeChange(oldBlockIds: string[], newBlockIds: string[]) {
   /* If lengths are different, then current transaction should not change the block type (should create a new block with no content) */

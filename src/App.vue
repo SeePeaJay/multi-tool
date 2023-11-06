@@ -37,6 +37,8 @@ import NavBar from "./components/NavBar.vue";
   > * + * {
     margin-top: 0.75em;
   }
+
+  position: relative; // to position the more options button properly
 }
 
 @media screen and (min-width: 1200px) {

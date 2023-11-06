@@ -28,7 +28,6 @@ import NavBar from "./components/NavBar.vue";
 .view-container {
   display: flex;
   justify-content: center;
-  overflow-y: scroll;
 }
 
 .view-area {

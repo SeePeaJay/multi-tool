@@ -3,13 +3,15 @@
 <template>
   <nav>
     <div class="left-icons">
-      <RouterLink class="pressable" to="/engrams">
+      <RouterLink class="btn btn-sm btn-square" :class="{ 'btn-ghost': $route.name !== 'engrams' }" to="/engrams">
         <i class="pi pi-database"></i>
       </RouterLink>
-      <i class="pi pi-star pressable" style="margin-left: 0"></i>
+      <button class="btn btn-sm btn-square btn-ghost">
+        <i class="pi pi-star"></i>
+      </button>
     </div>
     <div class="right-icons">
-      <RouterLink class="pressable" to="/login">
+      <RouterLink class="btn btn-sm btn-square" :class="{ 'btn-ghost': $route.name !== 'login' }" to="/login">
         <i class="pi pi-sign-in"></i>
       </RouterLink>
     </div>
@@ -34,12 +36,18 @@ nav {
   align-items: center;
 }
 
-.pi {
-  font-size: 20px;
-  margin: 10px;
+.left-icons,
+.right-icons {
+  > * {
+    margin: 4px;
+  }
 }
 
-.router-link-active {
-  color: var(--default-color);
+.left-icons > * + * {
+  margin-left: 0;
+}
+
+.pi {
+  font-size: 20px;
 }
 </style>

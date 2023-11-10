@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express, { Express, Request, Response } from "express";
-import db from "./sqlite";
+import db from "./persistence/sqlite";
 
 const app: Express = express();
 const port = process.env.PORT;

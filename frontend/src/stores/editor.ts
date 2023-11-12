@@ -6,7 +6,7 @@ export const useEditorStore = defineStore("editor", () => {
 
   async function fetchBlocksInHtml() {
     try {
-      const getBlocksResponse = await fetch("http://localhost:8000/blocks");
+      const getBlocksResponse = await fetch("/blocks");
       const blocksInHtml = await getBlocksResponse.json();
 
       setBlocksInHtml(blocksInHtml.join(""));

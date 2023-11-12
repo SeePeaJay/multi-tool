@@ -50,7 +50,7 @@ onClickOutside(
 <style scoped lang="scss">
 #more-options {
   position: absolute;
-  top: 0.25em; // based on 0.75 em which is the spacing between blocks
+  top: -0.5em; // depends on the spacing b/w elements in .view-area
   left: calc(-32px - 0.25em); // 32px = dimension of the button
 
   z-index: 1; // needs to be above editor content

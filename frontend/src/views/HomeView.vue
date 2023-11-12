@@ -6,8 +6,13 @@ import MoreOptions from "@/components/MoreOptions.vue";
 <template>
   <div class="view-container">
     <div class="view-area">
-      <MoreOptions />
-      <CustomEditor />
+      <Suspense>
+        <template #fallback>
+          <div></div>
+        </template>
+
+        <CustomEditor />
+      </Suspense>
     </div>
   </div>
 </template>

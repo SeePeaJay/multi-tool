@@ -35,7 +35,7 @@ import NavBar from "./components/NavBar.vue";
   margin: 8px 0 8px; // to give some spacing for the actual view
 
   > * + * {
-    margin-top: 0.75em;
+    margin-top: 0.75em; // to provide spacing for elements in other views; based on the spacing b/w editor elements
   }
 
   position: relative; // to position the more options button properly

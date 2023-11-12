@@ -16,8 +16,10 @@ import {
   AutoLink,
   BlockPlaceholder,
 } from "@/utils/editor-extensions";
+import MoreOptions from "@/components/MoreOptions.vue";
 
 const editorStore = useEditorStore();
+await editorStore.fetchBlocksInHtml();
 
 /* Editor setup */
 const editor = useEditor({
@@ -75,10 +77,12 @@ const editor = useEditor({
     console.log(editor.getJSON()?.content?.map((block) => block?.attrs?.blockId));
   },
 });
+editor.value?.commands.setContent(editorStore.blocksInHtml);
 </script>
 
 <template>
   <editor-content :editor="editor" />
+  <MoreOptions />
 </template>
 
 <style lang="scss">

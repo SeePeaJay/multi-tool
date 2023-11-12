@@ -77,7 +77,6 @@ const editor = useEditor({
     console.log(editor.getJSON()?.content?.map((block) => block?.attrs?.blockId));
   },
 });
-editor.value?.commands.setContent(editorStore.blocksInHtml);
 </script>
 
 <template>

@@ -11,7 +11,7 @@ interface Block {
   id: string;
   repo_id: string;
   engram_id: string;
-  block_order: number;
+  order_number: number;
   content: string;
 }
 
@@ -26,7 +26,17 @@ function getDefaultBlocks() {
     const htmlElements = Array.from(body.children).map((child: Element) => child.outerHTML);
     const engramId = nanoid(8);
 
-    return htmlElements.map((htmlElement, index) => [nanoid(8), null, engramId, index, htmlElement]);
+    return htmlElements.map((htmlElement, index) => {
+      const blockId = index === 0 ? engramId : nanoid(8);
+
+      const dom = new JSDOM(htmlElement);
+      const targetElement = dom.window.document.body.firstElementChild;
+      if (targetElement) {
+        targetElement.id = blockId;
+      }
+
+      return [blockId, null, engramId, index, targetElement?.outerHTML || htmlElement];
+    });
   } catch (err) {
     console.error(err);
     return [];
@@ -46,7 +56,7 @@ export function init(): Promise<void> {
       if (err) return reject(err);
 
       db.run(
-        "CREATE TABLE IF NOT EXISTS blocks (id TEXT(8) NOT NULL, repo_id TEXT(8), engram_id TEXT(8) NOT NULL, block_order INTEGER NOT NULL, content TEXT NOT NULL)",
+        "CREATE TABLE IF NOT EXISTS blocks (id TEXT(8) NOT NULL, repo_id TEXT(8), engram_id TEXT(8) NOT NULL, order_number INTEGER NOT NULL, content TEXT NOT NULL)",
         (err) => {
           if (err) return reject(err);
 
@@ -58,11 +68,11 @@ export function init(): Promise<void> {
 
               db.serialize(() => {
                 const statement = db.prepare(
-                  "INSERT INTO blocks (id, repo_id, engram_id, block_order, content) VALUES (?, ?, ?, ?, ?)",
+                  "INSERT INTO blocks (id, repo_id, engram_id, order_number, content) VALUES (?, ?, ?, ?, ?)",
                 );
 
-                defaultBlocks.forEach((row) => {
-                  statement.run(row, function (err) {
+                defaultBlocks.forEach((block) => {
+                  statement.run(block, function (err) {
                     if (err) {
                       return console.error(err.message);
                     }

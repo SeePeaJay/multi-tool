@@ -4,6 +4,10 @@ import { defineStore } from "pinia";
 export const useEditorStore = defineStore("editor", () => {
   const blocksInHtml = ref(``);
 
+  function setBlocksInHtml(newBlockContents: string) {
+    blocksInHtml.value = newBlockContents;
+  }
+
   async function fetchBlocksInHtml() {
     try {
       const getBlocksResponse = await fetch("/blocks");
@@ -13,10 +17,6 @@ export const useEditorStore = defineStore("editor", () => {
     } catch (err) {
       console.error(err);
     }
-  }
-
-  function setBlocksInHtml(newBlockContents: string) {
-    blocksInHtml.value = newBlockContents;
   }
 
   return { blocksInHtml, fetchBlocksInHtml, setBlocksInHtml };

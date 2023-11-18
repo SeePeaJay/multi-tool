@@ -13,7 +13,15 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/blocks": {
+      "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+      "/api/login": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+      "/api/engramTitles": {
         target: "http://localhost:8000",
         changeOrigin: true,
       },

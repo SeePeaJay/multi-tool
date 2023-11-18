@@ -7,7 +7,7 @@ import { nanoid } from "nanoid";
 interface RowWithCount {
   count: number;
 }
-interface Block {
+interface BlockRow {
   id: string;
   repo_id: string;
   engram_id: string;
@@ -18,12 +18,11 @@ interface Block {
 const location = process.env.SQLITE_DB_LOCATION || "db/test.db";
 let db: sqlite3.Database;
 
-function getDefaultBlocks() {
+function getDefaultBlockRows() {
   try {
     const html = fs.readFileSync(path.resolve(__dirname, "../../persistence/multi-tool.html"), "utf8");
     const dom = new JSDOM(html);
-    const body = dom.window.document.body;
-    const htmlElements = Array.from(body.children).map((child: Element) => child.outerHTML);
+    const htmlElements = Array.from(dom.window.document.body.children).map((child: Element) => child.outerHTML);
     const engramId = nanoid(8);
 
     return htmlElements.map((htmlElement, index) => {
@@ -43,6 +42,11 @@ function getDefaultBlocks() {
   }
 }
 
+function getTitleFromHtml(html: string) {
+  const dom = new JSDOM(html);
+  return dom.window.document.body.firstElementChild?.textContent || html;
+}
+
 export function init(): Promise<void> {
   /* Create directory if missing */
   const dirName = path.dirname(location);
@@ -50,7 +54,7 @@ export function init(): Promise<void> {
     fs.mkdirSync(dirName, { recursive: true });
   }
 
-  /* Create table and rows if missing */
+  /* Create blocks table and default rows if missing */
   return new Promise((resolve, reject) => {
     db = new sqlite3.Database(location, (err) => {
       if (err) return reject(err);
@@ -64,15 +68,15 @@ export function init(): Promise<void> {
             if (err) return reject(err);
 
             if (row.count === 0) {
-              const defaultBlocks = getDefaultBlocks();
+              const defaultBlockRows = getDefaultBlockRows();
 
               db.serialize(() => {
                 const statement = db.prepare(
                   "INSERT INTO blocks (id, repo_id, engram_id, order_number, content) VALUES (?, ?, ?, ?, ?)",
                 );
 
-                defaultBlocks.forEach((block) => {
-                  statement.run(block, function (err) {
+                defaultBlockRows.forEach((row) => {
+                  statement.run(row, function (err) {
                     if (err) {
                       return console.error(err.message);
                     }
@@ -91,9 +95,9 @@ export function init(): Promise<void> {
   });
 }
 
-export function getItems(): Promise<Block[]> {
+export function getBlockRows(): Promise<BlockRow[]> {
   return new Promise((resolve, reject) => {
-    db.all("SELECT * FROM blocks", function (err, rows: Block[]) {
+    db.all("SELECT * FROM blocks", function (err, rows: BlockRow[]) {
       if (err) {
         return reject(err);
       }
@@ -102,7 +106,38 @@ export function getItems(): Promise<Block[]> {
   });
 }
 
+export function getEngramTitles(userId: string): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    db.all(`SELECT content FROM blocks WHERE repo_id = ${userId} AND order_number = 0`, (err, rows: BlockRow[]) => {
+      if (err) {
+        return reject(err);
+      }
+
+      const engramTitles = rows.map((row) => getTitleFromHtml(row.content));
+      resolve(engramTitles);
+    });
+  });
+}
+
+export function createStarredEngram(userId: string) {
+  const blockId = nanoid(8);
+  const content = `<h1 id="${blockId}">Starred</h1>`;
+  const row = [blockId, userId, blockId, 0, content];
+
+  return new Promise((resolve, reject) => {
+    db.run(`INSERT INTO blocks (id, repo_id, engram_id, order_number, content) VALUES (?, ?, ?, ?, ?)`, row, (err) => {
+      if (err) {
+        return reject(err);
+      }
+
+      resolve(getTitleFromHtml(content));
+    });
+  });
+}
+
 export default {
   init,
-  getItems,
+  getBlockRows,
+  getEngramTitles,
+  createStarredEngram,
 };

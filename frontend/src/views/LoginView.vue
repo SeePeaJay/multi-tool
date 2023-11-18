@@ -1,24 +1,32 @@
 <script setup lang="ts">
-import { useForm } from "vee-validate";
+// import { useForm } from "vee-validate";
 
-function required(value: string) {
-  return value ? true : "This field is required!";
+interface CredentialResponse {
+  clientId: string;
+  client_id: string;
+  credential: string;
+  select_by: string;
 }
 
-const { defineInputBinds, handleSubmit, errors } = useForm({
-  validationSchema: {
-    username: required,
-    password: required,
-  },
-});
+let globalWithHandleCredentialResponse = globalThis as typeof globalThis & {
+  handleCredentialResponse: (response: CredentialResponse) => void;
+};
+globalWithHandleCredentialResponse.handleCredentialResponse = async (response: CredentialResponse) => {
+  console.log(response.credential);
 
-const username = defineInputBinds("username");
-const password = defineInputBinds("password");
+  await fetch("/api/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${response.credential}`,
+    },
+    body: JSON.stringify({
+      /* your request body */
+    }),
+  });
 
-const onSubmit = handleSubmit((values) => {
-  // Submit to API
-  console.log(values);
-});
+  await fetch("/api/engramTitles");
+};
 </script>
 
 <template>
@@ -28,35 +36,22 @@ const onSubmit = handleSubmit((values) => {
         <h1>Login</h1>
         <span>Welcome back</span>
       </div>
-      <form class="form-control w-full max-w-xs" @submit="onSubmit">
-        <label class="label">
-          <span class="label-text">Username</span>
-        </label>
-        <input
-          type="text"
-          v-bind="username"
-          class="input input-bordered w-full max-w-xs"
-          :class="{ 'input-error': errors.username }"
-        />
-        <label class="label">
-          <span class="label-text-alt text-red-500">{{ errors.username }}</span>
-        </label>
-        <label class="label">
-          <span class="label-text">Password</span>
-        </label>
-        <input
-          type="password"
-          v-bind="password"
-          class="input input-bordered w-full max-w-xs"
-          :class="{ 'input-error': errors.password }"
-        />
-        <label class="label">
-          <span class="label-text-alt text-red-500">{{ errors.password }}</span>
-        </label>
-        <label class="label"></label>
-        <button class="btn">Submit</button>
-        <span>Don't have an account? <RouterLink class="pressable link" to="/signup"> Sign Up</RouterLink></span>
-      </form>
+      <div
+        id="g_id_onload"
+        data-client_id="736880120177-bugpjv7lqj1d34a0msp47lmptpaa2jlm.apps.googleusercontent.com"
+        data-callback="handleCredentialResponse"
+        data-auto_prompt="false"
+      ></div>
+      <div
+        class="g_id_signin"
+        data-type="standard"
+        data-size="large"
+        data-theme="outline"
+        data-text="sign_in_with"
+        data-shape="rectangular"
+        data-logo_alignment="left"
+        data-width="120"
+      ></div>
     </div>
   </div>
 </template>

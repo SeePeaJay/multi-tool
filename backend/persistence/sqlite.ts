@@ -20,7 +20,7 @@ let db: sqlite3.Database;
 
 function getDefaultBlockRows() {
   try {
-    const html = fs.readFileSync(path.resolve(__dirname, "../../persistence/multi-tool.html"), "utf8");
+    const html = fs.readFileSync(path.resolve(__dirname, "./multi-tool.html"), "utf8");
     const dom = new JSDOM(html);
     const htmlElements = Array.from(dom.window.document.body.children).map((child: Element) => child.outerHTML);
     const engramId = nanoid(8);

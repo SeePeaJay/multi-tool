@@ -56,8 +56,8 @@ app.post("/api/login", (req: Request, res: Response) => {
 
       res.status(200).send(userId);
     })
-    .catch((error) => {
-      console.error(error);
+    .catch((err) => {
+      console.error(err);
 
       res.status(401).send("Invalid credential");
     });

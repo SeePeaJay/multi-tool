@@ -2,6 +2,7 @@
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import { useEditorStore } from "@/stores/editor";
+import { useUserStore } from "@/stores/user";
 import {
   BlockId,
   CustomDocument,
@@ -20,6 +21,8 @@ import MoreOptions from "@/components/MoreOptions.vue";
 
 const editorStore = useEditorStore();
 await editorStore.fetchBlocksInHtml();
+
+const userStore = useUserStore();
 
 /* Editor setup */
 const editor = useEditor({
@@ -48,6 +51,7 @@ const editor = useEditor({
     AutoLink,
     BlockPlaceholder,
   ],
+  editable: userStore.userIsLoggedIn,
   onSelectionUpdate({ editor }) {
     // console.log(editor.getJSON());
     // let { from, to } = editor.view.state.selection;
@@ -81,7 +85,7 @@ const editor = useEditor({
 
 <template>
   <editor-content :editor="editor" />
-  <MoreOptions />
+  <MoreOptions v-if="userStore.userIsLoggedIn" />
 </template>
 
 <style lang="scss">

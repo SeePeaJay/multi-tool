@@ -1,17 +1,29 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { useUserStore } from "@/stores/user";
+
+const userStore = useUserStore();
+</script>
 
 <template>
   <nav>
     <div class="left-icons">
-      <RouterLink class="btn btn-sm btn-square" :class="{ 'btn-ghost': $route.name !== 'engrams' }" to="/engrams">
+      <RouterLink
+        v-if="userStore.userIsLoggedIn"
+        class="btn btn-sm btn-square"
+        :class="{ 'btn-ghost': $route.name !== 'engrams' }"
+        to="/engrams"
+      >
         <i class="pi pi-database"></i>
       </RouterLink>
-      <button class="btn btn-sm btn-square btn-ghost">
+      <button v-if="userStore.userIsLoggedIn" class="btn btn-sm btn-square btn-ghost">
         <i class="pi pi-star"></i>
       </button>
     </div>
     <div class="right-icons">
-      <RouterLink class="btn btn-sm btn-square" :class="{ 'btn-ghost': $route.name !== 'login' }" to="/login">
+      <button v-if="userStore.userIsLoggedIn" class="btn btn-sm btn-square btn-ghost">
+        <i class="pi pi-sign-out"></i>
+      </button>
+      <RouterLink v-else class="btn btn-sm btn-square" :class="{ 'btn-ghost': $route.name !== 'login' }" to="/login">
         <i class="pi pi-sign-in"></i>
       </RouterLink>
     </div>

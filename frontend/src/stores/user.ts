@@ -1,14 +1,20 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 
-export const useUserStore = defineStore("user", () => {
-  const username = ref("");
+export const useUserStore = defineStore(
+  "user",
+  () => {
+    const userId = ref("");
 
-  const userIsLoggedIn = computed(() => !!username.value);
+    const userIsLoggedIn = computed(() => !!userId.value);
 
-  function setUsername(newUsername: string) {
-    username.value = newUsername;
-  }
+    function setUserId(newUserId: string) {
+      userId.value = newUserId;
+    }
 
-  return { userIsLoggedIn, setUsername };
-});
+    return { userId, userIsLoggedIn, setUserId }; // userId needs to be returned for it to persist
+  },
+  {
+    persist: true,
+  },
+);

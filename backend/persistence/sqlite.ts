@@ -108,7 +108,7 @@ export function getBlockRows(): Promise<BlockRow[]> {
 
 export function getEngramTitles(userId: string): Promise<string[]> {
   return new Promise((resolve, reject) => {
-    db.all(`SELECT content FROM blocks WHERE repo_id = ${userId} AND order_number = 0`, (err, rows: BlockRow[]) => {
+    db.all(`SELECT content FROM blocks WHERE repo_id = ? AND order_number = 0`, [userId], (err, rows: BlockRow[]) => {
       if (err) {
         return reject(err);
       }

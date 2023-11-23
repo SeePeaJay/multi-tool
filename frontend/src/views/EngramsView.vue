@@ -1,22 +1,25 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useUserStore } from "@/stores/user";
+import createAxiosInstance from "../utils/axios";
 
 interface Engram {
   id: string;
   title: string;
 }
 
+const router = useRouter();
+const userStore = useUserStore();
+const axiosInstance = createAxiosInstance(router, userStore);
+
 const engrams = ref<Engram[]>([]);
 
 onMounted(async () => {
   try {
-    const engramsResponse = await fetch("/api/engrams");
+    const engramsResponse = await axiosInstance("/api/engrams");
 
-    if (!engramsResponse.ok) {
-      throw new Error(`HTTP error! Status: ${engramsResponse.status}`);
-    }
-
-    engrams.value = await engramsResponse.json();
+    engrams.value = engramsResponse.data;
 
     console.log(engramsResponse);
   } catch (err) {

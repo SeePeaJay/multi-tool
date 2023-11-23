@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
+import createAxiosInstance from "../utils/axios";
 
 interface CredentialResponse {
   clientId: string;
@@ -11,24 +12,22 @@ interface CredentialResponse {
 
 const router = useRouter();
 const userStore = useUserStore();
+const axiosInstance = createAxiosInstance(router, userStore);
 
 async function handleCredentialResponse(credentialResponse: CredentialResponse) {
   try {
     // console.log(credentialResponse.credential);
 
-    const loginResponse = await fetch("/api/login", {
+    const loginResponse = await axiosInstance({
       method: "POST",
+      url: "/api/login",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${credentialResponse.credential}`,
       },
     });
 
-    if (!loginResponse.ok) {
-      throw new Error(`HTTP error! Status: ${loginResponse.status}`);
-    }
-
-    const userId = await loginResponse.json();
+    const userId = loginResponse.data;
     userStore.setUserId(userId);
 
     router.push("/engrams");

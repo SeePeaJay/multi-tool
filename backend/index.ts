@@ -63,16 +63,16 @@ app.post("/api/login", (req: Request, res: Response) => {
     });
 });
 
-app.get("/api/engramTitles", authCheck, async (req: Request, res: Response) => {
+app.get("/api/engrams", authCheck, async (req: Request, res: Response) => {
   console.log(req.session?.userId);
 
   try {
-    const engramTitles = await db.getEngramTitles(req.session?.userId);
+    const engramTitles = await db.getEngramIdsAndTitles(req.session?.userId);
 
     if (engramTitles.length === 0) {
       const starredTitle = await db.createStarredEngram(req.session?.userId);
 
-      res.status(200).send(starredTitle);
+      res.status(200).send([starredTitle]);
     } else {
       res.status(200).send(engramTitles);
     }

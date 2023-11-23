@@ -106,16 +106,24 @@ export function getBlockRows(): Promise<BlockRow[]> {
   });
 }
 
-export function getEngramTitles(userId: string): Promise<string[]> {
+export function getEngramIdsAndTitles(userId: string): Promise<object[]> {
   return new Promise((resolve, reject) => {
-    db.all(`SELECT content FROM blocks WHERE repo_id = ? AND order_number = 0`, [userId], (err, rows: BlockRow[]) => {
-      if (err) {
-        return reject(err);
-      }
+    db.all(
+      `SELECT id, content FROM blocks WHERE repo_id = ? AND order_number = 0`,
+      [userId],
+      (err, rows: BlockRow[]) => {
+        if (err) {
+          return reject(err);
+        }
 
-      const engramTitles = rows.map((row) => getTitleFromHtml(row.content));
-      resolve(engramTitles);
-    });
+        const engramIdsAndTitles = rows.map((row) => ({
+          title: getTitleFromHtml(row.content),
+          id: row.id,
+        }));
+
+        resolve(engramIdsAndTitles);
+      },
+    );
   });
 }
 
@@ -138,6 +146,6 @@ export function createStarredEngram(userId: string) {
 export default {
   init,
   getBlockRows,
-  getEngramTitles,
+  getEngramIdsAndTitles,
   createStarredEngram,
 };

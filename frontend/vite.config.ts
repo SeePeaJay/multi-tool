@@ -21,7 +21,7 @@ export default defineConfig({
         target: "http://localhost:8000",
         changeOrigin: true,
       },
-      "/api/engramTitles": {
+      "/api/engrams": {
         target: "http://localhost:8000",
         changeOrigin: true,
       },

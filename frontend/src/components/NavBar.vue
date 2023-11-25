@@ -58,8 +58,4 @@ nav {
 .left-icons > * + * {
   margin-left: 0;
 }
-
-.pi {
-  font-size: 20px;
-}
 </style>

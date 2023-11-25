@@ -32,11 +32,31 @@ onMounted(async () => {
   <div class="view-container">
     <div class="view-area">
       <h1>Engrams</h1>
-      <ul>
-        <router-link v-for="engram in engrams" :key="engram.id" :to="`/engrams/${engram.id}`">
-          {{ engram.title }}
-        </router-link>
-      </ul>
+      <table>
+        <tr>
+          <th>
+            <button class="btn btn-sm btn-square btn-ghost">
+              <i class="pi pi-trash"></i>
+            </button>
+          </th>
+        </tr>
+        <tr>
+          <th>
+            <input type="checkbox" />
+          </th>
+          <th>Title</th>
+        </tr>
+        <tr>
+          <td style="text-align: center">
+            <input type="checkbox" />
+          </td>
+          <td style="text-align: center">
+            <router-link v-for="engram in engrams" :key="engram.id" :to="`/engrams/${engram.id}`">
+              {{ engram.title }}
+            </router-link>
+          </td>
+        </tr>
+      </table>
     </div>
   </div>
 </template>

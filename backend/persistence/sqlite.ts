@@ -95,9 +95,19 @@ export function init(): Promise<void> {
   });
 }
 
-export function getBlockRows(): Promise<BlockRow[]> {
+export function getBlockRows(engramId?: string): Promise<BlockRow[]> {
   return new Promise((resolve, reject) => {
-    db.all("SELECT * FROM blocks", function (err, rows: BlockRow[]) {
+    let query = "SELECT * FROM blocks";
+    const params = [];
+
+    if (engramId) {
+      query += " WHERE engram_id = ?";
+      params.push(engramId);
+    } else {
+      query += " WHERE repo_id IS NULL";
+    }
+
+    db.all(query, params, (err, rows: BlockRow[]) => {
       if (err) {
         return reject(err);
       }

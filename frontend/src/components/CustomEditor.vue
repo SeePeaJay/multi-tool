@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRoute } from "vue-router";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import StarterKit from "@tiptap/starter-kit";
 import { useEditorStore } from "@/stores/editor";
@@ -19,8 +20,10 @@ import {
 } from "@/utils/editor-extensions";
 import MoreOptions from "@/components/MoreOptions.vue";
 
+const route = useRoute();
+
 const editorStore = useEditorStore();
-await editorStore.fetchBlocksInHtml();
+await editorStore.fetchBlocksInHtml(route.params.engramTitle as string);
 
 const userStore = useUserStore();
 

@@ -82,6 +82,19 @@ app.get("/api/engrams", authCheck, async (req: Request, res: Response) => {
   }
 });
 
+app.get("/api/engrams/:engramId", authCheck, async (req: Request, res: Response) => {
+  try {
+    const blockRows = await db.getBlockRows({
+      repoId: req.session?.userId,
+      engramId: req.params.engramId,
+    });
+    res.send(blockRows.map((row) => row.content));
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
+});
+
 db.init().then(() => {
   app.listen(port, () => {
     console.log(`⚡️[server]: Server is running at http://localhost:${port}`);

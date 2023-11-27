@@ -14,6 +14,10 @@ interface BlockRow {
   order_number: number;
   content: string;
 }
+interface GetBlockRowsOptions {
+  repoId: string;
+  engramId: string;
+}
 
 const location = process.env.SQLITE_DB_LOCATION || "db/test.db";
 let db: sqlite3.Database;
@@ -95,14 +99,14 @@ export function init(): Promise<void> {
   });
 }
 
-export function getBlockRows(engramId?: string): Promise<BlockRow[]> {
+export function getBlockRows(options?: GetBlockRowsOptions): Promise<BlockRow[]> {
   return new Promise((resolve, reject) => {
     let query = "SELECT * FROM blocks";
     const params = [];
 
-    if (engramId) {
-      query += " WHERE engram_id = ?";
-      params.push(engramId);
+    if (options?.repoId && options?.engramId) {
+      query += " WHERE repo_id = ? AND engram_id = ?";
+      params.push(...[options?.repoId, options?.engramId]);
     } else {
       query += " WHERE repo_id IS NULL";
     }

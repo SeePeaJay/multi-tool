@@ -8,9 +8,9 @@ export const useEditorStore = defineStore("editor", () => {
     blocksInHtml.value = newBlockContents;
   }
 
-  async function fetchBlocksInHtml() {
+  async function fetchBlocksInHtml(engramId?: string) {
     try {
-      const getBlocksResponse = await fetch("/api");
+      const getBlocksResponse = await fetch(engramId ? `/api/engrams/${engramId}` : "/api");
       const blocksInHtml = await getBlocksResponse.json();
 
       setBlocksInHtml(blocksInHtml.join(""));

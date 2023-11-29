@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { useRoute } from "vue-router";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
-import StarterKit from "@tiptap/starter-kit";
 import { useEditorStore } from "@/stores/editor";
 import { useUserStore } from "@/stores/user";
 import {
+  ModifiedStarterKit,
   BlockId,
-  CustomDocument,
+  CustomTitleDocument,
+  CustomBlocksDocument,
   CustomHeading,
   CustomParagraph,
   CustomBulletList,
@@ -28,21 +29,12 @@ await editorStore.fetchBlocksInHtml(route.params.engramTitle as string);
 const userStore = useUserStore();
 
 /* Editor setup */
-const editor = useEditor({
+const blocksEditor = useEditor({
   content: editorStore.blocksInHtml,
   extensions: [
-    StarterKit.configure({
-      document: false,
-      heading: false,
-      paragraph: false,
-      bulletList: false,
-      orderedList: false,
-      codeBlock: false,
-      blockquote: false,
-      horizontalRule: false,
-    }),
+    ModifiedStarterKit,
     BlockId,
-    CustomDocument,
+    CustomBlocksDocument,
     CustomHeading,
     CustomParagraph,
     CustomBulletList,
@@ -84,11 +76,26 @@ const editor = useEditor({
     console.log(editor.getJSON()?.content?.map((block) => block?.attrs?.blockId));
   },
 });
+const titleEditor = useEditor({
+  content: editorStore.titleInHtml,
+  extensions: [
+    ModifiedStarterKit,
+    BlockId,
+    CustomTitleDocument,
+    CustomHeading,
+    CustomParagraph,
+    EngramLink,
+    AutoLink,
+    BlockPlaceholder,
+  ],
+  editable: userStore.userIsLoggedIn,
+});
 </script>
 
 <template>
-  <editor-content :editor="editor" />
+  <editor-content :editor="titleEditor" />
   <MoreOptions v-if="userStore.userIsLoggedIn" />
+  <editor-content :editor="blocksEditor" />
 </template>
 
 <style lang="scss">

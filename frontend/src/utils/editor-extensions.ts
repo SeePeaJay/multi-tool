@@ -1,4 +1,5 @@
 import { mergeAttributes, Node, nodeInputRule } from "@tiptap/core";
+import StarterKit from "@tiptap/starter-kit";
 import Document from "@tiptap/extension-document";
 import Heading from "@tiptap/extension-heading";
 import Paragraph from "@tiptap/extension-paragraph";
@@ -27,6 +28,7 @@ function getBlockIdForBlockTypeChange(oldBlockIds: string[], newBlockIds: string
 
   return null;
 }
+
 const BlockType = {
   HEADING: "heading",
   PARAGRAPH: "paragraph",
@@ -45,6 +47,17 @@ const nodeTypesThatShouldHaveBlockId = {
   [BlockType.BLOCKQUOTE]: true,
   [BlockType.HORIZONTALRULE]: true,
 };
+
+export const ModifiedStarterKit = StarterKit.configure({
+  document: false,
+  heading: false,
+  paragraph: false,
+  bulletList: false,
+  orderedList: false,
+  codeBlock: false,
+  blockquote: false,
+  horizontalRule: false,
+});
 
 /* Custom node to render block id and create it for new blocks - https://github.com/ueberdosis/tiptap/issues/1041#issuecomment-917610594 */
 export const BlockId = Node.create({
@@ -111,9 +124,12 @@ export const BlockId = Node.create({
   },
 });
 
-/* Custom document node to force title */
-export const CustomDocument = Document.extend({
-  content: "heading block*",
+/* Custom document nodes */
+export const CustomTitleDocument = Document.extend({
+  content: "heading",
+});
+export const CustomBlocksDocument = Document.extend({
+  content: "block*",
 });
 
 /* Custom block nodes to render id */

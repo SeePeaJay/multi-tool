@@ -2,7 +2,6 @@
 import { useRoute } from "vue-router";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import { useEditorStore } from "@/stores/editor";
-import { useUserStore } from "@/stores/user";
 import {
   ModifiedStarterKit,
   BlockId,
@@ -26,9 +25,21 @@ const route = useRoute();
 const editorStore = useEditorStore();
 await editorStore.fetchEngram(route.params.engramTitle as string);
 
-const userStore = useUserStore();
-
 /* Editor setup */
+const titleEditor = useEditor({
+  content: editorStore.title,
+  extensions: [
+    ModifiedStarterKit,
+    BlockId,
+    TitleDocument,
+    HeadingWithId,
+    ParagraphWithId,
+    EngramLink,
+    AutoLink,
+    BlockPlaceholder,
+  ],
+  editable: editorStore.titleIsEditable,
+});
 const blocksEditor = useEditor({
   content: editorStore.blocks,
   extensions: [
@@ -46,7 +57,7 @@ const blocksEditor = useEditor({
     AutoLink,
     BlockPlaceholder,
   ],
-  editable: userStore.userIsLoggedIn,
+  editable: editorStore.blocksAreEditable,
   onSelectionUpdate({ editor }) {
     // console.log(editor.getJSON());
     // let { from, to } = editor.view.state.selection;
@@ -76,25 +87,11 @@ const blocksEditor = useEditor({
     console.log(editor.getJSON()?.content?.map((block) => block?.attrs?.blockId));
   },
 });
-const titleEditor = useEditor({
-  content: editorStore.title,
-  extensions: [
-    ModifiedStarterKit,
-    BlockId,
-    TitleDocument,
-    HeadingWithId,
-    ParagraphWithId,
-    EngramLink,
-    AutoLink,
-    BlockPlaceholder,
-  ],
-  editable: userStore.userIsLoggedIn,
-});
 </script>
 
 <template>
   <editor-content :editor="titleEditor" />
-  <MoreOptions v-if="userStore.userIsLoggedIn" />
+  <MoreOptions v-if="editorStore.titleIsEditable" />
   <editor-content :editor="blocksEditor" />
 </template>
 

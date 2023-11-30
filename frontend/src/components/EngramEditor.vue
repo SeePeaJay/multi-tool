@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import { useEditorStore } from "@/stores/editor";
+import { useUserStore } from "@/stores/user";
+import MoreOptions from "@/components/MoreOptions.vue";
 import {
   ModifiedStarterKit,
   BlockId,
@@ -18,12 +20,18 @@ import {
   AutoLink,
   BlockPlaceholder,
 } from "@/utils/editor-extensions";
-import MoreOptions from "@/components/MoreOptions.vue";
+import createAxiosInstance from "@/utils/axios";
 
 const route = useRoute();
+const router = useRouter();
 
+const userStore = useUserStore();
 const editorStore = useEditorStore();
-await editorStore.fetchEngram(route.params.engramTitle as string);
+
+await editorStore.fetchEngram({
+  engramId: route.params.engramTitle as string,
+  axiosInstance: createAxiosInstance(router, userStore),
+});
 
 /* Editor setup */
 const titleEditor = useEditor({

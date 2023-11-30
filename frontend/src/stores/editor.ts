@@ -1,5 +1,12 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
+import axios from "axios";
+import type { AxiosInstance } from "axios";
+
+interface FetchEngramsOptions {
+  engramId: string;
+  axiosInstance: AxiosInstance;
+}
 
 export const useEditorStore = defineStore("editor", () => {
   const title = ref("");
@@ -28,10 +35,10 @@ export const useEditorStore = defineStore("editor", () => {
     blocks.value = newBlockContents;
   }
 
-  async function fetchEngram(engramId?: string) {
+  async function fetchEngram({ engramId, axiosInstance }: FetchEngramsOptions) {
     try {
-      const getBlocksResponse = await fetch(engramId ? `/api/engrams/${engramId}` : "/api");
-      const blocks = await getBlocksResponse.json();
+      const getBlocksResponse = engramId ? await axiosInstance(`/api/engrams/${engramId}`) : await axios("/api");
+      const blocks = getBlocksResponse.data;
 
       const parser = new DOMParser();
       const title = (parser.parseFromString(blocks, "text/html").body.firstChild as HTMLElement)?.outerHTML;

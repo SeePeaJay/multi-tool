@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CustomEditor from "@/components/CustomEditor.vue";
+import EngramEditor from "@/components/EngramEditor.vue";
 </script>
 
 <template>
@@ -10,7 +10,7 @@ import CustomEditor from "@/components/CustomEditor.vue";
           <div></div>
         </template>
 
-        <CustomEditor />
+        <EngramEditor />
       </Suspense>
     </div>
   </div>

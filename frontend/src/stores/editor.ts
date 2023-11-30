@@ -2,30 +2,30 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 
 export const useEditorStore = defineStore("editor", () => {
-  const titleInHtml = ref("");
-  const blocksInHtml = ref("");
+  const title = ref("");
+  const blocks = ref("");
 
-  function setTitleInHtml(newTitle: string) {
-    titleInHtml.value = newTitle;
+  function setTitle(newTitle: string) {
+    title.value = newTitle;
   }
-  function setBlocksInHtml(newBlockContents: string) {
-    blocksInHtml.value = newBlockContents;
+  function setBlocks(newBlockContents: string) {
+    blocks.value = newBlockContents;
   }
 
-  async function fetchBlocksInHtml(engramId?: string) {
+  async function fetchEngram(engramId?: string) {
     try {
       const getBlocksResponse = await fetch(engramId ? `/api/engrams/${engramId}` : "/api");
-      const blocksInHtml = await getBlocksResponse.json();
+      const blocks = await getBlocksResponse.json();
 
       const parser = new DOMParser();
-      const titleInHtml = (parser.parseFromString(blocksInHtml, "text/html").body.firstChild as HTMLElement)?.outerHTML;
+      const title = (parser.parseFromString(blocks, "text/html").body.firstChild as HTMLElement)?.outerHTML;
 
-      setTitleInHtml(titleInHtml);
-      setBlocksInHtml(blocksInHtml.join("").replace(titleInHtml, ""));
+      setTitle(title);
+      setBlocks(blocks.join("").replace(title, ""));
     } catch (err) {
       console.error(err);
     }
   }
 
-  return { titleInHtml, blocksInHtml, fetchBlocksInHtml, setTitleInHtml, setBlocksInHtml };
+  return { title, blocks, fetchEngram, setTitle, setBlocks };
 });

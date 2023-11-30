@@ -125,15 +125,15 @@ export const BlockId = Node.create({
 });
 
 /* Custom document nodes */
-export const CustomTitleDocument = Document.extend({
+export const TitleDocument = Document.extend({
   content: "heading",
 });
-export const CustomBlocksDocument = Document.extend({
+export const BlocksDocument = Document.extend({
   content: "block*",
 });
 
 /* Custom block nodes to render id */
-export const CustomHeading = Heading.extend({
+export const HeadingWithId = Heading.extend({
   renderHTML({ node }) {
     const hasLevel = this.options.levels.includes(node.attrs.level);
     const level = hasLevel ? node.attrs.level : this.options.levels[0];
@@ -141,22 +141,22 @@ export const CustomHeading = Heading.extend({
     return [`h${level}`, { id: node.attrs.blockId }, 0];
   },
 });
-export const CustomParagraph = Paragraph.extend({
+export const ParagraphWithId = Paragraph.extend({
   renderHTML({ node }) {
     return ["p", { id: node.attrs.blockId }, 0];
   },
 });
-export const CustomBulletList = BulletList.extend({
+export const BulletListWithId = BulletList.extend({
   renderHTML({ node }) {
     return ["ul", { id: node.attrs.blockId }, 0];
   },
 });
-export const CustomOrderedList = OrderedList.extend({
+export const OrderedListWithId = OrderedList.extend({
   renderHTML({ node }) {
     return ["ol", { id: node.attrs.blockId }, 0];
   },
 });
-export const CustomCodeBlock = CodeBlock.extend({
+export const CodeBlockWithId = CodeBlock.extend({
   renderHTML({ node }) {
     return [
       "pre",
@@ -171,12 +171,12 @@ export const CustomCodeBlock = CodeBlock.extend({
     ];
   },
 });
-export const CustomBlockQuote = BlockQuote.extend({
+export const BlockQuoteWithId = BlockQuote.extend({
   renderHTML({ node }) {
     return ["blockquote", { id: node.attrs.blockId }, 0];
   },
 });
-export const CustomHorizontalRule = HorizontalRule.extend({
+export const HorizontalRuleWithId = HorizontalRule.extend({
   renderHTML({ node }) {
     return ["hr", { id: node.attrs.blockId }];
   },

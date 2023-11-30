@@ -6,15 +6,15 @@ import { useUserStore } from "@/stores/user";
 import {
   ModifiedStarterKit,
   BlockId,
-  CustomTitleDocument,
-  CustomBlocksDocument,
-  CustomHeading,
-  CustomParagraph,
-  CustomBulletList,
-  CustomOrderedList,
-  CustomCodeBlock,
-  CustomBlockQuote,
-  CustomHorizontalRule,
+  TitleDocument,
+  BlocksDocument,
+  HeadingWithId,
+  ParagraphWithId,
+  BulletListWithId,
+  OrderedListWithId,
+  CodeBlockWithId,
+  BlockQuoteWithId,
+  HorizontalRuleWithId,
   EngramLink,
   AutoLink,
   BlockPlaceholder,
@@ -24,24 +24,24 @@ import MoreOptions from "@/components/MoreOptions.vue";
 const route = useRoute();
 
 const editorStore = useEditorStore();
-await editorStore.fetchBlocksInHtml(route.params.engramTitle as string);
+await editorStore.fetchEngram(route.params.engramTitle as string);
 
 const userStore = useUserStore();
 
 /* Editor setup */
 const blocksEditor = useEditor({
-  content: editorStore.blocksInHtml,
+  content: editorStore.blocks,
   extensions: [
     ModifiedStarterKit,
     BlockId,
-    CustomBlocksDocument,
-    CustomHeading,
-    CustomParagraph,
-    CustomBulletList,
-    CustomOrderedList,
-    CustomCodeBlock,
-    CustomBlockQuote,
-    CustomHorizontalRule,
+    BlocksDocument,
+    HeadingWithId,
+    ParagraphWithId,
+    BulletListWithId,
+    OrderedListWithId,
+    CodeBlockWithId,
+    BlockQuoteWithId,
+    HorizontalRuleWithId,
     EngramLink,
     AutoLink,
     BlockPlaceholder,
@@ -72,18 +72,18 @@ const blocksEditor = useEditor({
     // console.log(node);
   },
   onUpdate({ editor }) {
-    editorStore.setBlocksInHtml(editor.getHTML());
+    editorStore.setBlocks(editor.getHTML());
     console.log(editor.getJSON()?.content?.map((block) => block?.attrs?.blockId));
   },
 });
 const titleEditor = useEditor({
-  content: editorStore.titleInHtml,
+  content: editorStore.title,
   extensions: [
     ModifiedStarterKit,
     BlockId,
-    CustomTitleDocument,
-    CustomHeading,
-    CustomParagraph,
+    TitleDocument,
+    HeadingWithId,
+    ParagraphWithId,
     EngramLink,
     AutoLink,
     BlockPlaceholder,

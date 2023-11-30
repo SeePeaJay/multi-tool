@@ -66,4 +66,8 @@ a {
   color: black;
   text-decoration: none;
 }
+
+#more-options-menu .pi {
+  font-size: inherit;
+}
 </style>

@@ -60,3 +60,9 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
+<style scoped lang="scss">
+.pi {
+  font-size: 16px;
+}
+</style>

@@ -29,7 +29,7 @@ const userStore = useUserStore();
 const editorStore = useEditorStore();
 
 await editorStore.fetchEngram({
-  engramId: route.params.engramTitle as string,
+  engramTitle: route.params.engramTitle as string,
   axiosInstance: createAxiosInstance(router, userStore),
 });
 
@@ -38,7 +38,6 @@ const titleEditor = useEditor({
   content: editorStore.title,
   extensions: [
     ModifiedStarterKit,
-    BlockId,
     TitleDocument,
     HeadingWithId,
     ParagraphWithId,

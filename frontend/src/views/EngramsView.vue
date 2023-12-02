@@ -4,22 +4,17 @@ import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import createAxiosInstance from "../utils/axios";
 
-interface Engram {
-  id: string;
-  title: string;
-}
-
 const router = useRouter();
 const userStore = useUserStore();
 const axiosInstance = createAxiosInstance(router, userStore);
 
-const engrams = ref<Engram[]>([]);
+const engramTitles = ref<string[]>([]);
 
 onMounted(async () => {
   try {
     const engramsResponse = await axiosInstance("/api/engrams");
 
-    engrams.value = engramsResponse.data;
+    engramTitles.value = engramsResponse.data;
 
     console.log(engramsResponse);
   } catch (err) {
@@ -51,8 +46,8 @@ onMounted(async () => {
             <input type="checkbox" />
           </td>
           <td style="text-align: center">
-            <router-link v-for="engram in engrams" :key="engram.id" :to="`/engrams/${engram.id}`">
-              {{ engram.title }}
+            <router-link v-for="title in engramTitles" :key="title" :to="`/engrams/${title}`">
+              {{ title }}
             </router-link>
           </td>
         </tr>

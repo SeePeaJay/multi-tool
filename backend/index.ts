@@ -40,7 +40,7 @@ app.use(
 );
 
 app.get("/api", (req: Request, res: Response) => {
-  db.getBlockRows().then((rows) => {
+  db.getBlockRows({ engramTitle: "Multi-Tool" }).then((rows) => {
     res.send(rows.map((row) => row.content));
   });
 });
@@ -67,7 +67,7 @@ app.get("/api/engrams", authCheck, async (req: Request, res: Response) => {
   console.log(req.session?.userId);
 
   try {
-    const engramTitles = await db.getEngramIdsAndTitles(req.session?.userId);
+    const engramTitles = await db.getEngramTitles(req.session?.userId);
 
     if (engramTitles.length === 0) {
       const starredTitle = await db.createStarredEngram(req.session?.userId);
@@ -82,11 +82,11 @@ app.get("/api/engrams", authCheck, async (req: Request, res: Response) => {
   }
 });
 
-app.get("/api/engrams/:engramId", authCheck, async (req: Request, res: Response) => {
+app.get("/api/engrams/:engramTitle", authCheck, async (req: Request, res: Response) => {
   try {
     const blockRows = await db.getBlockRows({
       repoId: req.session?.userId,
-      engramId: req.params.engramId,
+      engramTitle: req.params.engramTitle,
     });
     res.send(blockRows.map((row) => row.content));
   } catch (err) {

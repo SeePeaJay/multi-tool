@@ -3,8 +3,8 @@ import { defineStore } from "pinia";
 import axios from "axios";
 import type { AxiosInstance } from "axios";
 
-interface FetchEngramsOptions {
-  engramId: string;
+interface FetchEngramOptions {
+  engramTitle: string;
   axiosInstance: AxiosInstance;
 }
 
@@ -13,19 +13,11 @@ export const useEditorStore = defineStore("editor", () => {
   const blocks = ref("");
 
   const titleIsEditable = computed(() => {
-    const parser = new DOMParser();
     const nonEditableTitles = ["Multi-Tool", "Starred"];
-
-    return !nonEditableTitles.includes(
-      (parser.parseFromString(title.value, "text/html").body.firstChild as HTMLElement)?.innerHTML,
-    );
+    return !nonEditableTitles.includes(title.value);
   });
   const blocksAreEditable = computed(() => {
-    const parser = new DOMParser();
-
-    return !["Multi-Tool"].includes(
-      (parser.parseFromString(title.value, "text/html").body.firstChild as HTMLElement)?.innerHTML,
-    );
+    return !["Multi-Tool"].includes(title.value);
   });
 
   function setTitle(newTitle: string) {
@@ -35,16 +27,13 @@ export const useEditorStore = defineStore("editor", () => {
     blocks.value = newBlockContents;
   }
 
-  async function fetchEngram({ engramId, axiosInstance }: FetchEngramsOptions) {
+  async function fetchEngram({ engramTitle, axiosInstance }: FetchEngramOptions) {
     try {
-      const getBlocksResponse = engramId ? await axiosInstance(`/api/engrams/${engramId}`) : await axios("/api");
+      const getBlocksResponse = engramTitle ? await axiosInstance(`/api/engrams/${engramTitle}`) : await axios("/api");
       const blocks = getBlocksResponse.data;
 
-      const parser = new DOMParser();
-      const title = (parser.parseFromString(blocks, "text/html").body.firstChild as HTMLElement)?.outerHTML;
-
-      setTitle(title);
-      setBlocks(blocks.join("").replace(title, ""));
+      setTitle(engramTitle || "Multi-Tool");
+      setBlocks(blocks.join(""));
     } catch (err) {
       console.error(err);
     }

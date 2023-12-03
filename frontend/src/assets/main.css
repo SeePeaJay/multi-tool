@@ -71,10 +71,10 @@
 }
 
 @layer components {
-  span.engram-link[data-is-tag] {
+  .engram-link.is-tag {
     @apply text-gray-400;
   }
-  span.engram-link[data-is-tag]:hover {
+  .engram-link.is-tag:hover {
     text-decoration: underline;
     cursor: pointer;
   }

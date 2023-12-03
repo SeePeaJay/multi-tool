@@ -1,4 +1,4 @@
-import { mergeAttributes, Node, nodeInputRule } from "@tiptap/core";
+import { Node, nodeInputRule } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Document from "@tiptap/extension-document";
 import Heading from "@tiptap/extension-heading";
@@ -10,8 +10,10 @@ import BlockQuote from "@tiptap/extension-blockquote";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import { VueNodeViewRenderer } from "@tiptap/vue-3";
 import { Plugin } from "prosemirror-state";
 import { nanoid } from "nanoid";
+import EngramLinkNodeView from "../components/EngramLinkNodeView.vue";
 
 function getBlockIdForBlockTypeChange(oldBlockIds: string[], newBlockIds: string[]) {
   /* If lengths are different, then current transaction should not change the block type (should create a new block with no content) */
@@ -197,21 +199,11 @@ export const EngramLink = Node.create({
         parseHTML: (element) => {
           return element.getAttribute("data-target");
         },
-        renderHTML: (attributes) => {
-          return {
-            "data-target": attributes.target,
-          };
-        },
       },
       isTag: {
         default: null,
         parseHTML: (element) => {
           return element.getAttribute("data-is-tag");
-        },
-        renderHTML: (attributes) => {
-          return {
-            "data-is-tag": attributes.isTag,
-          };
         },
       },
     };
@@ -219,29 +211,15 @@ export const EngramLink = Node.create({
   parseHTML() {
     return [
       {
-        tag: "span.engram-link",
-        getAttrs: (node) => {
-          const element = node as HTMLElement;
-
-          return {
-            target: element.getAttribute("data-target"),
-            isTag: element.getAttribute("data-is-tag"),
-          };
-        },
+        tag: "engram-link",
       },
     ];
   },
-  renderHTML({ HTMLAttributes }) {
-    if (HTMLAttributes["data-is-tag"] !== null) {
-      return ["span", mergeAttributes(HTMLAttributes, { class: "engram-link" }), `#${HTMLAttributes["data-target"]}`];
-    }
-
-    return [
-      "span",
-      mergeAttributes(HTMLAttributes, { class: "engram-link btn btn-sm normal-case" }),
-      ["i", { class: "pi pi-file" }],
-      HTMLAttributes["data-target"],
-    ];
+  renderHTML() {
+    return ["engram-link"];
+  },
+  addNodeView() {
+    return VueNodeViewRenderer(EngramLinkNodeView);
   },
   addInputRules() {
     return [

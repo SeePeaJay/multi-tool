@@ -167,7 +167,12 @@ export function createStarredEngram(userId: string): Promise<string> {
   const blockId = nanoid(8);
   const title = "Starred";
   const engramsRow = [engramId, userId, title];
-  const blocksRow = [blockId, engramId, 0, `<p id="${blockId}">A sample paragraph.</p>`];
+  const blocksRow = [
+    blockId,
+    engramId,
+    0,
+    `<p id="${blockId}">A sample paragraph. <engram-link data-target="test"></engram-link> <engram-link data-target="test2" data-is-tag=""></engram-link></p>`,
+  ];
 
   return new Promise((resolve, reject) => {
     db.run("INSERT INTO engrams(id, repo_id, title) VALUES (?, ?, ?)", engramsRow, (err) => {

@@ -39,7 +39,7 @@ const titleEditor = useEditor({
     TitleDocument,
     HeadingWithId,
     ParagraphWithId,
-    EngramLink,
+    // EngramLink,
     AutoLink,
     BlockPlaceholder,
   ],

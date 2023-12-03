@@ -54,20 +54,24 @@ onClickOutside(
   left: calc(-32px - 0.25em); // 32px = dimension of the button
 
   z-index: 1; // needs to be above editor content
+
+  .pi {
+    font-size: 20px;
+  }
 }
 
 #more-options-menu {
   position: absolute; // to prevent moving the button when it's selected
 
   margin: 5px;
+
+  .pi {
+    font-size: inherit;
+  }
 }
 
 a {
   color: black;
   text-decoration: none;
-}
-
-#more-options-menu .pi {
-  font-size: inherit;
 }
 </style>

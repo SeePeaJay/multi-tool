@@ -71,10 +71,6 @@
 }
 
 @layer components {
-  .pi {
-    font-size: 20px;
-  }
-
   span.engram-link[data-is-tag] {
     @apply text-gray-400;
   }

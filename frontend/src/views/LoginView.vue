@@ -12,7 +12,7 @@ interface CredentialResponse {
 
 const router = useRouter();
 const userStore = useUserStore();
-const axiosInstance = createAxiosInstance(router, userStore);
+const axiosInstance = createAxiosInstance(router);
 
 async function handleCredentialResponse(credentialResponse: CredentialResponse) {
   try {

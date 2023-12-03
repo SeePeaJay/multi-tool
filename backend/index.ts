@@ -95,6 +95,15 @@ app.get("/api/engrams/:engramTitle", authCheck, async (req: Request, res: Respon
   }
 });
 
+app.get("/api/logout", (req, res) => {
+  if (req.session) {
+    req.session = null; // https://github.com/expressjs/cookie-session#destroying-a-session
+  }
+  res.clearCookie("session");
+
+  res.status(200).end();
+});
+
 db.init().then(() => {
   app.listen(port, () => {
     console.log(`⚡️[server]: Server is running at http://localhost:${port}`);

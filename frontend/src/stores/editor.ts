@@ -39,5 +39,10 @@ export const useEditorStore = defineStore("editor", () => {
     }
   }
 
-  return { title, blocks, titleIsEditable, blocksAreEditable, setTitle, setBlocks, fetchEngram };
+  function $reset() {
+    title.value = "";
+    blocks.value = "";
+  }
+
+  return { title, blocks, titleIsEditable, blocksAreEditable, setTitle, setBlocks, fetchEngram, $reset };
 });

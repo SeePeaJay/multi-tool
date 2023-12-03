@@ -2,7 +2,6 @@
 import { useRoute, useRouter } from "vue-router";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import { useEditorStore } from "@/stores/editor";
-import { useUserStore } from "@/stores/user";
 import MoreOptions from "@/components/MoreOptions.vue";
 import {
   ModifiedStarterKit,
@@ -25,12 +24,11 @@ import createAxiosInstance from "@/utils/axios";
 const route = useRoute();
 const router = useRouter();
 
-const userStore = useUserStore();
 const editorStore = useEditorStore();
 
 await editorStore.fetchEngram({
   engramTitle: route.params.engramTitle as string,
-  axiosInstance: createAxiosInstance(router, userStore),
+  axiosInstance: createAxiosInstance(router),
 });
 
 /* Editor setup */

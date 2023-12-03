@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { useUserStore } from "@/stores/user";
 import createAxiosInstance from "../utils/axios";
 
 const router = useRouter();
-const userStore = useUserStore();
-const axiosInstance = createAxiosInstance(router, userStore);
+const axiosInstance = createAxiosInstance(router);
 
 const engramTitles = ref<string[]>([]);
 

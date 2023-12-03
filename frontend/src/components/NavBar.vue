@@ -1,7 +1,23 @@
 <script setup lang="ts">
+import { useRouter } from "vue-router";
+import axios from "axios";
 import { useUserStore } from "@/stores/user";
+import resetAllStores from "@/utils/reset-stores";
 
+const router = useRouter();
 const userStore = useUserStore();
+
+async function logout() {
+  try {
+    await axios("/api/logout");
+
+    resetAllStores();
+
+    router.push("/login");
+  } catch (err) {
+    console.error(err);
+  }
+}
 </script>
 
 <template>
@@ -25,7 +41,7 @@ const userStore = useUserStore();
       </RouterLink>
     </div>
     <div class="right-icons">
-      <button v-if="userStore.userIsLoggedIn" class="btn btn-sm btn-square btn-ghost">
+      <button v-if="userStore.userIsLoggedIn" class="btn btn-sm btn-square btn-ghost" @click="logout">
         <i class="pi pi-sign-out"></i>
       </button>
       <RouterLink v-else class="btn btn-sm btn-square" :class="{ 'btn-ghost': $route.name !== 'login' }" to="/login">

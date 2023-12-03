@@ -12,7 +12,11 @@ export const useUserStore = defineStore(
       userId.value = newUserId;
     }
 
-    return { userId, userIsLoggedIn, setUserId }; // userId needs to be returned for it to persist
+    function $reset() {
+      userId.value = "";
+    }
+
+    return { userId, userIsLoggedIn, setUserId, $reset }; // userId needs to be returned for it to persist
   },
   {
     persist: true,

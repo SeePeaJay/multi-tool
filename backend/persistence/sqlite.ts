@@ -20,6 +20,10 @@ interface GetBlockRowsOptions {
   repoId?: string;
   engramTitle: string;
 }
+interface CreateEngramOptions {
+  repoId: string;
+  engramTitle: string;
+}
 
 const location = process.env.SQLITE_DB_LOCATION || "db/test.db";
 let db: sqlite3.Database;
@@ -150,9 +154,9 @@ export function getBlockRows(options: GetBlockRowsOptions): Promise<BlockRow[]> 
   });
 }
 
-export function getEngramTitles(userId: string): Promise<string[]> {
+export function getEngramTitles(repoId: string): Promise<string[]> {
   return new Promise((resolve, reject) => {
-    db.all(`SELECT title FROM engrams WHERE repo_id = ?`, [userId], (err, rows: TitleRow[]) => {
+    db.all(`SELECT title FROM engrams WHERE repo_id = ?`, [repoId], (err, rows: TitleRow[]) => {
       if (err) {
         return reject(err);
       }
@@ -162,11 +166,10 @@ export function getEngramTitles(userId: string): Promise<string[]> {
   });
 }
 
-export function createStarredEngram(userId: string): Promise<string> {
+export function createEngram({ repoId, engramTitle }: CreateEngramOptions): Promise<string> {
   const engramId = nanoid(8);
   const blockId = nanoid(8);
-  const title = "Starred";
-  const engramsRow = [engramId, userId, title];
+  const engramsRow = [engramId, repoId, engramTitle];
   const blocksRow = [
     blockId,
     engramId,
@@ -186,7 +189,7 @@ export function createStarredEngram(userId: string): Promise<string> {
         return reject(err);
       }
 
-      resolve(title);
+      resolve(engramTitle);
     });
   });
 }
@@ -195,5 +198,5 @@ export default {
   init,
   getBlockRows,
   getEngramTitles,
-  createStarredEngram,
+  createEngram,
 };

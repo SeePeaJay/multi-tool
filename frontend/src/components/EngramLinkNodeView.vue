@@ -18,6 +18,8 @@ export default {
   methods: {
     goToEngram() {
       console.log("Go to engram.");
+
+      this.$router.push(`/engrams/${this.node.attrs.target}`);
     },
   },
 };

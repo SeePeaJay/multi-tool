@@ -39,12 +39,12 @@ onMounted(async () => {
           </th>
           <th>Title</th>
         </tr>
-        <tr>
+        <tr v-for="title in engramTitles" :key="title">
           <td style="text-align: center">
             <input type="checkbox" />
           </td>
           <td style="text-align: center">
-            <router-link v-for="title in engramTitles" :key="title" :to="`/engrams/${title}`">
+            <router-link :to="`/engrams/${title}`">
               {{ title }}
             </router-link>
           </td>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import { useEditorStore } from "@/stores/editor";
@@ -92,6 +93,25 @@ const blocksEditor = useEditor({
     console.log(editor.getJSON()?.content?.map((block) => block?.attrs?.blockId));
   },
 });
+
+watch(
+  () => route.params.engramTitle,
+  async (newValue, oldValue) => {
+    // the route update from axios interceptor seems to be detected by this watcher before the editor component is unmounted, so the check is needed to avoid sending unnecessary request
+    if (!(oldValue && !newValue)) {
+      await editorStore.fetchEngram({
+        engramTitle: newValue as string,
+        axiosInstance: createAxiosInstance(router),
+      });
+
+      titleEditor.value?.commands.setContent(editorStore.title);
+      titleEditor.value?.setEditable(editorStore.titleIsEditable);
+
+      blocksEditor.value?.commands.setContent(editorStore.blocks);
+      blocksEditor.value?.setEditable(editorStore.blocksAreEditable);
+    }
+  },
+);
 </script>
 
 <template>

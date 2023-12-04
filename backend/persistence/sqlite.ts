@@ -77,7 +77,7 @@ export function init(): Promise<void> {
 
       /* Create engrams table and insert default row if it's missing */
       db.run(
-        `CREATE TABLE IF NOT EXISTS engrams (id TEXT(8) NOT NULL, repo_id TEXT(8), title TEXT NOT NULL UNIQUE)`,
+        `CREATE TABLE IF NOT EXISTS engrams (id TEXT(8) PRIMARY KEY, repo_id TEXT(8), title TEXT NOT NULL, CONSTRAINT unique_title_per_repo UNIQUE (repo_id, title))`,
         (err) => {
           if (err) {
             return reject(err);
@@ -97,7 +97,7 @@ export function init(): Promise<void> {
 
       /* Create blocks table and insert default rows if they're missing */
       db.run(
-        "CREATE TABLE IF NOT EXISTS blocks (id TEXT(8) NOT NULL, engram_id TEXT(8) NOT NULL, order_number INTEGER NOT NULL, content TEXT NOT NULL)",
+        "CREATE TABLE IF NOT EXISTS blocks (id TEXT(8) PRIMARY KEY, engram_id TEXT(8) NOT NULL, order_number INTEGER NOT NULL, content TEXT NOT NULL)",
         (err) => {
           if (err) return reject(err);
 

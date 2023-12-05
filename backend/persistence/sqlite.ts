@@ -24,6 +24,11 @@ interface CreateEngramOptions {
   repoId: string;
   engramTitle: string;
 }
+interface UpdateEngramTitleOptions {
+  repoId: string;
+  oldEngramTitle: string;
+  newEngramTitle: string;
+}
 
 const location = process.env.SQLITE_DB_LOCATION || "db/test.db";
 let db: sqlite3.Database;
@@ -174,7 +179,7 @@ export function createEngram({ repoId, engramTitle }: CreateEngramOptions): Prom
     blockId,
     engramId,
     0,
-    `<p id="${blockId}">A sample paragraph. <engram-link data-target="test"></engram-link> <engram-link data-target="test2" data-is-tag=""></engram-link></p>`,
+    `<p id="${blockId}">A sample paragraph for ${engramTitle}. <engram-link data-target="test"></engram-link> <engram-link data-target="test2" data-is-tag=""></engram-link></p>`,
   ];
 
   return new Promise((resolve, reject) => {
@@ -194,9 +199,26 @@ export function createEngram({ repoId, engramTitle }: CreateEngramOptions): Prom
   });
 }
 
+export function updateEngramTitle({ repoId, oldEngramTitle, newEngramTitle }: UpdateEngramTitleOptions) {
+  return new Promise((resolve, reject) => {
+    db.run(
+      "UPDATE engrams SET title = ? WHERE repo_id = ? AND title = ?",
+      [newEngramTitle, repoId, oldEngramTitle],
+      (err) => {
+        if (err) {
+          return reject(err);
+        }
+
+        resolve(newEngramTitle);
+      },
+    );
+  });
+}
+
 export default {
   init,
   getBlockRows,
   getEngramTitles,
   createEngram,
+  updateEngramTitle,
 };

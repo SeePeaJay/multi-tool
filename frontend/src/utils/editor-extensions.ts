@@ -129,6 +129,14 @@ export const BlockId = Node.create({
 /* Custom document nodes */
 export const TitleDocument = Document.extend({
   content: "heading",
+  addKeyboardShortcuts() {
+    return {
+      Enter: () => {
+        this.editor.commands.blur();
+        return true;
+      },
+    };
+  },
 });
 export const BlocksDocument = Document.extend({
   content: "block*",

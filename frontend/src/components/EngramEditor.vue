@@ -24,7 +24,6 @@ import createAxiosInstance from "@/utils/axios";
 
 const route = useRoute();
 const router = useRouter();
-
 const editorStore = useEditorStore();
 
 await editorStore.fetchEngram({
@@ -35,16 +34,17 @@ await editorStore.fetchEngram({
 /* Editor setup */
 const titleEditor = useEditor({
   content: editorStore.title,
-  extensions: [
-    ModifiedStarterKit,
-    TitleDocument,
-    HeadingWithId,
-    ParagraphWithId,
-    // EngramLink,
-    AutoLink,
-    BlockPlaceholder,
-  ],
+  extensions: [ModifiedStarterKit, TitleDocument, HeadingWithId, ParagraphWithId, AutoLink, BlockPlaceholder],
   editable: editorStore.titleIsEditable,
+  onUpdate({ editor }) {
+    const pendingTitle =
+      new DOMParser().parseFromString(editor.getHTML(), "text/html").body.firstElementChild?.textContent || "";
+
+    editorStore.setPendingTitle(pendingTitle);
+  },
+  onBlur() {
+    editorStore.updateTitle(createAxiosInstance(router));
+  },
 });
 const blocksEditor = useEditor({
   content: editorStore.blocks,
@@ -109,6 +109,18 @@ watch(
 
       blocksEditor.value?.commands.setContent(editorStore.blocks);
       blocksEditor.value?.setEditable(editorStore.blocksAreEditable);
+    }
+  },
+);
+
+/* In case title needs to be reverted */
+watch(
+  () => editorStore.isRevertingTitle,
+  (newValue) => {
+    if (newValue) {
+      titleEditor.value?.commands.setContent(editorStore.title);
+      editorStore.setPendingTitle("");
+      editorStore.setIsRevertingTitle(false);
     }
   },
 );

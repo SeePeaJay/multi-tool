@@ -38,6 +38,7 @@ app.use(
     maxAge: 60 * 60 * 1000,
   }),
 );
+app.use(express.json()); // makes req.body available
 
 app.get("/api", (req: Request, res: Response) => {
   db.getBlockRows({ engramTitle: "Multi-Tool" }).then((rows) => {
@@ -108,6 +109,26 @@ app.get("/api/engrams/:engramTitle", authCheck, async (req: Request, res: Respon
   } catch (err) {
     console.log(err);
     res.status(500).send(err);
+  }
+});
+
+app.put("/api/engrams/:engramTitle/rename", authCheck, async (req, res) => {
+  try {
+    const updatedTitle = await db.updateEngramTitle({
+      repoId: req.session?.userId,
+      oldEngramTitle: req.params.engramTitle,
+      newEngramTitle: req.body.newEngramTitle,
+    });
+
+    res.send(updatedTitle);
+  } catch (err) {
+    const sqliteError = err as Error;
+
+    if (sqliteError.message.startsWith("SQLITE_CONSTRAINT")) {
+      res.status(400).send("Engram with new title already exists");
+    } else {
+      res.status(500).send(err);
+    }
   }
 });
 

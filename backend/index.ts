@@ -112,6 +112,32 @@ app.get("/api/engrams/:engramTitle", authCheck, async (req: Request, res: Respon
   }
 });
 
+app.get("/api/engrams/:engramTitle/id", authCheck, async (req, res) => {
+  try {
+    let id = await db.getIdFromEngramTitle({
+      repoId: req.session?.userId,
+      engramTitle: req.params.engramTitle,
+    });
+
+    if (!id) {
+      await db.createEngram({
+        repoId: req.session?.userId,
+        engramTitle: req.params.engramTitle,
+      });
+
+      id = await db.getIdFromEngramTitle({
+        repoId: req.session?.userId,
+        engramTitle: req.params.engramTitle,
+      });
+    }
+
+    res.send(id);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
+});
+
 app.put("/api/engrams/:engramTitle/rename", authCheck, async (req, res) => {
   try {
     const updatedTitle = await db.updateEngramTitle({

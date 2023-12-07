@@ -171,6 +171,28 @@ export function getEngramTitles(repoId: string): Promise<string[]> {
   });
 }
 
+export function getIdFromEngramTitle({
+  repoId,
+  engramTitle,
+}: {
+  repoId: string;
+  engramTitle: string;
+}): Promise<string> {
+  return new Promise((resolve, reject) => {
+    db.get(
+      `SELECT id FROM engrams WHERE repo_id = ? AND title = ?`,
+      [repoId, engramTitle],
+      (err, row: { id: string }) => {
+        if (err) {
+          return reject(err);
+        }
+
+        resolve(row?.id || "");
+      },
+    );
+  });
+}
+
 export function createEngram({ repoId, engramTitle }: CreateEngramOptions): Promise<string> {
   const engramId = nanoid(8);
   const blockId = nanoid(8);
@@ -219,6 +241,7 @@ export default {
   init,
   getBlockRows,
   getEngramTitles,
+  getIdFromEngramTitle,
   createEngram,
   updateEngramTitle,
 };

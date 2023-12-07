@@ -208,6 +208,18 @@ export const EngramLink = Node.create({
           return element.getAttribute("data-target");
         },
       },
+      targetId: {
+        default: null,
+        parseHTML: (element) => {
+          return element.getAttribute("data-target-id");
+        },
+      },
+      targetTitle: {
+        default: null,
+        parseHTML: (element) => {
+          return element.getAttribute("data-target-title");
+        },
+      },
       isTag: {
         default: null,
         parseHTML: (element) => {
@@ -241,10 +253,11 @@ export const EngramLink = Node.create({
          */
         type: this.type,
         getAttributes: (match) => {
-          const [, , engramLinkMarker, target] = match;
+          const [, , engramLinkMarker, targetTitle] = match;
           return {
             ...(engramLinkMarker === "#" && { isTag: "" }),
-            target: target,
+            target: targetTitle,
+            targetTitle: targetTitle,
           };
         },
       }),

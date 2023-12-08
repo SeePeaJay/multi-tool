@@ -171,6 +171,22 @@ export function getEngramTitles(repoId: string): Promise<string[]> {
   });
 }
 
+function getTitleFromEngramId({ repoId, engramId }: { repoId: string; engramId: string }): Promise<string> {
+  return new Promise((resolve, reject) => {
+    db.get(
+      `SELECT title FROM engrams WHERE repo_id = ? AND id = ?`,
+      [repoId, engramId],
+      (err, row: { title: string }) => {
+        if (err) {
+          return reject(err);
+        }
+
+        resolve(row?.title || "");
+      },
+    );
+  });
+}
+
 export function getIdFromEngramTitle({
   repoId,
   engramTitle,
@@ -197,12 +213,7 @@ export function createEngram({ repoId, engramTitle }: CreateEngramOptions): Prom
   const engramId = nanoid(8);
   const blockId = nanoid(8);
   const engramsRow = [engramId, repoId, engramTitle];
-  const blocksRow = [
-    blockId,
-    engramId,
-    0,
-    `<p id="${blockId}">A sample paragraph for ${engramTitle}. <engram-link data-target="test"></engram-link> <engram-link data-target="test2" data-is-tag=""></engram-link></p>`,
-  ];
+  const blocksRow = [blockId, engramId, 0, `<p id="${blockId}">A sample paragraph originally for ${engramTitle}.`];
 
   return new Promise((resolve, reject) => {
     db.run("INSERT INTO engrams(id, repo_id, title) VALUES (?, ?, ?)", engramsRow, (err) => {
@@ -241,6 +252,7 @@ export default {
   init,
   getBlockRows,
   getEngramTitles,
+  getTitleFromEngramId,
   getIdFromEngramTitle,
   createEngram,
   updateEngramTitle,

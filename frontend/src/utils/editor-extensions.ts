@@ -202,28 +202,22 @@ export const EngramLink = Node.create({
 
   addAttributes() {
     return {
-      target: {
-        default: null,
-        parseHTML: (element) => {
-          return element.getAttribute("data-target");
-        },
-      },
       targetId: {
         default: null,
         parseHTML: (element) => {
-          return element.getAttribute("data-target-id");
+          return element.getAttribute("targetid");
         },
       },
       targetTitle: {
         default: null,
         parseHTML: (element) => {
-          return element.getAttribute("data-target-title");
+          return element.getAttribute("targettitle");
         },
       },
       isTag: {
         default: null,
         parseHTML: (element) => {
-          return element.getAttribute("data-is-tag");
+          return element.getAttribute("istag");
         },
       },
     };
@@ -235,8 +229,10 @@ export const EngramLink = Node.create({
       },
     ];
   },
-  renderHTML() {
-    return ["engram-link"];
+  renderHTML({ HTMLAttributes }) {
+    const { targetTitle: _, ...renderedAttributes } = HTMLAttributes;
+
+    return ["engram-link", renderedAttributes];
   },
   addNodeView() {
     return VueNodeViewRenderer(EngramLinkNodeView);
@@ -256,7 +252,6 @@ export const EngramLink = Node.create({
           const [, , engramLinkMarker, targetTitle] = match;
           return {
             ...(engramLinkMarker === "#" && { isTag: "" }),
-            target: targetTitle,
             targetTitle: targetTitle,
           };
         },

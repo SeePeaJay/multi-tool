@@ -88,24 +88,25 @@ app.get("/api/engrams", authCheck, async (req: Request, res: Response) => {
 
 app.get("/api/engrams/:engramTitle", authCheck, async (req: Request, res: Response) => {
   try {
-    let blockRows = await db.getBlockRows({
+    const blockRows = await db.getBlockRows({
       repoId: req.session?.userId,
       engramTitle: req.params.engramTitle,
     });
 
-    if (blockRows.length === 0) {
-      await db.createEngram({
-        repoId: req.session?.userId,
-        engramTitle: req.params.engramTitle,
-      });
-
-      blockRows = await db.getBlockRows({
-        repoId: req.session?.userId,
-        engramTitle: req.params.engramTitle,
-      });
-    }
-
     res.send(blockRows.map((row) => row.content));
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
+});
+
+app.get("/api/engrams/:engramId/title", authCheck, async (req, res) => {
+  try {
+    const title = await db.getTitleFromEngramId({
+      repoId: req.session?.userId,
+      engramId: req.params.engramId,
+    });
+    res.send(title);
   } catch (err) {
     console.log(err);
     res.status(500).send(err);

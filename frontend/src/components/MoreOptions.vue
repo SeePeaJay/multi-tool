@@ -2,8 +2,8 @@
 import { ref, watch } from "vue";
 import { onClickOutside } from "@vueuse/core";
 
-const moreOptionsButton = ref(null);
-const moreOptionsMenu = ref(null);
+const moreOptionsButtonRef = ref(null);
+const moreOptionsMenuRef = ref(null);
 const shouldShowMenu = ref(false);
 
 /* This disables scrolling when the menu is active */
@@ -13,11 +13,11 @@ watch(shouldShowMenu, (newValue) => {
 
 /* This hides the menu when anywhere else is clicked */
 onClickOutside(
-  moreOptionsMenu,
+  moreOptionsMenuRef,
   () => {
     shouldShowMenu.value = false;
   },
-  { ignore: [moreOptionsButton] },
+  { ignore: [moreOptionsButtonRef] },
 );
 </script>
 
@@ -26,7 +26,7 @@ onClickOutside(
     <button
       class="btn btn-sm btn-square"
       :class="{ 'btn-ghost': !shouldShowMenu }"
-      ref="moreOptionsButton"
+      ref="moreOptionsButtonRef"
       @click="shouldShowMenu = !shouldShowMenu"
     >
       <i class="pi pi-ellipsis-v"></i>
@@ -35,7 +35,7 @@ onClickOutside(
       v-if="shouldShowMenu"
       id="more-options-menu"
       class="menu menu-sm rounded-box w-28 p-1.5 bg-white border border-gray-100 shadow-lg"
-      ref="moreOptionsMenu"
+      ref="moreOptionsMenuRef"
     >
       <li>
         <a><i class="pi pi-star"></i> Star</a>

@@ -43,7 +43,7 @@ const titleEditor = useEditor({
     editorStore.setPendingTitle(pendingTitle);
   },
   onBlur() {
-    editorStore.updateTitle(createAxiosInstance(router));
+    editorStore.renameEngram(createAxiosInstance(router));
   },
 });
 const blocksEditor = useEditor({

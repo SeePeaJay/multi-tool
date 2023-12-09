@@ -100,16 +100,23 @@ app.get("/api/engrams/:engramTitle", authCheck, async (req: Request, res: Respon
   }
 });
 
-app.get("/api/engrams/:engramId/title", authCheck, async (req, res) => {
+app.put("/api/engrams/:engramTitle/rename", authCheck, async (req, res) => {
   try {
-    const title = await db.getTitleFromEngramId({
+    const updatedTitle = await db.renameEngram({
       repoId: req.session?.userId,
-      engramId: req.params.engramId,
+      oldEngramTitle: req.params.engramTitle,
+      newEngramTitle: req.body.newEngramTitle,
     });
-    res.send(title);
+
+    res.send(updatedTitle);
   } catch (err) {
-    console.log(err);
-    res.status(500).send(err);
+    const sqliteError = err as Error;
+
+    if (sqliteError.message.startsWith("SQLITE_CONSTRAINT")) {
+      res.status(400).send("Engram with new title already exists");
+    } else {
+      res.status(500).send(err);
+    }
   }
 });
 
@@ -139,23 +146,16 @@ app.get("/api/engrams/:engramTitle/id", authCheck, async (req, res) => {
   }
 });
 
-app.put("/api/engrams/:engramTitle/rename", authCheck, async (req, res) => {
+app.get("/api/engrams/:engramId/title", authCheck, async (req, res) => {
   try {
-    const updatedTitle = await db.updateEngramTitle({
+    const title = await db.getTitleFromEngramId({
       repoId: req.session?.userId,
-      oldEngramTitle: req.params.engramTitle,
-      newEngramTitle: req.body.newEngramTitle,
+      engramId: req.params.engramId,
     });
-
-    res.send(updatedTitle);
+    res.send(title);
   } catch (err) {
-    const sqliteError = err as Error;
-
-    if (sqliteError.message.startsWith("SQLITE_CONSTRAINT")) {
-      res.status(400).send("Engram with new title already exists");
-    } else {
-      res.status(500).send(err);
-    }
+    console.log(err);
+    res.status(500).send(err);
   }
 });
 

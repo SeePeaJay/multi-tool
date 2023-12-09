@@ -49,7 +49,7 @@ export const useEditorStore = defineStore("editor", () => {
       console.error(err);
     }
   }
-  async function updateTitle(axiosInstance: AxiosInstance) {
+  async function renameEngram(axiosInstance: AxiosInstance) {
     try {
       if (pendingTitle.value && pendingTitle.value !== title.value) {
         await axiosInstance({
@@ -92,7 +92,7 @@ export const useEditorStore = defineStore("editor", () => {
     setIsRevertingTitle,
     setBlocks,
     fetchEngram,
-    updateTitle,
+    renameEngram,
     $reset,
   };
 });

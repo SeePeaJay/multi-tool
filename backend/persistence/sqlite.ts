@@ -4,12 +4,6 @@ import path from "path";
 import { JSDOM } from "jsdom";
 import { nanoid } from "nanoid";
 
-interface RowWithCount {
-  count: number;
-}
-interface TitleRow {
-  title: string;
-}
 interface BlockRow {
   id: string;
   engram_id: string;
@@ -66,7 +60,7 @@ function getDefaultRows() {
   }
 }
 
-export function init(): Promise<void> {
+function init(): Promise<void> {
   /* Create directory if missing */
   const dirName = path.dirname(location);
   if (!fs.existsSync(dirName)) {
@@ -106,7 +100,7 @@ export function init(): Promise<void> {
         (err) => {
           if (err) return reject(err);
 
-          db.get("SELECT COUNT(*) as count FROM blocks", (err, row: RowWithCount) => {
+          db.get("SELECT COUNT(*) as count FROM blocks", (err, row: { count: number }) => {
             if (err) return reject(err);
 
             if (row.count === 0) {
@@ -137,7 +131,19 @@ export function init(): Promise<void> {
   });
 }
 
-export function getBlockRows(options: GetBlockRowsOptions): Promise<BlockRow[]> {
+function getEngramTitles(repoId: string): Promise<string[]> {
+  return new Promise((resolve, reject) => {
+    db.all(`SELECT title FROM engrams WHERE repo_id = ?`, [repoId], (err, rows: { title: string }[]) => {
+      if (err) {
+        return reject(err);
+      }
+
+      resolve(rows.map((row) => row.title));
+    });
+  });
+}
+
+function getBlockRows(options: GetBlockRowsOptions): Promise<BlockRow[]> {
   return new Promise((resolve, reject) => {
     let query = "SELECT blocks.* FROM blocks INNER JOIN engrams ON blocks.engram_id = engrams.id";
     const params = [];
@@ -159,15 +165,19 @@ export function getBlockRows(options: GetBlockRowsOptions): Promise<BlockRow[]> 
   });
 }
 
-export function getEngramTitles(repoId: string): Promise<string[]> {
+function renameEngram({ repoId, oldEngramTitle, newEngramTitle }: UpdateEngramTitleOptions) {
   return new Promise((resolve, reject) => {
-    db.all(`SELECT title FROM engrams WHERE repo_id = ?`, [repoId], (err, rows: TitleRow[]) => {
-      if (err) {
-        return reject(err);
-      }
+    db.run(
+      "UPDATE engrams SET title = ? WHERE repo_id = ? AND title = ?",
+      [newEngramTitle, repoId, oldEngramTitle],
+      (err) => {
+        if (err) {
+          return reject(err);
+        }
 
-      resolve(rows.map((row) => row.title));
-    });
+        resolve(newEngramTitle);
+      },
+    );
   });
 }
 
@@ -187,13 +197,7 @@ function getTitleFromEngramId({ repoId, engramId }: { repoId: string; engramId: 
   });
 }
 
-export function getIdFromEngramTitle({
-  repoId,
-  engramTitle,
-}: {
-  repoId: string;
-  engramTitle: string;
-}): Promise<string> {
+function getIdFromEngramTitle({ repoId, engramTitle }: { repoId: string; engramTitle: string }): Promise<string> {
   return new Promise((resolve, reject) => {
     db.get(
       `SELECT id FROM engrams WHERE repo_id = ? AND title = ?`,
@@ -209,7 +213,7 @@ export function getIdFromEngramTitle({
   });
 }
 
-export function createEngram({ repoId, engramTitle }: CreateEngramOptions): Promise<string> {
+function createEngram({ repoId, engramTitle }: CreateEngramOptions): Promise<string> {
   const engramId = nanoid(8);
   const blockId = nanoid(8);
   const engramsRow = [engramId, repoId, engramTitle];
@@ -232,28 +236,12 @@ export function createEngram({ repoId, engramTitle }: CreateEngramOptions): Prom
   });
 }
 
-export function updateEngramTitle({ repoId, oldEngramTitle, newEngramTitle }: UpdateEngramTitleOptions) {
-  return new Promise((resolve, reject) => {
-    db.run(
-      "UPDATE engrams SET title = ? WHERE repo_id = ? AND title = ?",
-      [newEngramTitle, repoId, oldEngramTitle],
-      (err) => {
-        if (err) {
-          return reject(err);
-        }
-
-        resolve(newEngramTitle);
-      },
-    );
-  });
-}
-
 export default {
   init,
-  getBlockRows,
   getEngramTitles,
+  getBlockRows,
+  renameEngram,
   getTitleFromEngramId,
   getIdFromEngramTitle,
   createEngram,
-  updateEngramTitle,
 };

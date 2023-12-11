@@ -100,6 +100,21 @@ app.get("/api/engrams/:engramTitle", authCheck, async (req: Request, res: Respon
   }
 });
 
+app.post("/api/engrams/:engramTitle", authCheck, async (req, res) => {
+  try {
+    db.updateBlocks({
+      repoId: req.session?.userId,
+      engramTitle: req.params.engramTitle,
+      updatedBlocks: req.body,
+    });
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
+});
+
 app.put("/api/engrams/:engramTitle/rename", authCheck, async (req, res) => {
   try {
     const updatedTitle = await db.renameEngram({

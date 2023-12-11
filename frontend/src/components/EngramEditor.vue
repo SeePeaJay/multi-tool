@@ -89,8 +89,10 @@ const blocksEditor = useEditor({
     // console.log(node);
   },
   onUpdate({ editor }) {
-    editorStore.setBlocks(editor.getHTML());
-    console.log(editor.getJSON()?.content?.map((block) => block?.attrs?.blockId));
+    editorStore.updateBlocks({
+      axiosInstance: createAxiosInstance(router),
+      newBlocks: editor.getHTML(),
+    });
   },
 });
 

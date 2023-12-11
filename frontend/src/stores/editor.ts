@@ -3,6 +3,8 @@ import { useRouter } from "vue-router";
 import { defineStore } from "pinia";
 import axios from "axios";
 import type { AxiosInstance } from "axios";
+import { useDebounceFn } from "@vueuse/core";
+import { getPayload } from "@/utils/post-engrams-helpers";
 
 interface FetchEngramOptions {
   engramTitle: string;
@@ -11,11 +13,24 @@ interface FetchEngramOptions {
 
 export const useEditorStore = defineStore("editor", () => {
   const router = useRouter();
+  const debounceUpdate = useDebounceFn(async (axiosInstance: AxiosInstance) => {
+    const payload = getPayload(blocksBeforeUpdate.value, blocks.value);
+    console.log(payload);
+
+    await axiosInstance({
+      method: "POST",
+      url: `/api/engrams/${title.value}`,
+      data: payload,
+    });
+
+    setBlocksBeforeUpdate("");
+  }, 1000);
 
   const title = ref("");
   const pendingTitle = ref("");
   const isRevertingTitle = ref(false);
   const blocks = ref("");
+  const blocksBeforeUpdate = ref("");
 
   const titleIsEditable = computed(() => {
     const nonEditableTitles = ["Multi-Tool", "Starred"];
@@ -36,6 +51,9 @@ export const useEditorStore = defineStore("editor", () => {
   }
   function setBlocks(newBlockContents: string) {
     blocks.value = newBlockContents;
+  }
+  function setBlocksBeforeUpdate(newBlocksBeforeUpdate: string) {
+    blocksBeforeUpdate.value = newBlocksBeforeUpdate;
   }
 
   async function fetchEngram({ engramTitle, axiosInstance }: FetchEngramOptions) {
@@ -74,6 +92,19 @@ export const useEditorStore = defineStore("editor", () => {
       }
     }
   }
+  async function updateBlocks({ axiosInstance, newBlocks }: { axiosInstance: AxiosInstance; newBlocks: string }) {
+    if (!blocksBeforeUpdate.value) {
+      blocksBeforeUpdate.value = blocks.value;
+    }
+
+    setBlocks(newBlocks);
+
+    try {
+      await debounceUpdate(axiosInstance);
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   function $reset() {
     title.value = "";
@@ -87,12 +118,11 @@ export const useEditorStore = defineStore("editor", () => {
     blocks,
     titleIsEditable,
     blocksAreEditable,
-    setTitle,
     setPendingTitle,
     setIsRevertingTitle,
-    setBlocks,
     fetchEngram,
     renameEngram,
+    updateBlocks,
     $reset,
   };
 });

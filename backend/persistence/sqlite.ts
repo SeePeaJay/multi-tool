@@ -23,6 +23,13 @@ interface UpdateEngramTitleOptions {
   oldEngramTitle: string;
   newEngramTitle: string;
 }
+interface BlockUpdate {
+  orderNumber: number;
+  content: string;
+}
+type UpdatedBlocks = {
+  [id: string]: BlockUpdate | null;
+};
 
 const location = process.env.SQLITE_DB_LOCATION || "db/test.db";
 let db: sqlite3.Database;
@@ -149,10 +156,10 @@ function getBlockRows(options: GetBlockRowsOptions): Promise<BlockRow[]> {
     const params = [];
 
     if (options.repoId) {
-      query += " WHERE engrams.repo_id = ? AND engrams.title = ?";
+      query += " WHERE engrams.repo_id = ? AND engrams.title = ? ORDER BY order_number";
       params.push(...[options.repoId, options.engramTitle]);
     } else {
-      query += " WHERE engrams.repo_id IS NULL AND engrams.title = ?";
+      query += " WHERE engrams.repo_id IS NULL AND engrams.title = ? ORDER BY order_number";
       params.push(options.engramTitle);
     }
 
@@ -236,6 +243,87 @@ function createEngram({ repoId, engramTitle }: CreateEngramOptions): Promise<str
   });
 }
 
+function updateBlocks({
+  repoId,
+  engramTitle,
+  updatedBlocks,
+}: {
+  repoId: string;
+  engramTitle: string;
+  updatedBlocks: UpdatedBlocks;
+}) {
+  getIdFromEngramTitle({
+    repoId,
+    engramTitle,
+  }).then((engramId: string) => {
+    db.serialize(() => {
+      let counter = 0;
+      const totalBlocks = Object.keys(updatedBlocks).length;
+
+      for (const blockId in updatedBlocks) {
+        const blockUpdate = updatedBlocks[blockId];
+
+        if (blockUpdate) {
+          db.run(
+            `UPDATE blocks SET order_number = ?, content = ? WHERE id = ?`,
+            [blockUpdate.orderNumber, blockUpdate.content, blockId],
+            function (this: { changes: number }, err) {
+              if (err) {
+                throw err;
+              } else if (this.changes === 0) {
+                db.run(
+                  `INSERT INTO blocks (id, engram_id, order_number, content) VALUES (?, ?, ?, ?);`,
+                  [blockId, engramId, blockUpdate.orderNumber, blockUpdate.content],
+                  (err) => {
+                    if (err) {
+                      throw err;
+                    }
+
+                    counter++;
+                    if (counter === totalBlocks) {
+                      getAllBlocks(repoId, engramTitle);
+                    }
+                  },
+                );
+              } else {
+                counter++;
+                if (counter === totalBlocks) {
+                  getAllBlocks(repoId, engramTitle);
+                }
+              }
+            },
+          );
+        } else {
+          db.run(`DELETE FROM blocks WHERE id = ?`, [blockId], (err) => {
+            if (err) {
+              throw err;
+            }
+
+            counter++;
+            if (counter === totalBlocks) {
+              getAllBlocks(repoId, engramTitle);
+            }
+          });
+        }
+      }
+    });
+  });
+}
+
+function getAllBlocks(repoId: string, engramTitle: string) {
+  const query =
+    "SELECT blocks.* FROM blocks INNER JOIN engrams ON blocks.engram_id = engrams.id WHERE engrams.repo_id = ? AND engrams.title = ? ORDER BY order_number";
+  const params = [repoId, engramTitle];
+
+  db.all(query, params, (err, rows: BlockRow[]) => {
+    if (err) {
+      throw err;
+    }
+
+    console.log(rows);
+  });
+}
+
 export default {
   init,
   getEngramTitles,
@@ -244,4 +332,5 @@ export default {
   getTitleFromEngramId,
   getIdFromEngramTitle,
   createEngram,
+  updateBlocks,
 };

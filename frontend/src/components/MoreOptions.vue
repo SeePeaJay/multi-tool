@@ -4,7 +4,12 @@ import { onClickOutside } from "@vueuse/core";
 
 const moreOptionsButtonRef = ref(null);
 const moreOptionsMenuRef = ref(null);
+const confirmationModalRef = ref<HTMLDialogElement | null>(null);
 const shouldShowMenu = ref(false);
+
+function showModal() {
+  confirmationModalRef.value?.showModal();
+}
 
 /* This disables scrolling when the menu is active */
 watch(shouldShowMenu, (newValue) => {
@@ -24,9 +29,9 @@ onClickOutside(
 <template>
   <div id="more-options">
     <button
+      ref="moreOptionsButtonRef"
       class="btn btn-sm btn-square"
       :class="{ 'btn-ghost': !shouldShowMenu }"
-      ref="moreOptionsButtonRef"
       @click="shouldShowMenu = !shouldShowMenu"
     >
       <i class="pi pi-ellipsis-v"></i>
@@ -34,17 +39,32 @@ onClickOutside(
     <ul
       v-if="shouldShowMenu"
       id="more-options-menu"
-      class="menu menu-sm rounded-box w-28 p-1.5 bg-white border border-gray-100 shadow-lg"
       ref="moreOptionsMenuRef"
+      class="menu menu-sm rounded-box w-28 p-1.5 bg-white border border-gray-100 shadow-lg"
     >
       <li>
         <a><i class="pi pi-star"></i> Star</a>
       </li>
-      <li>
+      <li @click="showModal">
         <a><i class="pi pi-trash"></i> Delete</a>
       </li>
     </ul>
   </div>
+  <dialog ref="confirmationModalRef" class="modal">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg">Warning!</h3>
+      <p class="py-4">Are you sure you want to permanently delete this engram?</p>
+      <div class="modal-action">
+        <form method="dialog">
+          <button class="btn btn-sm btn-warning">Confirm</button>
+          <button class="btn btn-sm">Cancel</button>
+        </form>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  </dialog>
 </template>
 
 <style scoped lang="scss">
@@ -73,5 +93,9 @@ onClickOutside(
 a {
   color: black;
   text-decoration: none;
+}
+
+.modal-action .btn {
+  margin-left: 6px;
 }
 </style>

@@ -89,10 +89,14 @@ const blocksEditor = useEditor({
     // console.log(node);
   },
   onUpdate({ editor }) {
-    editorStore.updateBlocks({
-      axiosInstance: createAxiosInstance(router),
-      newBlocks: editor.getHTML(),
-    });
+    if (editor.isFocused) {
+      // fetching the engram link title and updating the node attr can trigger this, so the check is necessary to distinguish
+
+      editorStore.updateBlocks({
+        axiosInstance: createAxiosInstance(router),
+        newBlocks: editor.getHTML(),
+      });
+    }
   },
 });
 

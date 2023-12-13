@@ -108,7 +108,10 @@ export const useEditorStore = defineStore("editor", () => {
 
   function $reset() {
     title.value = "";
+    pendingTitle.value = "";
+    isRevertingTitle.value = false;
     blocks.value = "";
+    blocksBeforeUpdate.value = "";
   }
 
   return {

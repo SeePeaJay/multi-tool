@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { onClickOutside } from "@vueuse/core";
+import router from "@/router";
+import { useEditorStore } from "@/stores/editor";
+import createAxiosInstance from "@/utils/axios";
+
+const editorStore = useEditorStore();
+const axiosInstance = createAxiosInstance(router);
 
 const moreOptionsButtonRef = ref(null);
 const moreOptionsMenuRef = ref(null);
@@ -9,6 +15,16 @@ const shouldShowMenu = ref(false);
 
 function showModal() {
   confirmationModalRef.value?.showModal();
+}
+
+async function deleteEngram() {
+  await axiosInstance({
+    method: "DELETE",
+    url: `/api/engrams/${editorStore.title}`,
+  });
+
+  editorStore.$reset();
+  router.push("/engrams");
 }
 
 /* This disables scrolling when the menu is active */
@@ -56,7 +72,7 @@ onClickOutside(
       <p class="py-4">Are you sure you want to permanently delete this engram?</p>
       <div class="modal-action">
         <form method="dialog">
-          <button class="btn btn-sm btn-warning">Confirm</button>
+          <button class="btn btn-sm btn-warning" @click="deleteEngram">Confirm</button>
           <button class="btn btn-sm">Cancel</button>
         </form>
       </div>

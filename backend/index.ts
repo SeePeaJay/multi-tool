@@ -115,6 +115,20 @@ app.post("/api/engrams/:engramTitle", authCheck, async (req, res) => {
   }
 });
 
+app.delete("/api/engrams/:engramTitle", authCheck, async (req, res) => {
+  try {
+    await db.deleteEngram({
+      repoId: req.session?.userId,
+      engramTitle: req.params.engramTitle,
+    });
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
+});
+
 app.put("/api/engrams/:engramTitle/rename", authCheck, async (req, res) => {
   try {
     const updatedTitle = await db.renameEngram({

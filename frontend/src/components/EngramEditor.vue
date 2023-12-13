@@ -37,10 +37,13 @@ const titleEditor = useEditor({
   extensions: [ModifiedStarterKit, TitleDocument, HeadingWithId, ParagraphWithId, AutoLink, BlockPlaceholder],
   editable: editorStore.titleIsEditable,
   onUpdate({ editor }) {
-    const pendingTitle =
-      new DOMParser().parseFromString(editor.getHTML(), "text/html").body.firstElementChild?.textContent || "";
+    if (editor.isFocused) {
+      // clicking on the engram link title (which updates the title) can trigger this function, so the check is necessary to distinguish
 
-    editorStore.setPendingTitle(pendingTitle);
+      const pendingTitle =
+        new DOMParser().parseFromString(editor.getHTML(), "text/html").body.firstElementChild?.textContent || "";
+      editorStore.setPendingTitle(pendingTitle);
+    }
   },
   onBlur() {
     editorStore.renameEngram(createAxiosInstance(router));

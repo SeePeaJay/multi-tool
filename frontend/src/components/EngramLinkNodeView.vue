@@ -1,6 +1,6 @@
 <template>
   <node-view-wrapper class="engram-link" :class="{ 'is-tag': node.attrs.isTag !== null }" as="span" @click="goToEngram">
-    <template v-if="node.attrs.isTag !== null">#{{ node.attrs.targetTitle }}</template>
+    <button v-if="node.attrs.isTag !== null">#{{ node.attrs.targetTitle }}</button>
     <button v-else class="btn btn-sm normal-case"><i class="pi pi-file"></i>{{ node.attrs.targetTitle }}</button>
   </node-view-wrapper>
 </template>

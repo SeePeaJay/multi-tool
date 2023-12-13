@@ -15,7 +15,6 @@ export const useEditorStore = defineStore("editor", () => {
   const router = useRouter();
   const debounceUpdate = useDebounceFn(async (axiosInstance: AxiosInstance) => {
     const payload = getPayload(blocksBeforeUpdate.value, blocks.value);
-    console.log(payload);
 
     await axiosInstance({
       method: "POST",

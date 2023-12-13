@@ -257,9 +257,6 @@ function updateBlocks({
     engramTitle,
   }).then((engramId: string) => {
     db.serialize(() => {
-      let counter = 0;
-      const totalBlocks = Object.keys(updatedBlocks).length;
-
       for (const blockId in updatedBlocks) {
         const blockUpdate = updatedBlocks[blockId];
 
@@ -278,18 +275,8 @@ function updateBlocks({
                     if (err) {
                       throw err;
                     }
-
-                    counter++;
-                    if (counter === totalBlocks) {
-                      getAllBlocks(repoId, engramTitle);
-                    }
                   },
                 );
-              } else {
-                counter++;
-                if (counter === totalBlocks) {
-                  getAllBlocks(repoId, engramTitle);
-                }
               }
             },
           );
@@ -297,11 +284,6 @@ function updateBlocks({
           db.run(`DELETE FROM blocks WHERE id = ?`, [blockId], (err) => {
             if (err) {
               throw err;
-            }
-
-            counter++;
-            if (counter === totalBlocks) {
-              getAllBlocks(repoId, engramTitle);
             }
           });
         }
@@ -351,20 +333,6 @@ function deleteEngram({ repoId, engramTitle }: { repoId: string; engramTitle: st
         resolve();
       });
     });
-  });
-}
-
-function getAllBlocks(repoId: string, engramTitle: string) {
-  const query =
-    "SELECT blocks.* FROM blocks INNER JOIN engrams ON blocks.engram_id = engrams.id WHERE engrams.repo_id = ? AND engrams.title = ? ORDER BY order_number";
-  const params = [repoId, engramTitle];
-
-  db.all(query, params, (err, rows: BlockRow[]) => {
-    if (err) {
-      throw err;
-    }
-
-    console.log(rows);
   });
 }
 

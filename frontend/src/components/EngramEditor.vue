@@ -67,30 +67,6 @@ const blocksEditor = useEditor({
     BlockPlaceholder,
   ],
   editable: editorStore.blocksAreEditable,
-  onSelectionUpdate({ editor }) {
-    // console.log(editor.getJSON());
-    // let { from, to } = editor.view.state.selection;
-    //
-    // let selectedNodes: any[] = [];
-    // editor.view.state.doc.nodesBetween(from, to, (node, pos) => {
-    //   const resolvedPos = editor.view.state.doc.resolve(pos);
-    //
-    //   console.log(resolvedPos.parent.attrs.blockId);
-    //
-    //   // if (node.isBlock && !node.parent) {
-    //   //   selectedNodes.push(node);
-    //   // }
-    // });
-    // console.log(selectedNodes.map((selected) => selected.attrs.blockId));
-    // let { from } = editor.state.selection;
-    // let node = editor.state.doc.nodeAt(from);
-    //
-    // while (node && node.isText) {
-    //   node = node.parent;
-    // }
-    //
-    // console.log(node);
-  },
   onUpdate({ editor }) {
     if (editor.isFocused) {
       // fetching the engram link title and updating the node attr can trigger this, so the check is necessary to distinguish

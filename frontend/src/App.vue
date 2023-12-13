@@ -9,21 +9,6 @@ import NavBar from "./components/NavBar.vue";
 </template>
 
 <style lang="scss">
-/* This handles generic icons and buttons. */
-.pressable {
-  color: var(--inactive-color);
-
-  &:hover {
-    cursor: pointer;
-    color: var(--default-color);
-  }
-
-  &.disabled {
-    cursor: default;
-    color: var(--disabled-color);
-  }
-}
-
 /* This handles the container and area of each view. Follows the same style as the editor. */
 .view-container {
   display: flex;

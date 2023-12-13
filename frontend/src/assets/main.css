@@ -101,13 +101,6 @@
   --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
   --vt-c-text-dark-1: var(--vt-c-white);
   --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
-
-  --default-color: #2c3e50;
-  --disabled-color: #dddddd;
-  --inactive-color: #777777;
-  --active-link-color: #0645ad;
-  --starred-color: #b18840;
-  --alert-color: #ff0000;
 }
 
 /* semantic color variables for this project */

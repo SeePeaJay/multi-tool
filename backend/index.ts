@@ -175,13 +175,14 @@ app.get("/api/engrams/:engramTitle/id", authCheck, async (req, res) => {
   }
 });
 
-app.get("/api/engrams/:engramId/title", authCheck, async (req, res) => {
+app.get("/api/engrams/:targetId/display", authCheck, async (req, res) => {
   try {
-    const title = await db.getTitleFromEngramId({
+    const content = await db.getMetadataToDisplayEngramLink({
       repoId: req.session?.userId,
-      engramId: req.params.engramId,
+      targetId: req.params.targetId,
     });
-    res.send(title);
+
+    res.send(content);
   } catch (err) {
     console.log(err);
     res.status(500).send(err);

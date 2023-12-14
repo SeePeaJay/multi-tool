@@ -188,17 +188,37 @@ function renameEngram({ repoId, oldEngramTitle, newEngramTitle }: UpdateEngramTi
   });
 }
 
-function getTitleFromEngramId({ repoId, engramId }: { repoId: string; engramId: string }): Promise<string> {
+function getMetadataToDisplayEngramLink({ repoId, targetId }: { repoId: string; targetId: string }) {
   return new Promise((resolve, reject) => {
     db.get(
       `SELECT title FROM engrams WHERE repo_id = ? AND id = ?`,
-      [repoId, engramId],
+      [repoId, targetId],
       (err, row: { title: string }) => {
         if (err) {
           return reject(err);
         }
 
-        resolve(row?.title || "");
+        if (!row) {
+          db.get(
+            `SELECT engrams.title, blocks.content FROM engrams JOIN blocks on engrams.id = blocks.engram_id WHERE engrams.repo_id = ? AND blocks.id = ?`,
+            [repoId, targetId],
+            (err, row: { title: string; content: string }) => {
+              if (err || !row) {
+                return reject(err);
+              }
+
+              resolve({
+                title: row.title,
+                isAnchor: true,
+                anchorContent: new JSDOM(row.content).window.document.body.firstElementChild?.textContent,
+              });
+            },
+          );
+        } else {
+          resolve({
+            title: row?.title || "",
+          });
+        }
       },
     );
   });
@@ -341,7 +361,7 @@ export default {
   getEngramTitles,
   getBlockRows,
   renameEngram,
-  getTitleFromEngramId,
+  getMetadataToDisplayEngramLink,
   getIdFromEngramTitle,
   createEngram,
   updateBlocks,

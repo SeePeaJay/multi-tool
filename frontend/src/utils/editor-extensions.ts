@@ -220,6 +220,15 @@ export const EngramLink = Node.create({
           return element.getAttribute("istag");
         },
       },
+      anchorContent: {
+        default: null,
+      },
+      isAnchor: {
+        default: null,
+        parseHTML: (element) => {
+          return element.getAttribute("isanchor");
+        },
+      },
     };
   },
   parseHTML() {
@@ -230,7 +239,7 @@ export const EngramLink = Node.create({
     ];
   },
   renderHTML({ HTMLAttributes }) {
-    const { targetTitle: _, ...renderedAttributes } = HTMLAttributes;
+    const { targetTitle, anchorContent, ...renderedAttributes } = HTMLAttributes;
 
     return ["engram-link", renderedAttributes];
   },

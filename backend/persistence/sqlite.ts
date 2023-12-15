@@ -285,25 +285,37 @@ function updateBlocks({
         const blockUpdate = updatedBlocks[blockId];
 
         if (blockUpdate) {
-          db.run(
-            `UPDATE blocks SET order_number = ?, content = ? WHERE id = ?`,
-            [blockUpdate.orderNumber, blockUpdate.content, blockId],
-            function (this: { changes: number }, err) {
-              if (err) {
-                throw err;
-              } else if (this.changes === 0) {
-                db.run(
-                  `INSERT INTO blocks (id, engram_id, order_number, content) VALUES (?, ?, ?, ?);`,
-                  [blockId, engramId, blockUpdate.orderNumber, blockUpdate.content],
-                  (err) => {
-                    if (err) {
-                      throw err;
-                    }
-                  },
-                );
-              }
-            },
-          );
+          let query = "UPDATE blocks SET ";
+          const params = [];
+
+          if ("orderNumber" in blockUpdate) {
+            query += "order_number = ?";
+            params.push(blockUpdate.orderNumber);
+          }
+          if ("content" in blockUpdate) {
+            query += ("orderNumber" in blockUpdate ? ", " : "") + "content = ?";
+            params.push(blockUpdate.content);
+          }
+
+          query += " WHERE id = ?";
+          params.push(blockId);
+          console.log(blockId, blockUpdate, query);
+
+          db.run(query, params, function (this: { changes: number }, err) {
+            if (err) {
+              throw err;
+            } else if (this.changes === 0) {
+              db.run(
+                `INSERT INTO blocks (id, engram_id, order_number, content) VALUES (?, ?, ?, ?);`,
+                [blockId, engramId, blockUpdate.orderNumber, blockUpdate.content],
+                (err) => {
+                  if (err) {
+                    throw err;
+                  }
+                },
+              );
+            }
+          });
         } else {
           db.run(`DELETE FROM blocks WHERE id = ?`, [blockId], (err) => {
             if (err) {

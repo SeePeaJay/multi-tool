@@ -1,8 +1,8 @@
 const parser = new DOMParser();
 
 interface BlockUpdate {
-  orderNumber: number;
-  content: string;
+  orderNumber?: number;
+  content?: string;
 }
 type UpdatedBlocks = {
   [id: string]: BlockUpdate | null;
@@ -30,21 +30,39 @@ export function getPayload(oldBlocks: string, newBlocks: string) {
 
   const oldBlocksKeys = Object.keys(oldBlocksObject);
   const newBlocksKeys = Object.keys(newBlocksObject);
+
   const payload: UpdatedBlocks = {};
 
-  for (let i = 0; i < Math.max(oldBlocksKeys.length, newBlocksKeys.length); i++) {
-    const oldBlocksKey = oldBlocksKeys[i];
+  for (let i = 0; i < newBlocksKeys.length; i++) {
     const newBlocksKey = newBlocksKeys[i];
 
-    if (oldBlocksKey && !(oldBlocksKey in newBlocksObject)) {
-      payload[oldBlocksKey] = null;
-    }
-
-    if (newBlocksKey) {
+    if (!(newBlocksKey in oldBlocksObject)) {
       payload[newBlocksKey] = {
         orderNumber: i,
         content: newBlocksObject[newBlocksKey],
       };
+    } else {
+      if (i !== oldBlocksKeys.indexOf(newBlocksKey)) {
+        payload[newBlocksKey] = {
+          ...payload[newBlocksKey],
+          orderNumber: i,
+        };
+      }
+
+      if (newBlocksObject[newBlocksKey] !== oldBlocksObject[newBlocksKey]) {
+        payload[newBlocksKey] = {
+          ...payload[newBlocksKey],
+          content: newBlocksObject[newBlocksKey],
+        };
+      }
+    }
+  }
+
+  for (let j = 0; j < oldBlocksKeys.length; j++) {
+    const oldBlocksKey = oldBlocksKeys[j];
+
+    if (!(oldBlocksKey in newBlocksObject)) {
+      payload[oldBlocksKey] = null;
     }
   }
 

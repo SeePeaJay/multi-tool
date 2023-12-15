@@ -203,15 +203,19 @@ function getMetadataToDisplayEngramLink({ repoId, targetId }: { repoId: string; 
             `SELECT engrams.title, blocks.content FROM engrams JOIN blocks on engrams.id = blocks.engram_id WHERE engrams.repo_id = ? AND blocks.id = ?`,
             [repoId, targetId],
             (err, row: { title: string; content: string }) => {
-              if (err || !row) {
+              if (err) {
                 return reject(err);
               }
 
-              resolve({
-                title: row.title,
-                isAnchor: true,
-                anchorContent: new JSDOM(row.content).window.document.body.firstElementChild?.textContent,
-              });
+              if (!row) {
+                resolve({});
+              } else {
+                resolve({
+                  title: row.title,
+                  isAnchor: true,
+                  anchorContent: new JSDOM(row.content).window.document.body.firstElementChild?.textContent,
+                });
+              }
             },
           );
         } else {

@@ -1,10 +1,7 @@
 <template>
   <node-view-wrapper class="engram-link" :class="{ 'is-tag': node.attrs.isTag !== null }" as="span" @click="goToEngram">
-    <button v-if="node.attrs.isTag !== null">#{{ node.attrs.targetTitle }}</button>
-    <button v-else class="btn btn-sm normal-case">
-      <i class="pi pi-file"></i>{{ node.attrs.targetTitle
-      }}{{ node.attrs.isAnchor ? ` - ${node.attrs.anchorContent}` : "" }}
-    </button>
+    <button v-if="node.attrs.isTag !== null">#{{ displayContent }}</button>
+    <button v-else class="btn btn-sm normal-case"><i class="pi pi-file"></i>{{ displayContent }}</button>
   </node-view-wrapper>
 </template>
 
@@ -19,9 +16,21 @@ export default {
 
   props: nodeViewProps,
 
+  computed: {
+    displayContent() {
+      if (this.node.attrs.targetTitle) {
+        return this.node.attrs.targetTitle + (this.node.attrs.isAnchor ? ` - ${this.node.attrs.anchorContent}` : "");
+      }
+
+      return "Unable to find reference";
+    },
+  },
+
   methods: {
     async goToEngram() {
-      await this.$router.push(`/engrams/${this.node.attrs.targetTitle}`);
+      if (this.node.attrs.targetTitle) {
+        await this.$router.push(`/engrams/${this.node.attrs.targetTitle}`);
+      }
 
       if (this.node.attrs.isAnchor) {
         setTimeout(() => {
@@ -43,7 +52,7 @@ export default {
 
       const displayResponse = await axiosInstance(`/api/engrams/${this.node.attrs.targetId}/display`);
       this.updateAttributes({
-        targetTitle: displayResponse.data.title,
+        ...(displayResponse.data.title && { targetTitle: displayResponse.data.title }),
         ...(displayResponse.data.isAnchor && { isAnchor: displayResponse.data.isAnchor }),
         ...(displayResponse.data.anchorContent && { anchorContent: displayResponse.data.anchorContent }),
       });

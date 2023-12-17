@@ -3,9 +3,11 @@ const parser = new DOMParser();
 interface BlockUpdate {
   orderNumber?: number;
   content?: string;
+  createdEngramLinks?: string[];
+  deletedEngramLinks?: string[];
 }
 type UpdatedBlocks = {
-  [id: string]: BlockUpdate | null;
+  [id: string]: BlockUpdate;
 };
 
 function getBlocksArray(blocks: string) {
@@ -19,6 +21,25 @@ function getBlocksObject(blocksArray: string[]) {
     acc[id] = block;
     return acc;
   }, {});
+}
+
+function getModifiedEngramLinks(oldBlock: string, newBlock: string) {
+  const oldBlockDoc = parser.parseFromString(oldBlock, "text/html");
+  const newBlockDoc = parser.parseFromString(newBlock, "text/html");
+
+  const oldEngramLinks = Array.from(
+    new Set(Array.from(oldBlockDoc.querySelectorAll("engram-link")).map((element) => element.outerHTML)),
+  );
+  const newEngramLinks = Array.from(
+    new Set(Array.from(newBlockDoc.querySelectorAll("engram-link")).map((element) => element.outerHTML)),
+  );
+
+  const deletedEngramLinks = oldEngramLinks.filter((engramLink) => !newEngramLinks.includes(engramLink));
+  const createdEngramLinks = newEngramLinks.filter((engramLink) => !oldEngramLinks.includes(engramLink));
+
+  console.log(deletedEngramLinks, createdEngramLinks);
+
+  return { deletedEngramLinks, createdEngramLinks };
 }
 
 export function getPayload(oldBlocks: string, newBlocks: string) {
@@ -37,9 +58,12 @@ export function getPayload(oldBlocks: string, newBlocks: string) {
     const newBlocksKey = newBlocksKeys[i];
 
     if (!(newBlocksKey in oldBlocksObject)) {
+      const { createdEngramLinks } = getModifiedEngramLinks("", newBlocksObject[newBlocksKey]);
+
       payload[newBlocksKey] = {
         orderNumber: i,
         content: newBlocksObject[newBlocksKey],
+        ...(createdEngramLinks.length && { createdEngramLinks }),
       };
     } else {
       if (i !== oldBlocksKeys.indexOf(newBlocksKey)) {
@@ -50,9 +74,16 @@ export function getPayload(oldBlocks: string, newBlocks: string) {
       }
 
       if (newBlocksObject[newBlocksKey] !== oldBlocksObject[newBlocksKey]) {
+        const { createdEngramLinks, deletedEngramLinks } = getModifiedEngramLinks(
+          oldBlocksObject[newBlocksKey] || "",
+          newBlocksObject[newBlocksKey] || "",
+        );
+
         payload[newBlocksKey] = {
           ...payload[newBlocksKey],
           content: newBlocksObject[newBlocksKey],
+          ...(createdEngramLinks.length && { createdEngramLinks }),
+          ...(deletedEngramLinks.length && { deletedEngramLinks }),
         };
       }
     }
@@ -62,7 +93,11 @@ export function getPayload(oldBlocks: string, newBlocks: string) {
     const oldBlocksKey = oldBlocksKeys[j];
 
     if (!(oldBlocksKey in newBlocksObject)) {
-      payload[oldBlocksKey] = null;
+      const { deletedEngramLinks } = getModifiedEngramLinks(oldBlocksObject[oldBlocksKey], "");
+
+      payload[oldBlocksKey] = {
+        ...(deletedEngramLinks.length && { deletedEngramLinks }),
+      };
     }
   }
 

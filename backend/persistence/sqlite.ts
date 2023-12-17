@@ -24,11 +24,13 @@ interface UpdateEngramTitleOptions {
   newEngramTitle: string;
 }
 interface BlockUpdate {
-  orderNumber: number;
-  content: string;
+  orderNumber?: number;
+  content?: string;
+  createdEngramLinks?: string[];
+  deletedEngramLinks?: string[];
 }
 type UpdatedBlocks = {
-  [id: string]: BlockUpdate | null;
+  [id: string]: BlockUpdate;
 };
 
 const location = process.env.SQLITE_DB_LOCATION || "db/test.db";
@@ -284,7 +286,7 @@ function updateBlocks({
       for (const blockId in updatedBlocks) {
         const blockUpdate = updatedBlocks[blockId];
 
-        if (blockUpdate) {
+        if ("orderNumber" in blockUpdate || "content" in blockUpdate) {
           let query = "UPDATE blocks SET ";
           const params = [];
 

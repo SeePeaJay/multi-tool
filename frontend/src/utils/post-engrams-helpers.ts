@@ -23,65 +23,120 @@ function getBlocksObject(blocksArray: string[]) {
   }, {});
 }
 
-function getModifiedEngramLinks(oldBlock: string, newBlock: string) {
-  const oldBlockDoc = parser.parseFromString(oldBlock, "text/html");
-  const newBlockDoc = parser.parseFromString(newBlock, "text/html");
+function IsNonTagLinkBlock(element: Element) {
+  if (element.hasAttribute("istag")) {
+    return true;
+  }
 
-  const oldEngramLinks = Array.from(
-    new Set(Array.from(oldBlockDoc.querySelectorAll("engram-link")).map((element) => element.outerHTML)),
+  return element.parentNode?.children.length === 1 && element.parentNode?.textContent === "";
+}
+
+function isModifiedBlockLinkUnique({ modifiedLink, isLinkUnique }: { modifiedLink: string; isLinkUnique: boolean }) {
+  if (modifiedLink.includes('istag="true"')) {
+    return true;
+  }
+
+  return isLinkUnique;
+}
+
+function getModifiedEngramLinks({
+  blockPreUpdate,
+  block,
+  blocksPreUpdate,
+  blocks,
+}: {
+  blockPreUpdate: string;
+  block: string;
+  blocksPreUpdate: string;
+  blocks: string;
+}) {
+  const blockDocPreUpdate = parser.parseFromString(blockPreUpdate, "text/html");
+  const blockDoc = parser.parseFromString(block, "text/html");
+
+  const engramLinksPreUpdate = Array.from(
+    new Set(
+      Array.from(blockDocPreUpdate.querySelectorAll("engram-link"))
+        .filter(IsNonTagLinkBlock)
+        .map((element) => element.outerHTML),
+    ),
   );
-  const newEngramLinks = Array.from(
-    new Set(Array.from(newBlockDoc.querySelectorAll("engram-link")).map((element) => element.outerHTML)),
+  const engramLinks = Array.from(
+    new Set(
+      Array.from(blockDoc.querySelectorAll("engram-link"))
+        .filter(IsNonTagLinkBlock)
+        .map((element) => element.outerHTML),
+    ),
   );
 
-  const deletedEngramLinks = oldEngramLinks.filter((engramLink) => !newEngramLinks.includes(engramLink));
-  const createdEngramLinks = newEngramLinks.filter((engramLink) => !oldEngramLinks.includes(engramLink));
+  const deletedEngramLinks = engramLinksPreUpdate
+    .filter((engramLink) => !engramLinks.includes(engramLink))
+    .filter((engramLink) =>
+      isModifiedBlockLinkUnique({
+        modifiedLink: engramLink,
+        isLinkUnique: !blocks.replace(block, "").includes(engramLink),
+      }),
+    );
+  const createdEngramLinks = engramLinks
+    .filter((engramLink) => !engramLinksPreUpdate.includes(engramLink))
+    .filter((engramLink) =>
+      isModifiedBlockLinkUnique({
+        modifiedLink: engramLink,
+        isLinkUnique: !blocksPreUpdate.replace(blockPreUpdate, "").includes(engramLink),
+      }),
+    );
 
   console.log(deletedEngramLinks, createdEngramLinks);
 
   return { deletedEngramLinks, createdEngramLinks };
 }
 
-export function getPayload(oldBlocks: string, newBlocks: string) {
-  const oldBlocksArray = getBlocksArray(oldBlocks);
-  const newBlocksArray = getBlocksArray(newBlocks);
+export function getPayload(blocksPreUpdate: string, blocks: string) {
+  const blocksArrayPreUpdate = getBlocksArray(blocksPreUpdate);
+  const blocksArray = getBlocksArray(blocks);
 
-  const oldBlocksObject = getBlocksObject(oldBlocksArray);
-  const newBlocksObject = getBlocksObject(newBlocksArray);
+  const blocksObjectPreUpdate = getBlocksObject(blocksArrayPreUpdate);
+  const blocksObject = getBlocksObject(blocksArray);
 
-  const oldBlocksKeys = Object.keys(oldBlocksObject);
-  const newBlocksKeys = Object.keys(newBlocksObject);
+  const blockKeysPreUpdate = Object.keys(blocksObjectPreUpdate);
+  const blockKeys = Object.keys(blocksObject);
 
   const payload: UpdatedBlocks = {};
 
-  for (let i = 0; i < newBlocksKeys.length; i++) {
-    const newBlocksKey = newBlocksKeys[i];
+  for (let i = 0; i < blockKeys.length; i++) {
+    const blockKey = blockKeys[i];
 
-    if (!(newBlocksKey in oldBlocksObject)) {
-      const { createdEngramLinks } = getModifiedEngramLinks("", newBlocksObject[newBlocksKey]);
+    if (!(blockKey in blocksObjectPreUpdate)) {
+      const { createdEngramLinks } = getModifiedEngramLinks({
+        blockPreUpdate: "",
+        block: blocksObject[blockKey],
+        blocksPreUpdate,
+        blocks,
+      });
 
-      payload[newBlocksKey] = {
+      payload[blockKey] = {
         orderNumber: i,
-        content: newBlocksObject[newBlocksKey],
+        content: blocksObject[blockKey],
         ...(createdEngramLinks.length && { createdEngramLinks }),
       };
     } else {
-      if (i !== oldBlocksKeys.indexOf(newBlocksKey)) {
-        payload[newBlocksKey] = {
-          ...payload[newBlocksKey],
+      if (i !== blockKeysPreUpdate.indexOf(blockKey)) {
+        payload[blockKey] = {
+          ...payload[blockKey],
           orderNumber: i,
         };
       }
 
-      if (newBlocksObject[newBlocksKey] !== oldBlocksObject[newBlocksKey]) {
-        const { createdEngramLinks, deletedEngramLinks } = getModifiedEngramLinks(
-          oldBlocksObject[newBlocksKey] || "",
-          newBlocksObject[newBlocksKey] || "",
-        );
+      if (blocksObject[blockKey] !== blocksObjectPreUpdate[blockKey]) {
+        const { createdEngramLinks, deletedEngramLinks } = getModifiedEngramLinks({
+          blockPreUpdate: blocksObjectPreUpdate[blockKey] || "",
+          block: blocksObject[blockKey] || "",
+          blocksPreUpdate,
+          blocks,
+        });
 
-        payload[newBlocksKey] = {
-          ...payload[newBlocksKey],
-          content: newBlocksObject[newBlocksKey],
+        payload[blockKey] = {
+          ...payload[blockKey],
+          content: blocksObject[blockKey],
           ...(createdEngramLinks.length && { createdEngramLinks }),
           ...(deletedEngramLinks.length && { deletedEngramLinks }),
         };
@@ -89,13 +144,18 @@ export function getPayload(oldBlocks: string, newBlocks: string) {
     }
   }
 
-  for (let j = 0; j < oldBlocksKeys.length; j++) {
-    const oldBlocksKey = oldBlocksKeys[j];
+  for (let j = 0; j < blockKeysPreUpdate.length; j++) {
+    const blockKeyPreUpdate = blockKeysPreUpdate[j];
 
-    if (!(oldBlocksKey in newBlocksObject)) {
-      const { deletedEngramLinks } = getModifiedEngramLinks(oldBlocksObject[oldBlocksKey], "");
+    if (!(blockKeyPreUpdate in blocksObject)) {
+      const { deletedEngramLinks } = getModifiedEngramLinks({
+        blockPreUpdate: blocksObjectPreUpdate[blockKeyPreUpdate],
+        block: "",
+        blocksPreUpdate,
+        blocks,
+      });
 
-      payload[oldBlocksKey] = {
+      payload[blockKeyPreUpdate] = {
         ...(deletedEngramLinks.length && { deletedEngramLinks }),
       };
     }

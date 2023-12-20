@@ -19,7 +19,10 @@ export default {
   computed: {
     displayContent() {
       if (this.node.attrs.targetTitle) {
-        return this.node.attrs.targetTitle + (this.node.attrs.isAnchor ? ` - ${this.node.attrs.anchorContent}` : "");
+        return (
+          this.node.attrs.targetTitle +
+          (this.node.attrs.isAnchor ? ` :: ${this.node.attrs.anchorContent.slice(0, 20)} ...` : "")
+        );
       }
 
       return "Unable to find reference";

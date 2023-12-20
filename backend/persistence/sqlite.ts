@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { JSDOM } from "jsdom";
 import { nanoid } from "nanoid";
+import modifyBacklinks from "./process-engramlinks-helpers";
 
 interface BlockRow {
   id: string;
@@ -215,7 +216,7 @@ function getMetadataToDisplayEngramLink({ repoId, targetId }: { repoId: string; 
                 resolve({
                   title: row.title,
                   isAnchor: true,
-                  anchorContent: new JSDOM(row.content).window.document.body.firstElementChild?.textContent,
+                  anchorContent: new JSDOM(row.content).window.document.body.firstElementChild?.innerHTML,
                 });
               }
             },
@@ -250,7 +251,7 @@ function createEngram({ repoId, engramTitle }: CreateEngramOptions): Promise<str
   const engramId = nanoid(8);
   const blockId = nanoid(8);
   const engramsRow = [engramId, repoId, engramTitle];
-  const blocksRow = [blockId, engramId, 0, `<p id="${blockId}">A sample paragraph originally for ${engramTitle}.`];
+  const blocksRow = [blockId, engramId, 0, `<p id="${blockId}"></p>`];
 
   return new Promise((resolve, reject) => {
     db.run("INSERT INTO engrams(id, repo_id, title) VALUES (?, ?, ?)", engramsRow, (err) => {
@@ -318,12 +319,32 @@ function updateBlocks({
               );
             }
           });
+
+          if ("createdEngramLinks" in blockUpdate || "deletedEngramLinks" in blockUpdate) {
+            modifyBacklinks({
+              origin: blockId,
+              originEngramId: engramId,
+              dbVariable: db,
+              createdLinks: blockUpdate.createdEngramLinks || [],
+              deletedLinks: blockUpdate.deletedEngramLinks || [],
+            });
+          }
         } else {
           db.run(`DELETE FROM blocks WHERE id = ?`, [blockId], (err) => {
             if (err) {
               throw err;
             }
           });
+
+          if ("deletedEngramLinks" in blockUpdate) {
+            modifyBacklinks({
+              origin: blockId,
+              originEngramId: engramId,
+              dbVariable: db,
+              createdLinks: [],
+              deletedLinks: blockUpdate.deletedEngramLinks || [],
+            });
+          }
         }
       }
     });
@@ -346,7 +367,7 @@ function deleteEngram({ repoId, engramTitle }: { repoId: string; engramTitle: st
           },
         );
         db.run(
-          `UPDATE blocks SET content = REPLACE(content, '<engram-link targetid="${engramId}" istag=""></engram-link>', '') WHERE content LIKE '%<engram-link targetid="${engramId}" istag=""></engram-link>%'`,
+          `UPDATE blocks SET content = REPLACE(content, '<engram-link istag="true" targetid="${engramId}"></engram-link>', '') WHERE content LIKE '%<engram-link istag="true" targetid="${engramId}"></engram-link>%'`,
           function (err) {
             if (err) {
               return reject(err);

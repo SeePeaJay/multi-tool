@@ -23,7 +23,7 @@ const router = createRouter({
       component: EngramsView,
     },
     {
-      path: "/engrams/:engramTitle",
+      path: "/engrams/:engramId",
       name: "engram",
       component: EngramView,
     },

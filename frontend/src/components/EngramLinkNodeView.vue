@@ -31,8 +31,8 @@ export default {
 
   methods: {
     async goToEngram() {
-      if (this.node.attrs.targetTitle) {
-        await this.$router.push(`/engrams/${this.node.attrs.targetTitle}`);
+      if (this.node.attrs.targetId) {
+        await this.$router.push(`/engrams/${this.node.attrs.targetId}`);
       }
 
       if (this.node.attrs.isAnchor) {

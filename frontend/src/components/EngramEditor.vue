@@ -27,7 +27,7 @@ const router = useRouter();
 const editorStore = useEditorStore();
 
 await editorStore.fetchEngram({
-  engramTitle: route.params.engramTitle as string,
+  engramId: route.params.engramId as string,
   axiosInstance: createAxiosInstance(router),
 });
 
@@ -88,12 +88,12 @@ onMounted(async () => {
 });
 
 watch(
-  () => route.params.engramTitle,
+  () => route.params.engramId,
   async (newValue, oldValue) => {
     // the route update from axios interceptor seems to be detected by this watcher before the editor component is unmounted, so the check is needed to avoid sending unnecessary request
     if (!(oldValue && !newValue)) {
       await editorStore.fetchEngram({
-        engramTitle: newValue as string,
+        engramId: newValue as string,
         axiosInstance: createAxiosInstance(router),
       });
 

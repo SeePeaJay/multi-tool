@@ -42,7 +42,10 @@ app.use(express.json()); // makes req.body available
 
 app.get("/api", (req: Request, res: Response) => {
   db.getBlockRows({ engramTitle: "Multi-Tool" }).then((rows) => {
-    res.send(rows.map((row) => row.content));
+    res.send({
+      title: "Multi-Tool",
+      blocks: rows.map((row) => row.content),
+    });
   });
 });
 
@@ -65,20 +68,18 @@ app.post("/api/login", (req: Request, res: Response) => {
 });
 
 app.get("/api/engrams", authCheck, async (req: Request, res: Response) => {
-  console.log(req.session?.userId);
-
   try {
-    const engramTitles = await db.getEngramTitles(req.session?.userId);
+    const engramIdsAndTitles = await db.getEngramIdsAndTitles(req.session?.userId);
 
-    if (engramTitles.length === 0) {
-      const starredTitle = await db.createEngram({
+    if (engramIdsAndTitles.length === 0) {
+      const starredIdAndTitle = await db.createEngram({
         repoId: req.session?.userId,
         engramTitle: "Starred",
       });
 
-      res.status(200).send([starredTitle]);
+      res.status(200).send([starredIdAndTitle]);
     } else {
-      res.status(200).send(engramTitles);
+      res.status(200).send(engramIdsAndTitles);
     }
   } catch (err) {
     console.log(err);
@@ -86,25 +87,48 @@ app.get("/api/engrams", authCheck, async (req: Request, res: Response) => {
   }
 });
 
-app.get("/api/engrams/:engramTitle", authCheck, async (req: Request, res: Response) => {
+app.get("/api/engrams/Starred", authCheck, async (req: Request, res: Response) => {
   try {
     const blockRows = await db.getBlockRows({
       repoId: req.session?.userId,
-      engramTitle: req.params.engramTitle,
+      engramTitle: "Starred",
     });
 
-    res.send(blockRows.map((row) => row.content));
+    res.send({
+      title: "Starred",
+      blocks: blockRows.map((row) => row.content),
+    });
   } catch (err) {
     console.log(err);
     res.status(500).send(err);
   }
 });
 
-app.post("/api/engrams/:engramTitle", authCheck, async (req, res) => {
+app.get("/api/engrams/:engramId", authCheck, async (req: Request, res: Response) => {
+  try {
+    const title = await db.getTitleFromEngramId({
+      repoId: req.session?.userId,
+      engramId: req.params.engramId,
+    });
+    const blockRows = await db.getBlockRows({
+      repoId: req.session?.userId,
+      engramId: req.params.engramId,
+    });
+
+    res.send({
+      title,
+      blocks: blockRows.map((row) => row.content),
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err);
+  }
+});
+
+app.post("/api/engrams/:engramId", authCheck, async (req, res) => {
   try {
     db.updateBlocks({
-      repoId: req.session?.userId,
-      engramTitle: req.params.engramTitle,
+      engramId: req.params.engramId,
       updatedBlocks: req.body,
     });
 
@@ -115,11 +139,11 @@ app.post("/api/engrams/:engramTitle", authCheck, async (req, res) => {
   }
 });
 
-app.delete("/api/engrams/:engramTitle", authCheck, async (req, res) => {
+app.delete("/api/engrams/:engramId", authCheck, async (req, res) => {
   try {
     await db.deleteEngram({
       repoId: req.session?.userId,
-      engramTitle: req.params.engramTitle,
+      engramId: req.params.engramId,
     });
 
     res.sendStatus(200);
@@ -129,11 +153,11 @@ app.delete("/api/engrams/:engramTitle", authCheck, async (req, res) => {
   }
 });
 
-app.put("/api/engrams/:engramTitle/rename", authCheck, async (req, res) => {
+app.put("/api/engrams/:engramId/rename", authCheck, async (req, res) => {
   try {
     const updatedTitle = await db.renameEngram({
       repoId: req.session?.userId,
-      oldEngramTitle: req.params.engramTitle,
+      engramId: req.params.engramId,
       newEngramTitle: req.body.newEngramTitle,
     });
 

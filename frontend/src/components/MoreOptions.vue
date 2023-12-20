@@ -20,7 +20,7 @@ function showModal() {
 async function deleteEngram() {
   await axiosInstance({
     method: "DELETE",
-    url: `/api/engrams/${editorStore.title}`,
+    url: `/api/engrams/${editorStore.engramId}`,
   });
 
   editorStore.$reset();

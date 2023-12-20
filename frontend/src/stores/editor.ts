@@ -7,7 +7,7 @@ import { useDebounceFn } from "@vueuse/core";
 import { getPayload } from "@/utils/post-engrams-helpers";
 
 interface FetchEngramOptions {
-  engramTitle: string;
+  engramId: string;
   axiosInstance: AxiosInstance;
 }
 
@@ -18,13 +18,14 @@ export const useEditorStore = defineStore("editor", () => {
 
     await axiosInstance({
       method: "POST",
-      url: `/api/engrams/${title.value}`,
+      url: `/api/engrams/${engramId.value}`,
       data: payload,
     });
 
     setBlocksBeforeUpdate("");
   }, 1000);
 
+  const engramId = ref("");
   const title = ref("");
   const pendingTitle = ref("");
   const isRevertingTitle = ref(false);
@@ -39,6 +40,9 @@ export const useEditorStore = defineStore("editor", () => {
     return !["Multi-Tool"].includes(title.value);
   });
 
+  function setEngramId(currentEngramId: string) {
+    engramId.value = currentEngramId;
+  }
   function setTitle(newTitle: string) {
     title.value = newTitle;
   }
@@ -55,12 +59,13 @@ export const useEditorStore = defineStore("editor", () => {
     blocksBeforeUpdate.value = newBlocksBeforeUpdate;
   }
 
-  async function fetchEngram({ engramTitle, axiosInstance }: FetchEngramOptions) {
+  async function fetchEngram({ engramId, axiosInstance }: FetchEngramOptions) {
     try {
-      const getBlocksResponse = engramTitle ? await axiosInstance(`/api/engrams/${engramTitle}`) : await axios("/api");
-      const blocks = getBlocksResponse.data;
+      const getBlocksResponse = engramId ? await axiosInstance(`/api/engrams/${engramId}`) : await axios("/api");
+      const { title, blocks } = getBlocksResponse.data;
 
-      setTitle(engramTitle || "Multi-Tool");
+      setEngramId(engramId);
+      setTitle(title || "Multi-Tool");
       setBlocks(blocks.join(""));
     } catch (err) {
       console.error(err);
@@ -71,13 +76,12 @@ export const useEditorStore = defineStore("editor", () => {
       if (pendingTitle.value && pendingTitle.value !== title.value) {
         await axiosInstance({
           method: "PUT",
-          url: `/api/engrams/${title.value}/rename`,
+          url: `/api/engrams/${engramId.value}/rename`,
           data: { newEngramTitle: pendingTitle.value },
         });
 
         setTitle(pendingTitle.value);
         setPendingTitle("");
-        await router.replace({ path: `/engrams/${title.value}` });
       } else {
         setPendingTitle("");
       }
@@ -106,6 +110,7 @@ export const useEditorStore = defineStore("editor", () => {
   }
 
   function $reset() {
+    engramId.value = "";
     title.value = "";
     pendingTitle.value = "";
     isRevertingTitle.value = false;
@@ -114,6 +119,7 @@ export const useEditorStore = defineStore("editor", () => {
   }
 
   return {
+    engramId,
     title,
     pendingTitle,
     isRevertingTitle,

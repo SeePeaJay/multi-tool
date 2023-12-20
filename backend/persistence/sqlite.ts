@@ -13,7 +13,8 @@ interface BlockRow {
 }
 interface GetBlockRowsOptions {
   repoId?: string;
-  engramTitle: string;
+  engramTitle?: string;
+  engramId?: string;
 }
 interface CreateEngramOptions {
   repoId: string;
@@ -21,7 +22,7 @@ interface CreateEngramOptions {
 }
 interface UpdateEngramTitleOptions {
   repoId: string;
-  oldEngramTitle: string;
+  engramId: string;
   newEngramTitle: string;
 }
 interface BlockUpdate {
@@ -141,53 +142,54 @@ function init(): Promise<void> {
   });
 }
 
-function getEngramTitles(repoId: string): Promise<string[]> {
+function getEngramIdsAndTitles(repoId: string): Promise<{ id: string; title: string }[]> {
   return new Promise((resolve, reject) => {
-    db.all(`SELECT title FROM engrams WHERE repo_id = ?`, [repoId], (err, rows: { title: string }[]) => {
-      if (err) {
-        return reject(err);
-      }
+    db.all(
+      `SELECT id, title FROM engrams WHERE repo_id = ?`,
+      [repoId],
+      (err, rows: { id: string; title: string }[]) => {
+        if (err) {
+          return reject(err);
+        }
 
-      resolve(rows.map((row) => row.title));
-    });
+        resolve(rows);
+      },
+    );
   });
 }
 
-function getBlockRows(options: GetBlockRowsOptions): Promise<BlockRow[]> {
+function getBlockRows({ repoId, engramId, engramTitle }: GetBlockRowsOptions): Promise<BlockRow[]> {
   return new Promise((resolve, reject) => {
     let query = "SELECT blocks.* FROM blocks INNER JOIN engrams ON blocks.engram_id = engrams.id";
     const params = [];
 
-    if (options.repoId) {
-      query += " WHERE engrams.repo_id = ? AND engrams.title = ? ORDER BY order_number";
-      params.push(...[options.repoId, options.engramTitle]);
+    if (repoId) {
+      query += ` WHERE engrams.repo_id = ? AND engrams.${engramTitle ? "title" : "id"} = ? ORDER BY order_number`;
+      params.push(...[repoId, engramTitle || engramId]);
     } else {
-      query += " WHERE engrams.repo_id IS NULL AND engrams.title = ? ORDER BY order_number";
-      params.push(options.engramTitle);
+      query += ` WHERE engrams.repo_id IS NULL AND engrams.title = ? ORDER BY order_number`;
+      params.push(engramTitle);
     }
 
     db.all(query, params, (err, rows: BlockRow[]) => {
       if (err) {
         return reject(err);
       }
+
       resolve(rows);
     });
   });
 }
 
-function renameEngram({ repoId, oldEngramTitle, newEngramTitle }: UpdateEngramTitleOptions) {
+function renameEngram({ repoId, engramId, newEngramTitle }: UpdateEngramTitleOptions) {
   return new Promise((resolve, reject) => {
-    db.run(
-      "UPDATE engrams SET title = ? WHERE repo_id = ? AND title = ?",
-      [newEngramTitle, repoId, oldEngramTitle],
-      (err) => {
-        if (err) {
-          return reject(err);
-        }
+    db.run("UPDATE engrams SET title = ? WHERE repo_id = ? AND id = ?", [newEngramTitle, repoId, engramId], (err) => {
+      if (err) {
+        return reject(err);
+      }
 
-        resolve(newEngramTitle);
-      },
-    );
+      resolve(newEngramTitle);
+    });
   });
 }
 
@@ -231,6 +233,22 @@ function getMetadataToDisplayEngramLink({ repoId, targetId }: { repoId: string; 
   });
 }
 
+function getTitleFromEngramId({ repoId, engramId }: { repoId: string; engramId: string }): Promise<string> {
+  return new Promise((resolve, reject) => {
+    db.get(
+      `SELECT title FROM engrams WHERE repo_id = ? AND id = ?`,
+      [repoId, engramId],
+      (err, row: { title: string }) => {
+        if (err) {
+          return reject(err);
+        }
+
+        resolve(row?.title || "");
+      },
+    );
+  });
+}
+
 function getIdFromEngramTitle({ repoId, engramTitle }: { repoId: string; engramTitle: string }): Promise<string> {
   return new Promise((resolve, reject) => {
     db.get(
@@ -247,7 +265,7 @@ function getIdFromEngramTitle({ repoId, engramTitle }: { repoId: string; engramT
   });
 }
 
-function createEngram({ repoId, engramTitle }: CreateEngramOptions): Promise<string> {
+function createEngram({ repoId, engramTitle }: CreateEngramOptions): Promise<{ id: string; title: string }> {
   const engramId = nanoid(8);
   const blockId = nanoid(8);
   const engramsRow = [engramId, repoId, engramTitle];
@@ -265,142 +283,125 @@ function createEngram({ repoId, engramTitle }: CreateEngramOptions): Promise<str
         return reject(err);
       }
 
-      resolve(engramTitle);
+      resolve({ id: engramId, title: engramTitle });
     });
   });
 }
 
-function updateBlocks({
-  repoId,
-  engramTitle,
-  updatedBlocks,
-}: {
-  repoId: string;
-  engramTitle: string;
-  updatedBlocks: UpdatedBlocks;
-}) {
-  getIdFromEngramTitle({
-    repoId,
-    engramTitle,
-  }).then((engramId: string) => {
-    db.serialize(() => {
-      for (const blockId in updatedBlocks) {
-        const blockUpdate = updatedBlocks[blockId];
+function updateBlocks({ engramId, updatedBlocks }: { engramId: string; updatedBlocks: UpdatedBlocks }) {
+  db.serialize(() => {
+    for (const blockId in updatedBlocks) {
+      const blockUpdate = updatedBlocks[blockId];
 
-        if ("orderNumber" in blockUpdate || "content" in blockUpdate) {
-          let query = "UPDATE blocks SET ";
-          const params = [];
+      if ("orderNumber" in blockUpdate || "content" in blockUpdate) {
+        let query = "UPDATE blocks SET ";
+        const params = [];
 
-          if ("orderNumber" in blockUpdate) {
-            query += "order_number = ?";
-            params.push(blockUpdate.orderNumber);
-          }
-          if ("content" in blockUpdate) {
-            query += ("orderNumber" in blockUpdate ? ", " : "") + "content = ?";
-            params.push(blockUpdate.content);
-          }
-
-          query += " WHERE id = ?";
-          params.push(blockId);
-          console.log(blockId, blockUpdate, query);
-
-          db.run(query, params, function (this: { changes: number }, err) {
-            if (err) {
-              throw err;
-            } else if (this.changes === 0) {
-              db.run(
-                `INSERT INTO blocks (id, engram_id, order_number, content) VALUES (?, ?, ?, ?);`,
-                [blockId, engramId, blockUpdate.orderNumber, blockUpdate.content],
-                (err) => {
-                  if (err) {
-                    throw err;
-                  }
-                },
-              );
-            }
-          });
-
-          if ("createdEngramLinks" in blockUpdate || "deletedEngramLinks" in blockUpdate) {
-            modifyBacklinks({
-              origin: blockId,
-              originEngramId: engramId,
-              dbVariable: db,
-              createdLinks: blockUpdate.createdEngramLinks || [],
-              deletedLinks: blockUpdate.deletedEngramLinks || [],
-            });
-          }
-        } else {
-          db.run(`DELETE FROM blocks WHERE id = ?`, [blockId], (err) => {
-            if (err) {
-              throw err;
-            }
-          });
-
-          if ("deletedEngramLinks" in blockUpdate) {
-            modifyBacklinks({
-              origin: blockId,
-              originEngramId: engramId,
-              dbVariable: db,
-              createdLinks: [],
-              deletedLinks: blockUpdate.deletedEngramLinks || [],
-            });
-          }
+        if ("orderNumber" in blockUpdate) {
+          query += "order_number = ?";
+          params.push(blockUpdate.orderNumber);
         }
-      }
-    });
-  });
-}
+        if ("content" in blockUpdate) {
+          query += ("orderNumber" in blockUpdate ? ", " : "") + "content = ?";
+          params.push(blockUpdate.content);
+        }
 
-function deleteEngram({ repoId, engramTitle }: { repoId: string; engramTitle: string }): Promise<void> {
-  return new Promise((resolve, reject) => {
-    getIdFromEngramTitle({
-      repoId,
-      engramTitle,
-    }).then((engramId: string) => {
-      db.serialize(() => {
-        db.run(
-          `UPDATE blocks SET content = REPLACE(content, '<engram-link targetid="${engramId}"></engram-link>', '') WHERE content LIKE '%<engram-link targetid="${engramId}"></engram-link>%'`,
-          function (err) {
-            if (err) {
-              return reject(err);
-            }
-          },
-        );
-        db.run(
-          `UPDATE blocks SET content = REPLACE(content, '<engram-link istag="true" targetid="${engramId}"></engram-link>', '') WHERE content LIKE '%<engram-link istag="true" targetid="${engramId}"></engram-link>%'`,
-          function (err) {
-            if (err) {
-              return reject(err);
-            }
-          },
-        );
-        db.run(
-          `DELETE FROM blocks WHERE engram_id IN (SELECT id FROM engrams WHERE repo_id = ? AND title = ?)`,
-          [repoId, engramTitle],
-          (err) => {
-            if (err) {
-              return reject(err);
-            }
-          },
-        );
-        db.run(`DELETE FROM engrams WHERE repo_id = ? AND title = ?`, [repoId, engramTitle], (err) => {
+        query += " WHERE id = ?";
+        params.push(blockId);
+        console.log(blockId, blockUpdate, query);
+
+        db.run(query, params, function (this: { changes: number }, err) {
           if (err) {
-            return reject(err);
+            throw err;
+          } else if (this.changes === 0) {
+            db.run(
+              `INSERT INTO blocks (id, engram_id, order_number, content) VALUES (?, ?, ?, ?);`,
+              [blockId, engramId, blockUpdate.orderNumber, blockUpdate.content],
+              (err) => {
+                if (err) {
+                  throw err;
+                }
+              },
+            );
           }
         });
 
-        resolve();
+        if ("createdEngramLinks" in blockUpdate || "deletedEngramLinks" in blockUpdate) {
+          modifyBacklinks({
+            origin: blockId,
+            originEngramId: engramId,
+            dbVariable: db,
+            createdLinks: blockUpdate.createdEngramLinks || [],
+            deletedLinks: blockUpdate.deletedEngramLinks || [],
+          });
+        }
+      } else {
+        db.run(`DELETE FROM blocks WHERE id = ?`, [blockId], (err) => {
+          if (err) {
+            throw err;
+          }
+        });
+
+        if ("deletedEngramLinks" in blockUpdate) {
+          modifyBacklinks({
+            origin: blockId,
+            originEngramId: engramId,
+            dbVariable: db,
+            createdLinks: [],
+            deletedLinks: blockUpdate.deletedEngramLinks || [],
+          });
+        }
+      }
+    }
+  });
+}
+
+function deleteEngram({ repoId, engramId }: { repoId: string; engramId: string }): Promise<void> {
+  return new Promise((resolve, reject) => {
+    db.serialize(() => {
+      db.run(
+        `UPDATE blocks SET content = REPLACE(content, '<engram-link targetid="${engramId}"></engram-link>', '') WHERE content LIKE '%<engram-link targetid="${engramId}"></engram-link>%'`,
+        function (err) {
+          if (err) {
+            return reject(err);
+          }
+        },
+      );
+      db.run(
+        `UPDATE blocks SET content = REPLACE(content, '<engram-link istag="true" targetid="${engramId}"></engram-link>', '') WHERE content LIKE '%<engram-link istag="true" targetid="${engramId}"></engram-link>%'`,
+        function (err) {
+          if (err) {
+            return reject(err);
+          }
+        },
+      );
+      db.run(
+        `DELETE FROM blocks WHERE engram_id IN (SELECT id FROM engrams WHERE repo_id = ? AND id = ?)`,
+        [repoId, engramId],
+        (err) => {
+          if (err) {
+            return reject(err);
+          }
+        },
+      );
+      db.run(`DELETE FROM engrams WHERE repo_id = ? AND id = ?`, [repoId, engramId], (err) => {
+        if (err) {
+          return reject(err);
+        }
       });
+
+      resolve();
     });
   });
 }
 
 export default {
   init,
-  getEngramTitles,
+  getEngramIdsAndTitles,
   getBlockRows,
   renameEngram,
   getMetadataToDisplayEngramLink,
+  getTitleFromEngramId,
   getIdFromEngramTitle,
   createEngram,
   updateBlocks,

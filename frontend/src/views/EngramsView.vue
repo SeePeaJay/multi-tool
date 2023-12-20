@@ -6,13 +6,13 @@ import createAxiosInstance from "../utils/axios";
 const router = useRouter();
 const axiosInstance = createAxiosInstance(router);
 
-const engramTitles = ref<string[]>([]);
+const engramIdsAndTitles = ref<{ id: string; title: string }[]>([]);
 
 onMounted(async () => {
   try {
     const engramsResponse = await axiosInstance("/api/engrams");
 
-    engramTitles.value = engramsResponse.data;
+    engramIdsAndTitles.value = engramsResponse.data;
 
     console.log(engramsResponse);
   } catch (err) {
@@ -39,13 +39,13 @@ onMounted(async () => {
           </th>
           <th>Title</th>
         </tr>
-        <tr v-for="title in engramTitles" :key="title">
+        <tr v-for="engramIdAndTitle in engramIdsAndTitles" :key="engramIdAndTitle.id">
           <td style="text-align: center">
             <input type="checkbox" />
           </td>
           <td style="text-align: center">
-            <router-link :to="`/engrams/${title}`">
-              {{ title }}
+            <router-link :to="`/engrams/${engramIdAndTitle.id}`">
+              {{ engramIdAndTitle.title }}
             </router-link>
           </td>
         </tr>

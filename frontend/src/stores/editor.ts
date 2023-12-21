@@ -1,10 +1,9 @@
 import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
 import { defineStore } from "pinia";
 import axios from "axios";
 import type { AxiosInstance } from "axios";
 import { useDebounceFn } from "@vueuse/core";
-import { getPostPayload, getRenamePayload } from "@/utils/update-engram-helpers";
+import { getBlocksUpdatePayload, getRenamePayload } from "@/utils/update-engram-helpers";
 
 interface FetchEngramOptions {
   engramId: string;
@@ -12,14 +11,11 @@ interface FetchEngramOptions {
 }
 
 export const useEditorStore = defineStore("editor", () => {
-  const router = useRouter();
   const debounceUpdate = useDebounceFn(async (axiosInstance: AxiosInstance) => {
-    const payload = getPostPayload(blocksBeforeUpdate.value, blocks.value);
-
     await axiosInstance({
       method: "POST",
       url: `/api/engrams/${engramId.value}`,
-      data: payload,
+      data: getBlocksUpdatePayload(blocksBeforeUpdate.value, blocks.value),
     });
 
     setBlocksBeforeUpdate("");

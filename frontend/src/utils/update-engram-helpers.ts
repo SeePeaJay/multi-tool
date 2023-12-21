@@ -90,7 +90,7 @@ function getModifiedEngramLinks({
   return { deletedEngramLinks, createdEngramLinks };
 }
 
-export function getPostPayload(blocksPreUpdate: string, blocks: string) {
+export function getBlocksUpdatePayload(blocksPreUpdate: string, blocks: string) {
   const blocksArrayPreUpdate = getBlocksArray(blocksPreUpdate);
   const blocksArray = getBlocksArray(blocks);
 

@@ -52,8 +52,6 @@ app.get("/api", (req: Request, res: Response) => {
 app.post("/api/login", (req: Request, res: Response) => {
   verifyGoogleToken(req.headers.authorization?.split(" ")[1] || "")
     .then((userId) => {
-      // console.log(userId);
-
       if (req.session) {
         req.session.userId = userId;
       }

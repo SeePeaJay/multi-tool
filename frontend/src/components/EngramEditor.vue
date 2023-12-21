@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, watch } from "vue";
+import { watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import { useEditorStore } from "@/stores/editor";
@@ -85,14 +85,6 @@ const blocksEditor = useEditor({
       });
     }
   },
-});
-
-onMounted(async () => {
-  // const axiosInstance = createAxiosInstance(router);
-  // await axiosInstance("/api/engrams/yd9lG-fL/display");
-  // blocksEditor.value?.commands.setContent(
-  //   "<p>testtesttest <engram-link targetid='z6uunNPF' isanchor='true'></engram-link></p>",
-  // );
 });
 
 watch(

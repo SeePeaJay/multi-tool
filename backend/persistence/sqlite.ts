@@ -20,7 +20,7 @@ interface CreateEngramOptions {
   repoId: string;
   engramTitle: string;
 }
-interface UpdateEngramTitleOptions {
+interface RenameEngramOptions {
   repoId: string;
   engramId: string;
   newEngramTitle: string;
@@ -189,7 +189,7 @@ function renameEngram({
   newEngramTitle,
   createdEngramLinks,
   deletedEngramLinks,
-}: UpdateEngramTitleOptions) {
+}: RenameEngramOptions) {
   return new Promise((resolve, reject) => {
     db.serialize(() => {
       db.run("UPDATE engrams SET title = ? WHERE repo_id = ? AND id = ?", [newEngramTitle, repoId, engramId], (err) => {

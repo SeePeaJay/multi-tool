@@ -34,14 +34,22 @@ await editorStore.fetchEngram({
 /* Editor setup */
 const titleEditor = useEditor({
   content: editorStore.title,
-  extensions: [ModifiedStarterKit, TitleDocument, HeadingWithId, ParagraphWithId, AutoLink, BlockPlaceholder],
+  extensions: [
+    ModifiedStarterKit,
+    TitleDocument,
+    HeadingWithId,
+    ParagraphWithId,
+    EngramLink,
+    AutoLink,
+    BlockPlaceholder,
+  ],
   editable: editorStore.titleIsEditable,
   onUpdate({ editor }) {
     if (editor.isFocused) {
       // clicking on the engram link title (which updates the title) can trigger this function, so the check is necessary to distinguish
 
       const pendingTitle =
-        new DOMParser().parseFromString(editor.getHTML(), "text/html").body.firstElementChild?.textContent || "";
+        new DOMParser().parseFromString(editor.getHTML(), "text/html").body.firstElementChild?.innerHTML || "";
       editorStore.setPendingTitle(pendingTitle);
     }
   },
@@ -83,7 +91,7 @@ onMounted(async () => {
   // const axiosInstance = createAxiosInstance(router);
   // await axiosInstance("/api/engrams/yd9lG-fL/display");
   // blocksEditor.value?.commands.setContent(
-  //   "<p>testtesttest <engram-link targetid='Y0vy7332' isanchor='true'></engram-link></p>",
+  //   "<p>testtesttest <engram-link targetid='z6uunNPF' isanchor='true'></engram-link></p>",
   // );
 });
 

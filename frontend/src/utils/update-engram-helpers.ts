@@ -47,8 +47,8 @@ function getModifiedEngramLinks({
 }: {
   blockPreUpdate: string;
   block: string;
-  blocksPreUpdate: string;
-  blocks: string;
+  blocksPreUpdate?: string;
+  blocks?: string;
 }) {
   const blockDocPreUpdate = parser.parseFromString(blockPreUpdate, "text/html");
   const blockDoc = parser.parseFromString(block, "text/html");
@@ -73,7 +73,7 @@ function getModifiedEngramLinks({
     .filter((engramLink) =>
       isModifiedBlockLinkUnique({
         modifiedLink: engramLink,
-        isLinkUnique: !blocks.replace(block, "").includes(engramLink),
+        isLinkUnique: blocks ? !blocks.replace(block, "").includes(engramLink) : true,
       }),
     );
   const createdEngramLinks = engramLinks
@@ -81,7 +81,7 @@ function getModifiedEngramLinks({
     .filter((engramLink) =>
       isModifiedBlockLinkUnique({
         modifiedLink: engramLink,
-        isLinkUnique: !blocksPreUpdate.replace(blockPreUpdate, "").includes(engramLink),
+        isLinkUnique: blocksPreUpdate ? !blocksPreUpdate.replace(blockPreUpdate, "").includes(engramLink) : true,
       }),
     );
 
@@ -90,7 +90,7 @@ function getModifiedEngramLinks({
   return { deletedEngramLinks, createdEngramLinks };
 }
 
-export function getPayload(blocksPreUpdate: string, blocks: string) {
+export function getPostPayload(blocksPreUpdate: string, blocks: string) {
   const blocksArrayPreUpdate = getBlocksArray(blocksPreUpdate);
   const blocksArray = getBlocksArray(blocks);
 
@@ -162,4 +162,17 @@ export function getPayload(blocksPreUpdate: string, blocks: string) {
   }
 
   return payload;
+}
+
+export function getRenamePayload(title: string, pendingTitle: string) {
+  const { createdEngramLinks, deletedEngramLinks } = getModifiedEngramLinks({
+    blockPreUpdate: title,
+    block: pendingTitle,
+  });
+
+  return {
+    newEngramTitle: pendingTitle,
+    ...(createdEngramLinks.length && { createdEngramLinks }),
+    ...(deletedEngramLinks.length && { deletedEngramLinks }),
+  };
 }

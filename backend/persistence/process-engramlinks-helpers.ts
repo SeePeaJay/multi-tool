@@ -15,8 +15,8 @@ function createBlockLink({
 }) {
   const blockId = nanoid(8);
   const blockLinkToCreate = `<p id="${blockId}"><engram-link ${
-    isTargetBlock ? 'isanchor="true"' : ""
-  } targetid="${linkTarget}"></engram-link></p>`;
+    isTargetBlock ? 'isanchor="true" ' : ""
+  }targetid="${linkTarget}"></engram-link></p>`;
 
   db.run(
     `

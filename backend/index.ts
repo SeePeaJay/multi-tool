@@ -159,6 +159,8 @@ app.put("/api/engrams/:engramId/rename", authCheck, async (req, res) => {
       repoId: req.session?.userId,
       engramId: req.params.engramId,
       newEngramTitle: req.body.newEngramTitle,
+      createdEngramLinks: req.body.createdEngramLinks,
+      deletedEngramLinks: req.body.deletedEngramLinks,
     });
 
     res.send(updatedTitle);

@@ -4,7 +4,7 @@ import { defineStore } from "pinia";
 import axios from "axios";
 import type { AxiosInstance } from "axios";
 import { useDebounceFn } from "@vueuse/core";
-import { getPayload } from "@/utils/post-engrams-helpers";
+import { getPostPayload, getRenamePayload } from "@/utils/update-engram-helpers";
 
 interface FetchEngramOptions {
   engramId: string;
@@ -14,7 +14,7 @@ interface FetchEngramOptions {
 export const useEditorStore = defineStore("editor", () => {
   const router = useRouter();
   const debounceUpdate = useDebounceFn(async (axiosInstance: AxiosInstance) => {
-    const payload = getPayload(blocksBeforeUpdate.value, blocks.value);
+    const payload = getPostPayload(blocksBeforeUpdate.value, blocks.value);
 
     await axiosInstance({
       method: "POST",
@@ -77,7 +77,7 @@ export const useEditorStore = defineStore("editor", () => {
         await axiosInstance({
           method: "PUT",
           url: `/api/engrams/${engramId.value}/rename`,
-          data: { newEngramTitle: pendingTitle.value },
+          data: getRenamePayload(title.value, pendingTitle.value),
         });
 
         setTitle(pendingTitle.value);

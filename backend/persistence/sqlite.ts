@@ -24,6 +24,8 @@ interface UpdateEngramTitleOptions {
   repoId: string;
   engramId: string;
   newEngramTitle: string;
+  createdEngramLinks?: string[];
+  deletedEngramLinks?: string[];
 }
 interface BlockUpdate {
   orderNumber?: number;
@@ -181,11 +183,29 @@ function getBlockRows({ repoId, engramId, engramTitle }: GetBlockRowsOptions): P
   });
 }
 
-function renameEngram({ repoId, engramId, newEngramTitle }: UpdateEngramTitleOptions) {
+function renameEngram({
+  repoId,
+  engramId,
+  newEngramTitle,
+  createdEngramLinks,
+  deletedEngramLinks,
+}: UpdateEngramTitleOptions) {
   return new Promise((resolve, reject) => {
-    db.run("UPDATE engrams SET title = ? WHERE repo_id = ? AND id = ?", [newEngramTitle, repoId, engramId], (err) => {
-      if (err) {
-        return reject(err);
+    db.serialize(() => {
+      db.run("UPDATE engrams SET title = ? WHERE repo_id = ? AND id = ?", [newEngramTitle, repoId, engramId], (err) => {
+        if (err) {
+          return reject(err);
+        }
+      });
+
+      if (createdEngramLinks || deletedEngramLinks) {
+        modifyBacklinks({
+          origin: engramId,
+          originEngramId: engramId,
+          dbVariable: db,
+          createdLinks: createdEngramLinks || [],
+          deletedLinks: deletedEngramLinks || [],
+        });
       }
 
       resolve(newEngramTitle);

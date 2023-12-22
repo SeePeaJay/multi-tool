@@ -112,7 +112,7 @@ watch(
   (newValue) => {
     if (newValue) {
       titleEditor.value?.commands.setContent(editorStore.title);
-      editorStore.setPendingTitle("");
+      editorStore.setPendingTitle(null);
       editorStore.setIsRevertingTitle(false);
     }
   },

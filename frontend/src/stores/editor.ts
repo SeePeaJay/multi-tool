@@ -1,4 +1,5 @@
 import { ref, computed } from "vue";
+import type { Ref } from "vue";
 import { defineStore } from "pinia";
 import axios from "axios";
 import type { AxiosInstance } from "axios";
@@ -23,7 +24,7 @@ export const useEditorStore = defineStore("editor", () => {
 
   const engramId = ref("");
   const title = ref("");
-  const pendingTitle = ref("");
+  const pendingTitle: Ref<string | null> = ref(null);
   const isRevertingTitle = ref(false);
   const blocks = ref("");
   const blocksBeforeUpdate = ref("");
@@ -42,8 +43,8 @@ export const useEditorStore = defineStore("editor", () => {
   function setTitle(newTitle: string) {
     title.value = newTitle;
   }
-  function setPendingTitle(newTitle: string) {
-    pendingTitle.value = newTitle;
+  function setPendingTitle(value: string | null) {
+    pendingTitle.value = value;
   }
   function setIsRevertingTitle(value: boolean) {
     isRevertingTitle.value = value;
@@ -77,9 +78,9 @@ export const useEditorStore = defineStore("editor", () => {
         });
 
         setTitle(pendingTitle.value);
-        setPendingTitle("");
-      } else {
-        setPendingTitle("");
+        setPendingTitle(null);
+      } else if (pendingTitle.value === "") {
+        setIsRevertingTitle(true);
       }
     } catch (err) {
       const axiosError = err as string;
@@ -108,7 +109,7 @@ export const useEditorStore = defineStore("editor", () => {
   function $reset() {
     engramId.value = "";
     title.value = "";
-    pendingTitle.value = "";
+    pendingTitle.value = null;
     isRevertingTitle.value = false;
     blocks.value = "";
     blocksBeforeUpdate.value = "";

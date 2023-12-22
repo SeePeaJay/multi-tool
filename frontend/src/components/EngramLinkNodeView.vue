@@ -31,8 +31,8 @@ export default {
 
   methods: {
     async goToEngram() {
-      if (this.node.attrs.targetId) {
-        await this.$router.push(`/engrams/${this.node.attrs.targetId}`);
+      if (this.node.attrs.targetTitleId) {
+        await this.$router.push(`/engrams/${this.node.attrs.targetTitleId}`);
       }
 
       if (this.node.attrs.isAnchor) {
@@ -56,6 +56,7 @@ export default {
       const displayResponse = await axiosInstance(`/api/engrams/${this.node.attrs.targetId}/display`);
       this.updateAttributes({
         ...(displayResponse.data.title && { targetTitle: displayResponse.data.title }),
+        ...(displayResponse.data.titleId && { targetTitleId: displayResponse.data.titleId }),
         ...(displayResponse.data.isAnchor && { isAnchor: displayResponse.data.isAnchor }),
         ...(displayResponse.data.anchorContent && { anchorContent: displayResponse.data.anchorContent }),
       });
@@ -65,6 +66,7 @@ export default {
       const idResponse = await axiosInstance(`/api/engrams/${this.node.attrs.targetTitle}/id`);
       this.updateAttributes({
         targetId: idResponse.data,
+        targetTitleId: idResponse.data,
       });
     }
   },

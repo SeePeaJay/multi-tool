@@ -222,9 +222,9 @@ export const EngramLink = Node.create({
       },
       targetTitle: {
         default: null,
-        parseHTML: (element) => {
-          return element.getAttribute("targettitle");
-        },
+      },
+      targetTitleId: {
+        default: null,
       },
       anchorContent: {
         default: null,

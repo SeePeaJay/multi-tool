@@ -216,18 +216,18 @@ function renameEngram({
 function getMetadataToDisplayEngramLink({ repoId, targetId }: { repoId: string; targetId: string }) {
   return new Promise((resolve, reject) => {
     db.get(
-      `SELECT title FROM engrams WHERE repo_id = ? AND id = ?`,
+      `SELECT id, title FROM engrams WHERE repo_id = ? AND id = ?`,
       [repoId, targetId],
-      (err, row: { title: string }) => {
+      (err, row: { id: string; title: string }) => {
         if (err) {
           return reject(err);
         }
 
         if (!row) {
           db.get(
-            `SELECT engrams.title, blocks.content FROM engrams JOIN blocks on engrams.id = blocks.engram_id WHERE engrams.repo_id = ? AND blocks.id = ?`,
+            `SELECT engrams.title, engrams.id, blocks.content FROM engrams JOIN blocks on engrams.id = blocks.engram_id WHERE engrams.repo_id = ? AND blocks.id = ?`,
             [repoId, targetId],
-            (err, row: { title: string; content: string }) => {
+            (err, row: { id: string; title: string; content: string }) => {
               if (err) {
                 return reject(err);
               }
@@ -237,6 +237,7 @@ function getMetadataToDisplayEngramLink({ repoId, targetId }: { repoId: string; 
               } else {
                 resolve({
                   title: row.title,
+                  titleId: row.id,
                   isAnchor: true,
                   anchorContent: new JSDOM(row.content).window.document.body.firstElementChild?.innerHTML,
                 });
@@ -246,6 +247,7 @@ function getMetadataToDisplayEngramLink({ repoId, targetId }: { repoId: string; 
         } else {
           resolve({
             title: row?.title || "",
+            titleId: row?.id,
           });
         }
       },

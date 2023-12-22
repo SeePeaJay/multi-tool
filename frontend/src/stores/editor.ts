@@ -36,6 +36,13 @@ export const useEditorStore = defineStore("editor", () => {
   const blocksAreEditable = computed(() => {
     return !["Multi-Tool"].includes(title.value);
   });
+  const pendingTitleIsBlockLink = computed(() => {
+    return (
+      new DOMParser()
+        .parseFromString(pendingTitle.value || "", "text/html")
+        .body.firstElementChild?.tagName.toLowerCase() === "engram-link"
+    );
+  });
 
   function setEngramId(currentEngramId: string) {
     engramId.value = currentEngramId;
@@ -70,7 +77,7 @@ export const useEditorStore = defineStore("editor", () => {
   }
   async function renameEngram(axiosInstance: AxiosInstance) {
     try {
-      if (pendingTitle.value && pendingTitle.value !== title.value) {
+      if (pendingTitle.value && pendingTitle.value !== title.value && !pendingTitleIsBlockLink.value) {
         await axiosInstance({
           method: "PUT",
           url: `/api/engrams/${engramId.value}/rename`,
@@ -79,7 +86,7 @@ export const useEditorStore = defineStore("editor", () => {
 
         setTitle(pendingTitle.value);
         setPendingTitle(null);
-      } else if (pendingTitle.value === "") {
+      } else if (pendingTitle.value === "" || pendingTitleIsBlockLink.value) {
         setIsRevertingTitle(true);
       }
     } catch (err) {

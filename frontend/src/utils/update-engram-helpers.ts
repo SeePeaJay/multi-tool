@@ -31,7 +31,13 @@ function IsNonTagLinkBlock(element: Element) {
   return element.parentNode?.children.length === 1 && element.parentNode?.textContent === "";
 }
 
-function isModifiedBlockLinkUnique({ modifiedLink, isLinkUnique }: { modifiedLink: string; isLinkUnique: boolean }) {
+function isModifiedBlockLinkUniqueInBlocks({
+  modifiedLink,
+  isLinkUnique,
+}: {
+  modifiedLink: string;
+  isLinkUnique: boolean;
+}) {
   if (modifiedLink.includes('istag="true"')) {
     return true;
   }
@@ -71,17 +77,17 @@ function getModifiedEngramLinks({
   const deletedEngramLinks = engramLinksPreUpdate
     .filter((engramLink) => !engramLinks.includes(engramLink))
     .filter((engramLink) =>
-      isModifiedBlockLinkUnique({
+      isModifiedBlockLinkUniqueInBlocks({
         modifiedLink: engramLink,
-        isLinkUnique: blocks ? !blocks.replace(block, "").includes(engramLink) : true,
+        isLinkUnique: blocks ? !blocks.replace(block, "").includes(engramLink) : false,
       }),
     );
   const createdEngramLinks = engramLinks
     .filter((engramLink) => !engramLinksPreUpdate.includes(engramLink))
     .filter((engramLink) =>
-      isModifiedBlockLinkUnique({
+      isModifiedBlockLinkUniqueInBlocks({
         modifiedLink: engramLink,
-        isLinkUnique: blocksPreUpdate ? !blocksPreUpdate.replace(blockPreUpdate, "").includes(engramLink) : true,
+        isLinkUnique: blocksPreUpdate ? !blocksPreUpdate.replace(blockPreUpdate, "").includes(engramLink) : false,
       }),
     );
 

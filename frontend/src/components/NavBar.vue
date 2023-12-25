@@ -31,14 +31,6 @@ async function logout() {
       >
         <i class="pi pi-database"></i>
       </RouterLink>
-      <RouterLink
-        v-if="userStore.userIsLoggedIn"
-        class="btn btn-sm btn-square"
-        :class="{ 'btn-ghost': $route.path !== '/engrams/Starred' }"
-        to="/engrams/Starred"
-      >
-        <i class="pi pi-star"></i>
-      </RouterLink>
     </div>
     <div class="right-icons">
       <button v-if="userStore.userIsLoggedIn" class="btn btn-sm btn-square btn-ghost" @click="logout">

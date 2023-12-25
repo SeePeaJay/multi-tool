@@ -85,23 +85,6 @@ app.get("/api/engrams", authCheck, async (req: Request, res: Response) => {
   }
 });
 
-app.get("/api/engrams/Starred", authCheck, async (req: Request, res: Response) => {
-  try {
-    const blockRows = await db.getBlockRows({
-      repoId: req.session?.userId,
-      engramTitle: "Starred",
-    });
-
-    res.send({
-      title: "Starred",
-      blocks: blockRows.map((row) => row.content),
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(500).send(err);
-  }
-});
-
 app.get("/api/engrams/:engramId", authCheck, async (req: Request, res: Response) => {
   try {
     const title = await db.getTitleFromEngramId({

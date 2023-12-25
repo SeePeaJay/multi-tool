@@ -166,8 +166,8 @@ function getBlockRows({ repoId, engramId, engramTitle }: GetBlockRowsOptions): P
     const params = [];
 
     if (repoId) {
-      query += ` WHERE engrams.repo_id = ? AND engrams.${engramTitle ? "title" : "id"} = ? ORDER BY order_number`;
-      params.push(...[repoId, engramTitle || engramId]);
+      query += ` WHERE engrams.repo_id = ? AND engrams.id = ? ORDER BY order_number`;
+      params.push(...[repoId, engramId]);
     } else {
       query += ` WHERE engrams.repo_id IS NULL AND engrams.title = ? ORDER BY order_number`;
       params.push(engramTitle);

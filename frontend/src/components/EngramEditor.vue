@@ -120,9 +120,9 @@ watch(
 </script>
 
 <template>
-  <editor-content :editor="titleEditor" />
+  <editor-content id="title-editor" :editor="titleEditor" />
   <MoreOptions v-if="editorStore.titleIsEditable" />
-  <editor-content :editor="blocksEditor" />
+  <editor-content id="blocks-editor" :editor="blocksEditor" />
 </template>
 
 <style lang="scss">

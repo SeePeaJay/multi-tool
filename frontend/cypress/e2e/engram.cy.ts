@@ -234,7 +234,6 @@ describe("Engram Test - Block References", () => {
     cy.reload();
 
     cy.get("#blocks-editor").contains("CPSC 404").click();
-    cy.wait(2000);
 
     cy.get("#title-editor").find("h1").contains("CPSC 404");
     cy.get("#title-editor").find("h1").contains("#UBC");
@@ -256,43 +255,70 @@ describe("Engram Test - Block References", () => {
     cy.get("#title-editor").find("h1").contains("CPSC 404");
     cy.get("#title-editor").find("h1").should("not.contain", "#UBC");
   });
+
+  // it("removes an anchor block link, which should remove a tag in block", () => {
+  //   cy.visit("/engrams");
+  //   cy.contains("a", "CPSC 404").click();
+  //   cy.get("#blocks-editor").type(" #Keypoint{}");
+  //   cy.wait(2000); // >= debounce timer
+  //   cy.reload();
+  //   cy.get("#blocks-editor").contains("Keypoint").click();
+  //   cy.get("#title-editor").find("h1").contains("Keypoint");
+  //   cy.get("#blocks-editor").find("button").should("have.length", 1);
+  //
+  //   cy.get("#blocks-editor [contenteditable]").first().click("right").type("{backspace}");
+  //   cy.wait(2000); // >= debounce timer
+  //   cy.reload();
+  //   cy.visit("/engrams");
+  //   cy.contains("a", "CPSC 404").click();
+  //   cy.get("#title-editor").find("h1").contains("CPSC 404");
+  //   cy.get("#blocks-editor").should("not.contain", "#Keypoint");
+  // });
 });
 
-// describe("Engram Test - Rename", () => {
-//   beforeEach(function () {
-//     cy.loginByGoogleApi();
-//   });
-//
-//   it("visits CCC", () => {
-//     cy.visit("/engrams");
-//   });
-//
-//   it("updates a block", () => {
-//     cy.visit("/engrams/Starred");
-//     cy.get("p").click();
-//     cy.get("p").type("Hello, World");
-//
-//     cy.wait(2000); // >= debounce timer
-//     cy.reload();
-//
-//     cy.contains("p", "Hello, World").should("exist");
-//
-//     // cy.get("p").click();
-//     // cy.get("p").type("{selectall}{del}");
-//   });
-//
-//   it("creates a link", () => {
-//     cy.visit("/engrams/Starred");
-//     cy.get("p").click();
-//     cy.get("p").type("*CCC{}");
-//
-//     cy.wait(2000); // >= debounce timer
-//     cy.reload();
-//
-//     cy.visit("/engrams");
-//     cy.contains("a", "CCC");
-//
-//     // cy.get("p").click();
-//     // cy.get("p").type("{selectall}{del}");
-//   });
-// });
+describe("Engram Test - Rename", () => {
+  beforeEach(function () {
+    cy.loginByGoogleApi();
+  });
+
+  it("renames an engram", () => {
+    cy.visit("/engrams");
+    cy.contains("a", "Keypoint").click();
+
+    cy.get("#title-editor").type("s{enter}");
+
+    cy.wait(2000); // >= debounce timer
+    cy.reload();
+
+    cy.get("#title-editor").find("h1").contains("Keypoints");
+  });
+});
+
+describe("Engram Test - Delete", () => {
+  beforeEach(function () {
+    cy.loginByGoogleApi();
+  });
+
+  it("deletes engrams", () => {
+    cy.visit("/engrams");
+    cy.contains("a", "Keypoints").click();
+    cy.get("#more-options").click();
+    cy.contains("Delete").click();
+    cy.contains("Confirm").click();
+    cy.contains("a", "Keypoints").should("not.exist");
+
+    cy.visit("/engrams");
+    cy.contains("a", "UBC").click();
+    cy.get("#more-options").click();
+    cy.contains("Delete").click();
+    cy.contains("Confirm").click();
+    cy.contains("a", "UBC").should("not.exist");
+
+    cy.visit("/engrams");
+    cy.contains("a", "CPSC 404").click();
+    cy.get("#more-options").click();
+    cy.contains("Delete").click();
+    cy.contains("Confirm").click();
+    cy.contains("a", "CPSC 404").should("not.exist");
+  });
+});

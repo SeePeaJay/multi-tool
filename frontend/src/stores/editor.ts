@@ -36,8 +36,8 @@ export const useEditorStore = defineStore("editor", () => {
   const blocksAreEditable = computed(() => {
     return !["Multi-Tool"].includes(title.value);
   });
-  const pendingTitleIsEngramLink = computed(() => {
-    const pendingTitleBody = new DOMParser().parseFromString(pendingTitle.value || "", "text/html").body;
+  const trimmedPendingTitleIsEngramLink = computed(() => {
+    const pendingTitleBody = new DOMParser().parseFromString(pendingTitle.value?.trim() || "", "text/html").body;
 
     return (
       Array.from(pendingTitleBody.childNodes).length === 1 &&
@@ -78,16 +78,22 @@ export const useEditorStore = defineStore("editor", () => {
   }
   async function renameEngram(axiosInstance: AxiosInstance) {
     try {
-      if (pendingTitle.value && pendingTitle.value !== title.value && !pendingTitleIsEngramLink.value) {
+      const trimmedPendingTitle = pendingTitle.value?.trim();
+
+      if (trimmedPendingTitle && trimmedPendingTitle !== title.value && !trimmedPendingTitleIsEngramLink.value) {
         await axiosInstance({
           method: "PUT",
           url: `/api/engrams/${engramId.value}/rename`,
-          data: getRenamePayload(title.value, pendingTitle.value),
+          data: getRenamePayload(title.value, trimmedPendingTitle),
         });
 
-        setTitle(pendingTitle.value);
+        setTitle(trimmedPendingTitle);
         setPendingTitle(null);
-      } else if (pendingTitle.value === "" || pendingTitleIsEngramLink.value) {
+      } else if (
+        trimmedPendingTitle === "" ||
+        (trimmedPendingTitle !== pendingTitle.value && trimmedPendingTitle === title.value) ||
+        trimmedPendingTitleIsEngramLink.value
+      ) {
         setIsRevertingTitle(true);
       }
     } catch (err) {

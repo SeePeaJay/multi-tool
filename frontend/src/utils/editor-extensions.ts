@@ -239,7 +239,7 @@ export const EngramLink = Node.create({
     ];
   },
   renderHTML({ HTMLAttributes }) {
-    const { targetTitle, anchorContent, ...renderedAttributes } = HTMLAttributes;
+    const { targetTitle, targetTitleId, anchorContent, ...renderedAttributes } = HTMLAttributes;
 
     return ["engram-link", renderedAttributes];
   },

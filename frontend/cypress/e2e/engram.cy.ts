@@ -232,24 +232,26 @@ describe("Engram Test - Block References", () => {
     cy.get("#title-editor").find("h1").should("not.contain", "#UBC");
   });
 
-  // it("removes an anchor block link, which should remove a tag in block", () => {
-  //   cy.visit("/engrams");
-  //   cy.contains("a", "CPSC 404").click();
-  //   cy.get("#blocks-editor").type(" #Keypoint{}");
-  //   cy.wait(2000); // >= debounce timer
-  //   cy.reload();
-  //   cy.get("#blocks-editor").contains("Keypoint").click();
-  //   cy.get("#title-editor").find("h1").contains("Keypoint");
-  //   cy.get("#blocks-editor").find("button").should("have.length", 1);
-  //
-  //   cy.get("#blocks-editor [contenteditable]").first().click("right").type("{backspace}");
-  //   cy.wait(2000); // >= debounce timer
-  //   cy.reload();
-  //   cy.visit("/engrams");
-  //   cy.contains("a", "CPSC 404").click();
-  //   cy.get("#title-editor").find("h1").contains("CPSC 404");
-  //   cy.get("#blocks-editor").should("not.contain", "#Keypoint");
-  // });
+  it("removes an anchor block link, which should remove a tag in block", () => {
+    cy.visit("/engrams");
+    cy.contains("a", "CPSC 404").click();
+    cy.get("#blocks-editor .tiptap").type(" #Keypoint{}");
+    cy.wait(2000); // >= debounce timer
+    cy.reload();
+    cy.get("#blocks-editor").contains("Keypoint").click();
+
+    cy.get("#title-editor").find("h1").contains("Keypoint");
+    cy.get("#blocks-editor").find("button").should("have.length", 1);
+
+    cy.get("#blocks-editor .tiptap").type("{backspace}");
+    cy.wait(2000); // >= debounce timer
+    cy.reload();
+    cy.visit("/engrams");
+    cy.contains("a", "CPSC 404").click();
+
+    cy.get("#title-editor").find("h1").contains("CPSC 404");
+    cy.get("#blocks-editor").should("not.contain", "#Keypoint");
+  });
 });
 
 describe("Engram Test - Rename", () => {

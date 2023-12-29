@@ -237,8 +237,6 @@ function getMetadataToDisplayEngramLink({ repoId, targetId }: { repoId: string; 
               } else {
                 resolve({
                   title: row.title,
-                  titleId: row.id,
-                  isAnchor: true,
                   anchorContent: new JSDOM(row.content).window.document.body.firstElementChild?.innerHTML,
                 });
               }
@@ -247,7 +245,6 @@ function getMetadataToDisplayEngramLink({ repoId, targetId }: { repoId: string; 
         } else {
           resolve({
             title: row?.title || "",
-            titleId: row?.id,
           });
         }
       },

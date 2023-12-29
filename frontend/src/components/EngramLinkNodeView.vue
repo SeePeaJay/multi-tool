@@ -21,7 +21,9 @@ export default {
       if (this.node.attrs.targetTitle) {
         return (
           this.node.attrs.targetTitle +
-          (this.node.attrs.isAnchor ? ` :: ${this.node.attrs.anchorContent.slice(0, 20)} ...` : "")
+          (this.node.attrs.targetId !== this.node.attrs.targetTitleId
+            ? ` :: ${this.node.attrs.anchorContent.slice(0, 20)} ...`
+            : "")
         );
       }
 
@@ -35,7 +37,7 @@ export default {
         await this.$router.push(`/engrams/${this.node.attrs.targetTitleId}`);
       }
 
-      if (this.node.attrs.isAnchor) {
+      if (this.node.attrs.targetId !== this.node.attrs.targetTitleId) {
         setTimeout(() => {
           const element = document.getElementById(this.node.attrs.targetId);
 
@@ -56,8 +58,6 @@ export default {
       const displayResponse = await axiosInstance(`/api/engrams/${this.node.attrs.targetId}/display`);
       this.updateAttributes({
         ...(displayResponse.data.title && { targetTitle: displayResponse.data.title }),
-        ...(displayResponse.data.titleId && { targetTitleId: displayResponse.data.titleId }),
-        ...(displayResponse.data.isAnchor && { isAnchor: displayResponse.data.isAnchor }),
         ...(displayResponse.data.anchorContent && { anchorContent: displayResponse.data.anchorContent }),
       });
     } else if (this.node.attrs.targetTitle && !this.node.attrs.targetId) {

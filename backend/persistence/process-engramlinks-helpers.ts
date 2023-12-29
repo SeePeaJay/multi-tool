@@ -7,16 +7,14 @@ let db: sqlite3.Database;
 function createBlockLink({
   linkLocation,
   linkTarget,
-  isTargetBlock,
+  targetEngramId,
 }: {
   linkLocation: string | null | undefined;
   linkTarget: string;
-  isTargetBlock: boolean;
+  targetEngramId: string;
 }) {
   const blockId = nanoid(8);
-  const blockLinkToCreate = `<p id="${blockId}"><engram-link ${
-    isTargetBlock ? 'isanchor="true" ' : ""
-  }targetid="${linkTarget}"></engram-link></p>`;
+  const blockLinkToCreate = `<p id="${blockId}"><engram-link targetid="${linkTarget}" targettitleid="${targetEngramId}"></engram-link></p>`;
 
   db.run(
     `
@@ -41,7 +39,7 @@ function createTag({
 }) {
   const tableName = isLocationBlock ? "blocks" : "engrams";
   const columnName = isLocationBlock ? "content" : "title";
-  const tagToCreate = `<engram-link istag="true" targetid="${tagTarget}"></engram-link>`;
+  const tagToCreate = `<engram-link istag="true" targetid="${tagTarget}" targettitleid="${tagTarget}"></engram-link>`;
 
   if (tableName === "blocks") {
     db.get(`SELECT content FROM blocks WHERE id = ?`, [tagLocation], function (err, row: { content: string }) {
@@ -85,18 +83,15 @@ function createTag({
 function deleteBlockLink({
   linkLocation,
   linkTarget,
+  targetEngramId,
 }: {
   linkLocation: string | null | undefined;
   linkTarget: string;
+  targetEngramId: string;
 }) {
-  const blockLinksToDelete = [
-    `<engram-link isanchor="true" targetid="${linkTarget}"></engram-link>`,
-    `<engram-link targetid="${linkTarget}"></engram-link>`,
-  ];
+  const blockLinkToDelete = `<engram-link targetid="${linkTarget}" targettitleid="${targetEngramId}"></engram-link>`;
 
-  blockLinksToDelete.forEach((link) => {
-    db.run(`DELETE FROM blocks WHERE engram_id = ? AND content LIKE ?`, [linkLocation, `%${link}%`]);
-  });
+  db.run(`DELETE FROM blocks WHERE engram_id = ? AND content LIKE ?`, [linkLocation, `%${blockLinkToDelete}%`]);
 }
 
 function deleteTag({
@@ -108,10 +103,9 @@ function deleteTag({
   isLocationBlock: boolean;
   tagTarget: string;
 }) {
-  const tagToDelete = `<engram-link istag="true" targetid="${tagTarget}"></engram-link>`;
+  const tagToDelete = `<engram-link istag="true" targetid="${tagTarget}" targettitleid="${tagTarget}"></engram-link>`;
   const tableName = isLocationBlock ? "blocks" : "engrams";
   const columnName = isLocationBlock ? "content" : "title";
-  console.log(tagLocation);
 
   db.run(`UPDATE ${tableName} SET ${columnName} = REPLACE(${columnName}, ?, '') WHERE id = ?`, [
     tagToDelete,
@@ -137,12 +131,12 @@ function createBacklinks({
       createBlockLink({
         linkLocation: createdLinkTarget,
         linkTarget: origin,
-        isTargetBlock: origin !== originEngramId,
+        targetEngramId: originEngramId,
       });
     } else {
       createTag({
         tagLocation: createdLinkTarget,
-        isLocationBlock: createdLink?.hasAttribute("isanchor") || false,
+        isLocationBlock: createdLink?.getAttribute("targetid") !== createdLink?.getAttribute("targettitleid") || false,
         tagTarget: originEngramId,
       });
     }
@@ -166,11 +160,11 @@ function deleteBacklinks({
     console.log(deletedLinkTarget);
 
     if (deletedLink?.hasAttribute("istag")) {
-      deleteBlockLink({ linkLocation: deletedLinkTarget, linkTarget: origin });
+      deleteBlockLink({ linkLocation: deletedLinkTarget, linkTarget: origin, targetEngramId: originEngramId });
     } else {
       deleteTag({
         tagLocation: deletedLinkTarget,
-        isLocationBlock: deletedLink?.hasAttribute("isanchor") || false,
+        isLocationBlock: deletedLink?.getAttribute("targetid") !== deletedLink?.getAttribute("targettitleid") || false,
         tagTarget: originEngramId,
       });
     }

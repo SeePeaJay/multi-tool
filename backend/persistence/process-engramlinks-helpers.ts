@@ -55,7 +55,6 @@ function createTag({
       element?.appendChild(engramLinkElement);
 
       const updatedContent = element?.outerHTML;
-      console.log(updatedContent);
 
       db.run(
         `UPDATE blocks SET content = ? WHERE id = ? AND content NOT LIKE ?`,
@@ -156,8 +155,6 @@ function deleteBacklinks({
     const dom = new JSDOM(deletedLinkString);
     const deletedLink = dom.window.document.body.firstElementChild;
     const deletedLinkTarget = deletedLink?.getAttribute("targetid");
-
-    console.log(deletedLinkTarget);
 
     if (deletedLink?.hasAttribute("istag")) {
       deleteBlockLink({ linkLocation: deletedLinkTarget, linkTarget: origin, targetEngramId: originEngramId });

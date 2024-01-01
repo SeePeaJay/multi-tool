@@ -13,8 +13,6 @@ onMounted(async () => {
     const engramsResponse = await axiosInstance("/api/engrams");
 
     engramIdsAndTitles.value = engramsResponse.data;
-
-    console.log(engramsResponse);
   } catch (err) {
     console.error(err);
   }

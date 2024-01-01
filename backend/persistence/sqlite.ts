@@ -327,7 +327,6 @@ function updateBlocks({ engramId, updatedBlocks }: { engramId: string; updatedBl
 
         query += " WHERE id = ?";
         params.push(blockId);
-        console.log(blockId, blockUpdate, query);
 
         db.run(query, params, function (this: { changes: number }, err) {
           if (err) {

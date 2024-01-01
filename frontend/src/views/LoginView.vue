@@ -16,8 +16,6 @@ const axiosInstance = createAxiosInstance(router);
 
 async function handleCredentialResponse(credentialResponse: CredentialResponse) {
   try {
-    // console.log(credentialResponse.credential);
-
     const loginResponse = await axiosInstance({
       method: "POST",
       url: "/api/login",

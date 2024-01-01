@@ -91,8 +91,6 @@ function getModifiedEngramLinks({
       }),
     );
 
-  console.log(deletedEngramLinks, createdEngramLinks);
-
   return { deletedEngramLinks, createdEngramLinks };
 }
 

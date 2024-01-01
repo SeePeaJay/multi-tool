@@ -12,8 +12,13 @@ import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { VueNodeViewRenderer } from "@tiptap/vue-3";
 import { Plugin } from "prosemirror-state";
+import type { Fragment } from "prosemirror-model";
 import { nanoid } from "nanoid";
 import EngramLinkNodeView from "../components/EngramLinkNodeView.vue";
+
+interface ExtendedFragment extends Fragment {
+  content: any;
+}
 
 function getBlockIdForBlockTypeChange(oldBlockIds: string[], newBlockIds: string[]) {
   /* If lengths are different, then current transaction should not change the block type (should create a new block with no content) */
@@ -95,8 +100,8 @@ export const BlockId = Node.create({
           const tr = newState.tr;
           const visitedBlockIds: Record<string, boolean> = {};
 
-          const blockIdsBeforeInput = oldState.doc.content.content.map((block: any) => block.attrs.blockId);
-          const blockIdsRightAfterInput = newState.doc.content.content.map((block: any) => block.attrs.blockId);
+          const blockIdsBeforeInput = (oldState.doc.content as ExtendedFragment).content.map((block: any) => block.attrs.blockId);
+          const blockIdsRightAfterInput = (newState.doc.content as ExtendedFragment).content.map((block: any) => block.attrs.blockId);
           const blockIdForBlockTypeChange = getBlockIdForBlockTypeChange(blockIdsBeforeInput, blockIdsRightAfterInput);
 
           newState.doc.descendants((node, pos, parent) => {

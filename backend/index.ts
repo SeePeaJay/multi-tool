@@ -3,6 +3,7 @@ dotenv.config();
 
 import express, { Express, NextFunction, Request, Response } from "express";
 import cors from "cors";
+import path from "path";
 import cookieSession from "cookie-session";
 import { OAuth2Client } from "google-auth-library";
 import db from "./persistence/sqlite";
@@ -38,7 +39,8 @@ app.use(
     maxAge: 60 * 60 * 1000,
   }),
 );
-app.use(express.json()); // makes req.body available
+app.use(express.json()); // make req.body available
+app.use(express.static(path.join(__dirname, '../frontend/dist'))); // serve Vue static files for production when users access root
 
 app.get("/api", (req: Request, res: Response) => {
   db.getBlockRows({ engramTitle: "Multi-Tool" }).then((rows) => {
@@ -203,6 +205,11 @@ app.get("/api/logout", (req, res) => {
   res.clearCookie("session");
 
   res.status(200).end();
+});
+
+/* This is needed for production in case users refresh at any route except root */
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 });
 
 db.init().then(() => {

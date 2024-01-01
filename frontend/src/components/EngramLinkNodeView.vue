@@ -5,7 +5,7 @@
   </node-view-wrapper>
 </template>
 
-<script>
+<script lang="ts">
 import { nodeViewProps, NodeViewWrapper } from "@tiptap/vue-3";
 import createAxiosInstance from "@/utils/axios";
 

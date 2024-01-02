@@ -1,6 +1,6 @@
 import sqlite3 from "sqlite3";
 import fs from "fs";
-import path from "path";
+import path, { dirname } from "path";
 import { JSDOM } from "jsdom";
 import { nanoid } from "nanoid";
 import modifyBacklinks from "./process-engramlinks-helpers";
@@ -42,7 +42,7 @@ let db: sqlite3.Database;
 
 function getDefaultRows() {
   try {
-    const html = fs.readFileSync(path.resolve(__dirname, "./multi-tool.html"), "utf8");
+    const html = fs.readFileSync(path.join(process.env.PWD || "", "/persistence/multi-tool.html"), "utf8");
     const dom = new JSDOM(html);
     const htmlElements = Array.from(dom.window.document.body.children).map((child: Element) => child.outerHTML);
 
@@ -75,7 +75,7 @@ function getDefaultRows() {
 
 function init(): Promise<void> {
   /* Create directory if missing */
-  const dirName = path.dirname(location);
+  const dirName = path.dirname(path.join(process.env.PWD || "", location));
   if (!fs.existsSync(dirName)) {
     fs.mkdirSync(dirName, { recursive: true });
   }

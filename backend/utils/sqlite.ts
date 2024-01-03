@@ -42,7 +42,7 @@ let db: sqlite3.Database;
 
 function getDefaultRows() {
   try {
-    const html = fs.readFileSync(path.join(process.env.PWD || "", "/persistence/multi-tool.html"), "utf8");
+    const html = fs.readFileSync(path.join(process.env.PWD || "", "/utils/multi-tool.html"), "utf8");
     const dom = new JSDOM(html);
     const htmlElements = Array.from(dom.window.document.body.children).map((child: Element) => child.outerHTML);
 

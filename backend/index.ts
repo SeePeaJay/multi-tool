@@ -6,7 +6,7 @@ import cors from "cors";
 import path, { dirname } from "path";
 import cookieSession from "cookie-session";
 import { OAuth2Client } from "google-auth-library";
-import db from "./persistence/sqlite";
+import db from "./utils/sqlite";
 
 const app: Express = express();
 const port = process.env.PORT;

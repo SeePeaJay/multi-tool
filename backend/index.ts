@@ -3,7 +3,7 @@ dotenv.config();
 
 import express, { Express, NextFunction, Request, Response } from "express";
 import cors from "cors";
-import path, { dirname } from "path";
+import path from "path";
 import cookieSession from "cookie-session";
 import { OAuth2Client } from "google-auth-library";
 import db from "./utils/sqlite";

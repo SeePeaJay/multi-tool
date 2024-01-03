@@ -1,6 +1,6 @@
 import sqlite3 from "sqlite3";
 import fs from "fs";
-import path, { dirname } from "path";
+import path from "path";
 import { JSDOM } from "jsdom";
 import { nanoid } from "nanoid";
 import modifyBacklinks from "./process-engramlinks-helpers";

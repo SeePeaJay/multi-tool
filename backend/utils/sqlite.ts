@@ -37,7 +37,7 @@ type UpdatedBlocks = {
   [id: string]: BlockUpdate;
 };
 
-const location = process.env.SQLITE_DB_LOCATION || "db/test.db";
+const location = process.env.SQLITE_DB_LOCATION || "db/multi-tool.db";
 let db: sqlite3.Database;
 
 function getDefaultRows() {

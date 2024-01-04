@@ -1,0 +1,50 @@
+name: Run Tests on main commit
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  run_tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies, create env file, and build frontend
+        run: |
+          cd frontend
+          npm install
+          echo "VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+          npm run build
+
+      - name: Install dependencies, create env file, and build backend
+        run: |
+          cd backend
+          npm install
+          echo "PORT=${{ secrets.PORT }}" >> .env
+          echo "SQLITE_DB_LOCATION=${{ secrets.SQLITE_DB_LOCATION }}" >> .env
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+          npm run build
+
+      - name: Create Cypress env file
+        run: |
+          cd frontend
+          echo '{
+            "googleClientId": "${{ secrets.GOOGLE_CLIENT_ID }}",
+            "googleClientSecret": "${{ secrets.GOOGLE_CLIENT_SECRET }}",
+            "googleRefreshToken": "${{ secrets.GOOGLE_REFRESH_TOKEN }}"
+          }' > cypress.env.json
+
+      - name: Start backend server
+        run: |
+          cd backend
+          npm run start &
+
+      - name: Wait for server to start and run tests
+        run: |
+          cd backend
+          npx wait-on http://localhost:8000 && cd ../frontend && npm run test:e2e --verbose

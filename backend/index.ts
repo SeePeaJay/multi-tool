@@ -36,7 +36,7 @@ app.use(
   cookieSession({
     name: "session",
     keys: ["secret"],
-    maxAge: 60 * 60 * 1000,
+    maxAge: 24 * 60 * 60 * 1000,
   }),
 );
 app.use(express.json()); // make req.body available

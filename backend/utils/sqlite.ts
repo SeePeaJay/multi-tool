@@ -40,39 +40,6 @@ type UpdatedBlocks = {
 const location = process.env.SQLITE_DB_LOCATION || "db/multi-tool.db";
 let db: sqlite3.Database;
 
-function getDefaultRows() {
-  try {
-    const html = fs.readFileSync(path.join(process.env.PWD || "", "/utils/multi-tool.html"), "utf8");
-    const dom = new JSDOM(html);
-    const htmlElements = Array.from(dom.window.document.body.children).map((child: Element) => child.outerHTML);
-
-    const engramId = nanoid(8);
-    const defaultRows = [];
-
-    for (let i = 0; i < htmlElements.length; i++) {
-      const dom = new JSDOM(htmlElements[i]);
-      const targetElement = dom.window.document.body.firstElementChild;
-
-      if (i === 0) {
-        defaultRows.push([engramId, targetElement?.textContent || htmlElements[i]]);
-      } else {
-        const blockId = nanoid(8);
-
-        if (targetElement) {
-          targetElement.id = blockId;
-        }
-
-        defaultRows.push([blockId, engramId, i, targetElement?.outerHTML || htmlElements[i]]);
-      }
-    }
-
-    return defaultRows;
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
-}
-
 function init(): Promise<void> {
   /* Create directory if missing */
   const dirName = path.dirname(path.join(process.env.PWD || "", location));
@@ -85,8 +52,6 @@ function init(): Promise<void> {
     db = new sqlite3.Database(location, (err) => {
       if (err) return reject(err);
 
-      const defaultRows = getDefaultRows();
-
       /* Create engrams table and insert default row if it's missing */
       db.run(
         `CREATE TABLE IF NOT EXISTS engrams (id TEXT(8) PRIMARY KEY, repo_id TEXT(8), title TEXT NOT NULL, CONSTRAINT unique_title_per_repo UNIQUE (repo_id, title))`,
@@ -94,16 +59,6 @@ function init(): Promise<void> {
           if (err) {
             return reject(err);
           }
-
-          db.run(
-            "INSERT INTO engrams (id, repo_id, title) SELECT ?, NULL, ? WHERE NOT EXISTS(SELECT 1 FROM engrams)",
-            defaultRows[0],
-            (err) => {
-              if (err) {
-                return reject(err);
-              }
-            },
-          );
         },
       );
 
@@ -113,31 +68,7 @@ function init(): Promise<void> {
         (err) => {
           if (err) return reject(err);
 
-          db.get("SELECT COUNT(*) as count FROM blocks", (err, row: { count: number }) => {
-            if (err) return reject(err);
-
-            if (row.count === 0) {
-              const defaultBlockRows = defaultRows.slice(1);
-
-              db.serialize(() => {
-                const statement = db.prepare(
-                  "INSERT INTO blocks (id, engram_id, order_number, content) VALUES (?, ?, ?, ?)",
-                );
-
-                defaultBlockRows.forEach((row) => {
-                  statement.run(row, function (err) {
-                    if (err) {
-                      return console.error(err.message);
-                    }
-                    console.log(`Row inserted ${this.lastID}`);
-                  });
-                });
-                statement.finalize();
-              });
-            }
-
-            resolve();
-          });
+          resolve();
         },
       );
     });

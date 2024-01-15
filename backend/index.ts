@@ -6,6 +6,8 @@ import cors from "cors";
 import path from "path";
 import cookieSession from "cookie-session";
 import { OAuth2Client } from "google-auth-library";
+import fs from "fs";
+import { JSDOM } from "jsdom";
 import db from "./utils/sqlite";
 
 const app: Express = express();
@@ -43,11 +45,13 @@ app.use(express.json()); // make req.body available
 app.use(express.static(path.join(process.env.PWD || "", "../frontend/dist"))); // serve Vue static files for production when users access root
 
 app.get("/api", (req: Request, res: Response) => {
-  db.getBlockRows({ engramTitle: "Multi-Tool" }).then((rows) => {
-    res.send({
-      title: "Multi-Tool",
-      blocks: rows.map((row) => row.content),
-    });
+  const html = fs.readFileSync(path.join(process.env.PWD || "", "/utils/multi-tool.html"), "utf8");
+  const dom = new JSDOM(html);
+  const htmlElements = Array.from(dom.window.document.body.children).map((child: Element) => child.outerHTML);
+
+  res.send({
+    title: "Multi-Tool",
+    blocks: htmlElements.slice(1),
   });
 });
 
@@ -208,8 +212,8 @@ app.get("/api/logout", (req, res) => {
 });
 
 /* This is needed for production in case users refresh at any route except root */
-app.get('*', (req, res) => {
-  res.sendFile(path.join(process.env.PWD || "", '../frontend/dist/index.html'));
+app.get("*", (req, res) => {
+  res.sendFile(path.join(process.env.PWD || "", "../frontend/dist/index.html"));
 });
 
 db.init().then(() => {

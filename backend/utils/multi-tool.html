@@ -8,13 +8,20 @@
 <body>
   <h1>Multi-Tool</h1>
   <p><a href="https://github.com/SeePeaJay/multi-tool" target="_blank">Github Link</a></p>
-  <p>Multi-Tool is an (experimental) personal note-taking application.</p>
+  <p>Multi-Tool is an experimental block-based note-taking application.</p>
   <h2>Features</h2>
   <h3>Block Reference</h3>
-  <p id="11111111">Every block comes with a unique identifier that can be referenced individually.</p>
+  <p>Sometimes users may want to <strong>directly reference a particular block to provide additional context</strong>. This feature facilitates that need.</p>
   <h3>Bi-Directional Linking</h3>
-  <p>Whenever a user assigns a tag to a block, the application automatically creates a corresponding backlink on the referenced page. This backlink points back to the original block where the tag was added.</p>
-  <p>This makes it easy to summarize/aggregate information from various backlinks that share the same topic.</p>
+  <p>Sometimes users may want to tag blocks that are important. For example, they may want to tag a block containing:</p>
+  <ul>
+    <li>term definitions (in which case the tag can just be the term - see below example gif)</li>
+    <li>key points that are worth highlighting</li>
+    <li>questions that require further investigation </li>
+  </ul>
+  <p>In such cases, the application generates a backlink in the page referenced by the tag. This backlink points back to the block where the tag was originally added.</p>
+  <ul><li><img src="https://i.imgur.com/0L9kEjC.gif" alt=""></li></ul>
+  <p>Because <strong>these backlinks are designed to be physically part of the note</strong> (meaning they can be moved around freely in the page), users can organize them based on the topics they share and review them more effectively.</p>
   <h3>And hopefully more to come ...</h3>
 </body>
 </html>

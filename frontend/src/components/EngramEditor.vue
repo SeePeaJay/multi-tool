@@ -18,6 +18,7 @@ import {
   HorizontalRuleWithId,
   EngramLink,
   AutoLink,
+  InlineImage,
   BlockPlaceholder,
 } from "@/utils/editor-extensions";
 import createAxiosInstance from "@/utils/axios";
@@ -72,6 +73,7 @@ const blocksEditor = useEditor({
     HorizontalRuleWithId,
     EngramLink,
     AutoLink,
+    InlineImage,
     BlockPlaceholder,
   ],
   editable: editorStore.blocksAreEditable,

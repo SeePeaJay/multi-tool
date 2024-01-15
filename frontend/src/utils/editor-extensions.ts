@@ -9,6 +9,7 @@ import CodeBlock from "@tiptap/extension-code-block";
 import BlockQuote from "@tiptap/extension-blockquote";
 import HorizontalRule from "@tiptap/extension-horizontal-rule";
 import Link from "@tiptap/extension-link";
+import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import { VueNodeViewRenderer } from "@tiptap/vue-3";
 import { Plugin } from "prosemirror-state";
@@ -100,8 +101,12 @@ export const BlockId = Node.create({
           const tr = newState.tr;
           const visitedBlockIds: Record<string, boolean> = {};
 
-          const blockIdsBeforeInput = (oldState.doc.content as ExtendedFragment).content.map((block: any) => block.attrs.blockId);
-          const blockIdsRightAfterInput = (newState.doc.content as ExtendedFragment).content.map((block: any) => block.attrs.blockId);
+          const blockIdsBeforeInput = (oldState.doc.content as ExtendedFragment).content.map(
+            (block: any) => block.attrs.blockId,
+          );
+          const blockIdsRightAfterInput = (newState.doc.content as ExtendedFragment).content.map(
+            (block: any) => block.attrs.blockId,
+          );
           const blockIdForBlockTypeChange = getBlockIdForBlockTypeChange(blockIdsBeforeInput, blockIdsRightAfterInput);
 
           newState.doc.descendants((node, pos, parent) => {
@@ -272,6 +277,10 @@ export const EngramLink = Node.create({
 });
 export const AutoLink = Link.extend({ inclusive: false }).configure({
   autolink: true,
+});
+
+export const InlineImage = Image.configure({
+  inline: true,
 });
 
 /* Custom placeholder config */

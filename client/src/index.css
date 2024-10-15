@@ -13,3 +13,9 @@
     @apply text-xl font-semibold;
   }
 }
+
+@layer components {
+  .icon {
+    @apply text-gray-400 hover:text-gray-600 hover:cursor-pointer;
+  }
+}

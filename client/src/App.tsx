@@ -1,11 +1,15 @@
 import Editor from "./components/Editor";
+import Navbar from "./components/Navbar";
 import "./App.css";
 
 function App() {
   return (
-    <div className="view">
-      <Editor />
-    </div>
+    <>
+      <Navbar />
+      <div className="view">
+        <Editor />
+      </div>
+    </>
   );
 }
 

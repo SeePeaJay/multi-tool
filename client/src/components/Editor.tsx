@@ -6,7 +6,7 @@ import "./Editor.css";
 const extensions = [StarterKit];
 
 const content =
-  "<h1>Multi-Tool</h1><p>Multi-Tool is an experimental block-based note-taking application.</p>";
+  "<p>Multi-Tool is an experimental block-based note-taking application.</p>";
 
 const Editor = () => {
   return (

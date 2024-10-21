@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+// import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
@@ -8,14 +8,12 @@ import Starred from "./routes/Starred";
 import "./index.css";
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <BrowserRouter>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Root />}></Route>
-        <Route path="/notes" element={<Notes />}></Route>
-        <Route path="/starred" element={<Starred />}></Route>
-      </Routes>
-    </BrowserRouter>
-  </StrictMode>,
+  <BrowserRouter>
+    <Navbar />
+    <Routes>
+      <Route path="/" element={<Root />}></Route>
+      <Route path="/notes" element={<Notes />}></Route>
+      <Route path="/starred" element={<Starred />}></Route>
+    </Routes>
+  </BrowserRouter>,
 );

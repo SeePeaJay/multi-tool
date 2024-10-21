@@ -10,20 +10,27 @@ function Root() {
     const code = query.get("code");
 
     if (code) {
-      // Exchange the authorization code for an access token here
+      // exchange auth code for access token
       const response = await fetch(
         `http://localhost:3000/api/auth?code=${code}`,
+        { credentials: "include" }, // include cookies with request; required for cookie session to function
       );
       console.log(response);
 
-      // After processing the code, redirect to clean up the URL
+      // redirect to clean up query string in URL
       navigate(location.pathname, { replace: true });
+
+      const response2 = await fetch(
+        `http://localhost:3000/api/user`,
+        { credentials: "include" }, // include cookies with request; required for cookie session to function
+      );
+      console.log(response2);
     }
   };
 
   useEffect(() => {
     OAuthCallback();
-  }, [location]);
+  }, []);
 
   return (
     <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">

@@ -23,7 +23,7 @@ function authCheck(req, res, next) {
   }
 }
 
-app.use(express.json()); // makes `req.body` available
+app.use(express.json()); // make `req.body` available
 app.use(cors());
 app.use(
   cookieSession({

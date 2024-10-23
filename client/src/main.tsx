@@ -16,8 +16,8 @@ createRoot(document.getElementById("root")!).render(
       <Routes>
         <Route path="/" element={<Root />}></Route>
         <Route path="/app" element={<App />}></Route>
-        <Route path="/notes" element={<Notes />}></Route>
-        <Route path="/starred" element={<Starred />}></Route>
+        <Route path="/app/notes" element={<Notes />}></Route>
+        <Route path="/app/starred" element={<Starred />}></Route>
       </Routes>
     </BrowserRouter>
   </AuthProvider>,

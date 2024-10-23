@@ -27,7 +27,7 @@ function Navbar() {
         {isAuthenticated ? (
           <>
             <NavLink
-              to="/notes"
+              to="/app/notes"
               className={({ isActive }) =>
                 isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"
               }
@@ -35,7 +35,7 @@ function Navbar() {
               <StackIcon className="ml-2" />
             </NavLink>
             <NavLink
-              to="/starred"
+              to="/app/starred"
               className={({ isActive }) =>
                 isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"
               }

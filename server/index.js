@@ -62,6 +62,12 @@ app.get("/api/user", authCheck, async (req, res) => {
   }
 });
 
+app.post("/api/logout", (req, res) => {
+  req.session = null;
+  res.clearCookie("session");
+  res.status(200).send({ message: "Logout successful" });
+});
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });

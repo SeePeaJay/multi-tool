@@ -1,3 +1,5 @@
+/* This is needed in case user enters url directly. */
+
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";

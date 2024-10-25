@@ -62,6 +62,47 @@ app.get("/api/user", authCheck, async (req, res) => {
   }
 });
 
+app.get("/api/starred", authCheck, async (req, res) => {
+  try {
+    const accessToken = req.session.accessToken;
+    dbx.auth.setAccessToken(accessToken);
+
+    const sampleHtml = `
+      <body>
+        <h1>Starred</h1>
+        <p>This is a sample HTML response from your API.</p>
+      </body>
+    `;
+
+    res.status(200).send(sampleHtml);
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .send("An error occurred while trying to obtain Starred page");
+  }
+});
+
+app.get("/api/notes", authCheck, async (req, res) => {
+  try {
+    const accessToken = req.session.accessToken;
+    dbx.auth.setAccessToken(accessToken);
+
+    const sampleList = [
+      { id: 1, title: "Note 1" },
+      { id: 2, title: "Note 2" },
+      { id: 3, title: "Note 3" }
+    ];
+   
+    res.status(200).json(sampleList);
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .send("An error occurred while trying to obtain list of notes");
+  }
+});
+
 app.post("/api/logout", (req, res) => {
   req.session = null;
   res.clearCookie("session");

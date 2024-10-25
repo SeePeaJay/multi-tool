@@ -1,4 +1,10 @@
-import { createContext, useState, useContext, ReactNode } from "react";
+import {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  ReactNode,
+} from "react";
 
 // define shape of context
 interface AuthContextType {
@@ -13,7 +19,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // initialize state with localStorage to persist auth status across refreshes
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const storedAuthState = localStorage.getItem("isAuthenticated");
+    return storedAuthState ? JSON.parse(storedAuthState) : false;
+  });
+
+  // keep localStorage up to date
+  useEffect(() => {
+    localStorage.setItem("isAuthenticated", JSON.stringify(isAuthenticated));
+  }, [isAuthenticated]);
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>

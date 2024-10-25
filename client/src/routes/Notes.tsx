@@ -11,10 +11,6 @@ function Notes() {
         { credentials: "include" }, // include cookies with request; required for cookie session to function
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch notes");
-      }
-
       console.log(response);
     } catch (err) {
       console.error(err);

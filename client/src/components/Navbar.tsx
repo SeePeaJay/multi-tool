@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import StackIcon from "./StackIcon";
 import StarIcon from "./StarIcon";
 import LoginIcon from "./LoginIcon";

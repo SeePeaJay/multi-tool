@@ -11,7 +11,10 @@ function Navbar() {
 
   const logout = async () => {
     try {
-      await fetch("http://localhost:3000/api/logout", { method: "POST", credentials: "include" });
+      await fetch("http://localhost:3000/api/logout", {
+        method: "POST",
+        credentials: "include",
+      });
 
       setIsAuthenticated(false);
 
@@ -28,6 +31,7 @@ function Navbar() {
           <>
             <NavLink
               to="/app/notes"
+              end
               className={({ isActive }) =>
                 isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"
               }
@@ -35,7 +39,8 @@ function Navbar() {
               <StackIcon className="ml-2" />
             </NavLink>
             <NavLink
-              to="/app/starred"
+              to="/app"
+              end
               className={({ isActive }) =>
                 isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"
               }

@@ -1,4 +1,9 @@
-/* A fetch wrapper that sets auth state to false and redirects if a 401 or 500 response is encountered. */
+/*
+  A fetch wrapper that sets auth state to false and redirects if a 401 or 500 response is encountered.
+  
+  This is primarily designed to block unauthorized users from accessing GET endpoints.
+*/
+
 
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";

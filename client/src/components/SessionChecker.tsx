@@ -1,4 +1,8 @@
-/* We need a method to prevent users from writing notes down and then encountering API failures due to expired sessions. This approach appears to be the most effective solution so far. */
+/*
+  This is primarily designed to block unauthorized users from making delayed requests to POST endpoints, i.e. typing a note.
+  
+  Out of all options, the following approach appears to be the most effective so far. 
+*/
 
 import { useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";

@@ -1,4 +1,4 @@
-/* This is needed in case user enters url directly. */
+/* This is primarily designed to block unauthorized users from accessing protected routes through manual URL entry. */
 
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";

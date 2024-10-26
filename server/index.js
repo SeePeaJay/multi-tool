@@ -33,6 +33,10 @@ app.use(
   }),
 );
 
+app.get("/api", authCheck, async (req, res) => {
+  res.status(200).send("ok");
+});
+
 app.get("/api/auth", async (req, res) => {
   try {
     const { code } = req.query;

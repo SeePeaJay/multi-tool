@@ -33,36 +33,36 @@ function Navbar() {
               to="/app/notes"
               end
               className={({ isActive }) =>
-                isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"
+                `ml-2 ${isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"}`
               }
             >
-              <StackIcon className="ml-2" />
+              <StackIcon />
             </NavLink>
             <NavLink
               to="/app"
               end
               className={({ isActive }) =>
-                isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"
+                `ml-2 ${isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"}`
               }
             >
-              <StarIcon className="ml-2" />
+              <StarIcon />
             </NavLink>
           </>
         ) : (
           <></>
         )}
       </div>
-      <div>
+      <div className="flex items-center">
         {isAuthenticated ? (
-          <span onClick={logout}>
-            <LogoutIcon className="mr-2 cursor-pointer text-gray-400 hover:text-gray-600" />
+          <span className="mr-2 cursor-pointer text-gray-400 hover:text-gray-600" onClick={logout}>
+            <LogoutIcon />
           </span>
         ) : (
           <a
             href={`https://www.dropbox.com/oauth2/authorize?client_id=${import.meta.env.VITE_CLIENT_ID}&redirect_uri=${import.meta.env.VITE_REDIRECT_URI}&response_type=code`}
-            className="text-gray-400 hover:text-gray-600"
+            className="mr-2 text-gray-400 hover:text-gray-600"
           >
-            <LoginIcon className="mr-2" />
+            <LoginIcon />
           </a>
         )}
       </div>

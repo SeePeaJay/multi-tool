@@ -4,7 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import Editor from "../components/Editor";
 
-function App() {
+function Starred() {
   const location = useLocation();
   const navigate = useNavigate();
   const { setIsAuthenticated } = useAuth();
@@ -53,4 +53,4 @@ function App() {
   );
 }
 
-export default App;
+export default Starred;

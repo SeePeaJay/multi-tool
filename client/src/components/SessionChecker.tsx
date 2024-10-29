@@ -26,12 +26,10 @@ const SessionChecker: React.FC = () => {
     if (isAuthenticated) {
       // add listener on access token
       window.addEventListener("focus", checkSession);
-      console.log("LIstener added");
 
       // remove listener on expired session/logout
       return () => {
         window.removeEventListener("focus", checkSession);
-        console.log("LIstener removed");
       };
     }
   }, [isAuthenticated]);

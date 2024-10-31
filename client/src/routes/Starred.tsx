@@ -2,12 +2,13 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
+import LoadingScreen from "../components/LoadingScreen";
 import Editor from "../components/Editor";
 
 function Starred() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { setIsAuthenticated } = useAuth();
+  const { isAuthenticated, setIsAuthenticated } = useAuth();
   const authFetch = useAuthFetch();
 
   const fetchAccessTokenAndStarred = async () => {
@@ -46,10 +47,16 @@ function Starred() {
   }, []);
 
   return (
-    <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
-      <h1>Starred</h1>
-      <Editor />
-    </div>
+    <>
+      {isAuthenticated ? (
+        <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
+          <h1>Starred</h1>
+          <Editor />
+        </div>
+      ) : (
+        <LoadingScreen />
+      )}
+    </>
   );
 }
 

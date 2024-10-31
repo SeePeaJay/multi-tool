@@ -56,19 +56,30 @@ app.get("/api/starred", authCheck, async (req, res) => {
     const accessToken = req.session.accessToken;
     dbx.auth.setAccessToken(accessToken);
 
-    const sampleHtml = `
-      <body>
-        <h1>Starred</h1>
-        <p>This is a sample HTML response from your API.</p>
-      </body>
-    `;
+    const fileResponse = await dbx.filesDownload({ path: "/Starred.html" });
 
-    res.status(200).send(sampleHtml);
+    const fileContent = fileResponse.result.fileBinary.toString("utf8");
+
+    res.status(200).send(fileContent);
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .send("An error occurred while trying to obtain Starred page");
+    // if file isn't found, create it
+    if (error.status === 409) {
+      const defaultContent = "<p></p>";
+
+      await dbx.filesUpload({
+        path: "/Starred.html",
+        contents: defaultContent,
+        mode: { ".tag": "add" },
+      });
+
+      res.status(200).send(defaultContent);
+    } else {
+      console.error(error);
+
+      res
+        .status(500)
+        .send("An error occurred while trying to obtain Starred page");
+    }
   }
 });
 
@@ -80,9 +91,9 @@ app.get("/api/notes", authCheck, async (req, res) => {
     const sampleList = [
       { id: 1, title: "Note 1" },
       { id: 2, title: "Note 2" },
-      { id: 3, title: "Note 3" }
+      { id: 3, title: "Note 3" },
     ];
-   
+
     res.status(200).json(sampleList);
   } catch (error) {
     console.error(error);

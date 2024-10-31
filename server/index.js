@@ -51,21 +51,6 @@ app.get("/api/auth", async (req, res) => {
   }
 });
 
-app.get("/api/user", authCheck, async (req, res) => {
-  try {
-    const accessToken = req.session.accessToken;
-
-    dbx.auth.setAccessToken(accessToken);
-
-    const response = await dbx.usersGetCurrentAccount();
-
-    res.status(200).send(response);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("An error occurred during authentication");
-  }
-});
-
 app.get("/api/starred", authCheck, async (req, res) => {
   try {
     const accessToken = req.session.accessToken;

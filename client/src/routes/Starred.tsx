@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
@@ -10,6 +10,8 @@ function Starred() {
   const navigate = useNavigate();
   const { isAuthenticated, setIsAuthenticated } = useAuth();
   const authFetch = useAuthFetch();
+
+  const [editorContent, setEditorContent] = useState("");
 
   const fetchAccessTokenAndStarred = async () => {
     try {
@@ -32,11 +34,12 @@ function Starred() {
         navigate(location.pathname, { replace: true });
       }
 
-      const response2 = await authFetch(
+      const starredContent = await authFetch(
         `http://localhost:3000/api/starred`,
         { credentials: "include" }, // include cookies with request; required for cookie session to function
       );
-      console.log(response2);
+      setEditorContent(starredContent);
+      console.log(starredContent);
     } catch (error) {
       console.error(error);
     }
@@ -51,7 +54,7 @@ function Starred() {
       {isAuthenticated ? (
         <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
           <h1>Starred</h1>
-          <Editor />
+          <Editor content={editorContent} />
         </div>
       ) : (
         <LoadingScreen />

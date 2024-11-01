@@ -1,5 +1,8 @@
+import { useCallback } from "react";
 import { EditorProvider } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import debounce from "lodash.debounce";
+import { useAuthFetch } from "../hooks/AuthFetch";
 import "./Editor.css";
 
 interface EditorProps {
@@ -11,6 +14,28 @@ interface EditorProps {
 const extensions = [StarterKit];
 
 const Editor = ({ title, content }: EditorProps) => {
+  const authFetch = useAuthFetch();
+
+  // debounce the content change handler
+  const handleContentChange = useCallback(
+    debounce(async (updatedContent: string) => {
+      console.log(updatedContent);
+
+      await authFetch(
+        `http://localhost:3000/api/notes/Starred`,
+        {
+          credentials: "include",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json", // specify JSON content type for below
+          },
+          body: JSON.stringify({ updatedContent }),
+        }, // include cookies with request; required for cookie session to function
+      );
+    }, 500),
+    [],
+  );
+
   // Tiptap's content prop is static, so only render element when content is ready
   return (
     <>
@@ -19,6 +44,9 @@ const Editor = ({ title, content }: EditorProps) => {
         <EditorProvider
           extensions={extensions}
           content={content}
+          onUpdate={({ editor }) => {
+            handleContentChange(editor.getHTML());
+          }}
         ></EditorProvider>
       ) : null}
     </>

@@ -103,6 +103,33 @@ app.get("/api/notes", authCheck, async (req, res) => {
   }
 });
 
+app.post("/api/notes/:noteTitle", authCheck, async (req, res) => {
+  try {
+    const accessToken = req.session.accessToken;
+    dbx.auth.setAccessToken(accessToken);
+
+    const noteTitle = req.params.noteTitle;
+    const updatedContent = req.body.updatedContent;
+    console.log(noteTitle, updatedContent);
+
+    // validate input (basic check for empty strings)
+    if (!noteTitle || !updatedContent) {
+      return res.status(400).send("Note title and content are required");
+    }
+
+    await dbx.filesUpload({
+      path: `/${noteTitle}.html`,
+      contents: updatedContent,
+      mode: { ".tag": "overwrite" }, // overwrite existing file
+    });
+
+    res.status(200).send(`File '${noteTitle}' updated successfully`);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while trying to update the note");
+  }
+});
+
 app.post("/api/logout", (req, res) => {
   req.session = null;
   res.clearCookie("session");

@@ -53,8 +53,7 @@ function Starred() {
     <>
       {isAuthenticated ? (
         <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
-          <h1>Starred</h1>
-          <Editor content={editorContent} />
+          <Editor title="Starred" content={editorContent} />
         </div>
       ) : (
         <LoadingScreen />

@@ -3,6 +3,7 @@ import { EditorProvider } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import debounce from "lodash.debounce";
 import { useAuthFetch } from "../hooks/AuthFetch";
+import SkeletonEditor from "./SkeletonEditor";
 import "./Editor.css";
 
 interface EditorProps {
@@ -48,7 +49,9 @@ const Editor = ({ title, content }: EditorProps) => {
             handleContentChange(editor.getHTML());
           }}
         ></EditorProvider>
-      ) : null}
+      ) : (
+        <SkeletonEditor />
+      )}
     </>
   );
 };

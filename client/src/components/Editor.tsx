@@ -22,7 +22,7 @@ const Editor = ({ title, content }: EditorProps) => {
     debounce(async (updatedContent: string) => {
       console.log(updatedContent);
 
-      await authFetch(
+      const sanetizedContent = await authFetch(
         `http://localhost:3000/api/notes/Starred`,
         {
           credentials: "include",
@@ -34,7 +34,7 @@ const Editor = ({ title, content }: EditorProps) => {
         }, // include cookies with request; required for cookie session to function
       );
 
-      localStorage.setItem(`Note:${title}`, updatedContent);
+      localStorage.setItem(`Note:${title}`, sanetizedContent);
     }, 500),
     [],
   );

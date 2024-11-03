@@ -5,6 +5,7 @@ const cors = require("cors");
 const cookieSession = require("cookie-session");
 const { Dropbox } = require("dropbox");
 const fetch = require("node-fetch");
+const sanitizeHtml = require('sanitize-html');
 
 const app = express();
 const port = 3000;
@@ -109,21 +110,21 @@ app.post("/api/notes/:noteTitle", authCheck, async (req, res) => {
     dbx.auth.setAccessToken(accessToken);
 
     const noteTitle = req.params.noteTitle;
-    const updatedContent = req.body.updatedContent;
-    console.log(noteTitle, updatedContent);
+    const sanitizedContent = sanitizeHtml(req.body.updatedContent);
+    console.log(noteTitle, sanitizedContent);
 
     // validate input (basic check for empty strings)
-    if (!noteTitle || !updatedContent) {
+    if (!noteTitle || !sanitizedContent) {
       return res.status(400).send("Note title and content are required");
     }
 
     await dbx.filesUpload({
       path: `/${noteTitle}.html`,
-      contents: updatedContent,
+      contents: sanitizedContent,
       mode: { ".tag": "overwrite" }, // overwrite existing file
     });
 
-    res.status(200).send(`File '${noteTitle}' updated successfully`);
+    res.status(200).send(sanitizedContent);
   } catch (error) {
     console.error(error);
     res.status(500).send("An error occurred while trying to update the note");

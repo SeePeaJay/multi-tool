@@ -27,7 +27,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   // keep localStorage up to date
   useEffect(() => {
-    localStorage.setItem("isAuthenticated", JSON.stringify(isAuthenticated));
+    if (isAuthenticated) {
+      localStorage.setItem("isAuthenticated", JSON.stringify(isAuthenticated));
+    } else {
+      localStorage.clear();
+    }
   }, [isAuthenticated]);
 
   return (

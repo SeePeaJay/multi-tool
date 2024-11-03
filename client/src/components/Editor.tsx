@@ -33,6 +33,8 @@ const Editor = ({ title, content }: EditorProps) => {
           body: JSON.stringify({ updatedContent }),
         }, // include cookies with request; required for cookie session to function
       );
+
+      localStorage.setItem(`Note:${title}`, updatedContent);
     }, 500),
     [],
   );

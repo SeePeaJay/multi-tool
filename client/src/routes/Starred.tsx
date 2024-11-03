@@ -34,12 +34,20 @@ function Starred() {
         navigate(location.pathname, { replace: true });
       }
 
-      const starredContent = await authFetch(
-        `http://localhost:3000/api/starred`,
-        { credentials: "include" }, // include cookies with request; required for cookie session to function
-      );
-      setEditorContent(starredContent);
-      console.log(starredContent);
+      const cachedStarredContent = localStorage.getItem("Note:Starred");
+
+      if (cachedStarredContent) {
+        setEditorContent(cachedStarredContent);
+      } else {
+        const starredContent = await authFetch(
+          `http://localhost:3000/api/starred`,
+          { credentials: "include" }, // include cookies with request; required for cookie session to function
+        );
+
+        localStorage.setItem("Note:Starred", starredContent);
+        setEditorContent(starredContent);
+        console.log(starredContent);
+      }
     } catch (error) {
       console.error(error);
     }

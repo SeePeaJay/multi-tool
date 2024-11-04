@@ -13,8 +13,8 @@ function App() {
     <>
       <SessionChecker />
       <ToastContainer
-        position="top-right"
-        autoClose={3000}
+        position="top-center"
+        autoClose={5000}
         hideProgressBar
         newestOnTop={false}
         closeOnClick

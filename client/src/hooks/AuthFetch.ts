@@ -42,8 +42,8 @@ export const useAuthFetch = () => {
       setIsAuthenticated(false);
       navigate("/");
       toast.error(errorMessage, {
-        position: "top-right",
-        autoClose: 3000,
+        position: "top-center",
+        autoClose: 5000,
         hideProgressBar: true,
         closeOnClick: true,
         pauseOnHover: true,

@@ -5,16 +5,12 @@ function Notes() {
   const authFetch = useAuthFetch();
 
   const fetchNotes = async () => {
-    try {
-      const response = await authFetch(
-        `http://localhost:3000/api/notes`,
-        { credentials: "include" }, // include cookies with request; required for cookie session to function
-      );
+    const response = await authFetch(
+      `http://localhost:3000/api/notes`,
+      { credentials: "include" }, // include cookies with request; required for cookie session to function
+    );
 
-      console.log(response);
-    } catch (err) {
-      console.error(err);
-    }
+    console.log(response);
   };
 
   useEffect(() => {

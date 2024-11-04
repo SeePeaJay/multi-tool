@@ -16,22 +16,15 @@ export const useAuthFetch = () => {
     try {
       const response = await fetch(url, options);
 
-      // for the time being, immediately exit upon any server error code
       if (!response.ok) {
-        setIsAuthenticated(false);
-        navigate("/");
-        toast.error(`Network response was not ok! Error code: ${response.status}`, {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: true,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "colored",
-        });
-
-        return; // exit early to avoid further processing
+        switch (response.status) {
+          case 401:
+            throw new Error("Unauthorized access. Please log in again.");
+          case 500:
+            throw new Error("Server error. Please try again later.");
+          default:
+            throw new Error(`Unexpected error: ${response.statusText}`);
+        }
       }
 
       // check content-type header to determine how to process response
@@ -42,8 +35,22 @@ export const useAuthFetch = () => {
         return await response.text();
       }
     } catch (error) {
-      console.error("Fetch error:", error);
-      throw error;
+      // for the time being, immediately exit upon any (server) error
+
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+
+      setIsAuthenticated(false);
+      navigate("/");
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "colored",
+      });
     }
   };
 

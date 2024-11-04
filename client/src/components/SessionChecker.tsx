@@ -13,13 +13,9 @@ const SessionChecker: React.FC = () => {
   const authFetch = useAuthFetch();
 
   const checkSession = async () => {
-    try {
-      await authFetch("http://localhost:3000/api", {
-        credentials: "include",
-      });
-    } catch (error) {
-      console.error("Error checking session:", error);
-    }
+    await authFetch("http://localhost:3000/api", {
+      credentials: "include",
+    });
   };
 
   useEffect(() => {

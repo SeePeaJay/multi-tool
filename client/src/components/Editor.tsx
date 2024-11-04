@@ -23,7 +23,7 @@ const Editor = ({ title, content }: EditorProps) => {
       console.log(updatedContent);
 
       const sanetizedContent = await authFetch(
-        `http://localhost:3000/api/notes/Starred`,
+        `/api/notes/Starred`,
         {
           credentials: "include",
           method: "POST",

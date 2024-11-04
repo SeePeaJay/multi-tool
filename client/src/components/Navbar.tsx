@@ -11,7 +11,7 @@ function Navbar() {
 
   const logout = async () => {
     try {
-      await fetch("http://localhost:3000/api/logout", {
+      await fetch("/api/logout", {
         method: "POST",
         credentials: "include",
       });

@@ -6,7 +6,7 @@ function Notes() {
 
   const fetchNotes = async () => {
     const response = await authFetch(
-      `http://localhost:3000/api/notes`,
+      `/api/notes`,
       { credentials: "include" }, // include cookies with request; required for cookie session to function
     );
 

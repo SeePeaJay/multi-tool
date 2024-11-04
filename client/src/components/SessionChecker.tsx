@@ -13,7 +13,7 @@ const SessionChecker: React.FC = () => {
   const authFetch = useAuthFetch();
 
   const checkSession = async () => {
-    await authFetch("http://localhost:3000/api", {
+    await authFetch("/api", {
       credentials: "include",
     });
   };

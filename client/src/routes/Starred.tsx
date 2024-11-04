@@ -21,7 +21,7 @@ function Starred() {
       if (code) {
         // exchange auth code for access token
         const response = await fetch(
-          `http://localhost:3000/api/auth?code=${code}`,
+          `/api/auth?code=${code}`,
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
         console.log(response);
@@ -40,7 +40,7 @@ function Starred() {
         setEditorContent(cachedStarredContent);
       } else {
         const starredContent = await authFetch(
-          `http://localhost:3000/api/starred`,
+          `/api/starred`,
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
 

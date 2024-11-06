@@ -110,7 +110,11 @@ app.post("/api/notes/:noteTitle", authCheck, async (req, res) => {
     dbx.auth.setAccessToken(accessToken);
 
     const noteTitle = req.params.noteTitle;
-    const sanitizedContent = sanitizeHtml(req.body.updatedContent);
+    const sanitizedContent = sanitizeHtml(req.body.updatedContent, {
+      allowedAttributes: {
+        "*": ["id"],
+      },
+    });
     console.log(noteTitle, sanitizedContent);
 
     // validate input (basic check for empty strings)

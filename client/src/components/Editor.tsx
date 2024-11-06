@@ -4,6 +4,7 @@ import StarterKit from "@tiptap/starter-kit";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import debounce from "lodash.debounce";
 import { useAuthFetch } from "../hooks/AuthFetch";
+import { ensureUniqueIds, HeadingWithId, ParagraphWithId } from "../utils/EditorExtensions";
 import SkeletonEditor from "./SkeletonEditor";
 import "./Editor.css";
 
@@ -48,7 +49,13 @@ const Editor = ({ title, content }: EditorProps) => {
               dragHandleWidth: 20,
               scrollTreshold: 100,
             }),
-            StarterKit,
+            StarterKit.configure({
+              heading: false,
+              paragraph: false,
+            }),
+            HeadingWithId,
+            ParagraphWithId,
+            ensureUniqueIds,
           ]}
           content={content}
           onUpdate={({ editor }) => {

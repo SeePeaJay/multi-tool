@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { EditorProvider } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import debounce from "lodash.debounce";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import SkeletonEditor from "./SkeletonEditor";
@@ -10,9 +11,6 @@ interface EditorProps {
   title: string;
   content: string;
 }
-
-// define your extension array
-const extensions = [StarterKit];
 
 const Editor = ({ title, content }: EditorProps) => {
   const authFetch = useAuthFetch();
@@ -45,7 +43,13 @@ const Editor = ({ title, content }: EditorProps) => {
       <h1>{title}</h1>
       {content ? (
         <EditorProvider
-          extensions={extensions}
+          extensions={[
+            GlobalDragHandle.configure({
+              dragHandleWidth: 20,
+              scrollTreshold: 100,
+            }),
+            StarterKit,
+          ]}
           content={content}
           onUpdate={({ editor }) => {
             handleContentChange(editor.getHTML());

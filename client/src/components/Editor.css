@@ -1,5 +1,11 @@
-.ProseMirror:focus {
-  outline: none;
+.ProseMirror {
+  &:focus {
+    outline: none;
+  }
+
+  > * + * {
+    margin-top: 0.5rem;
+  }
 }
 
 /* https://github.com/steven-tey/novel/blob/main/apps/web/styles/prosemirror.css#L131 */

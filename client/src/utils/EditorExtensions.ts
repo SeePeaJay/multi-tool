@@ -3,6 +3,8 @@ import { Plugin } from "@tiptap/pm/state";
 import { Fragment } from "@tiptap/pm/model";
 import Paragraph from "@tiptap/extension-paragraph";
 import Heading from "@tiptap/extension-heading";
+import GlobalDragHandle from "tiptap-extension-global-drag-handle";
+import StarterKit from "@tiptap/starter-kit";
 import { nanoid } from "nanoid";
 
 interface ExtendedFragment extends Fragment {
@@ -105,7 +107,7 @@ export const ensureUniqueIds = Extension.create({
               visitedBlockIds[newBlockId] = true;
             } else {
               // otherwise, add current id to visited, in case next id is the same as current
-              
+
               visitedBlockIds[currentBlockId] = true;
             }
           });
@@ -118,3 +120,16 @@ export const ensureUniqueIds = Extension.create({
 });
 
 // for the time being, disable lists because nested layer makes handling block id complicated
+export const extensions = [
+  GlobalDragHandle.configure({
+    dragHandleWidth: 20,
+    scrollTreshold: 100,
+  }),
+  StarterKit.configure({
+    heading: false,
+    paragraph: false,
+  }),
+  HeadingWithId,
+  ParagraphWithId,
+  ensureUniqueIds,
+]

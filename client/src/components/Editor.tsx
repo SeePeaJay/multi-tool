@@ -1,10 +1,8 @@
 import { useCallback } from "react";
 import { EditorProvider } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import debounce from "lodash.debounce";
 import { useAuthFetch } from "../hooks/AuthFetch";
-import { ensureUniqueIds, HeadingWithId, ParagraphWithId } from "../utils/EditorExtensions";
+import { extensions } from "../utils/EditorExtensions";
 import SkeletonEditor from "./SkeletonEditor";
 import "./Editor.css";
 
@@ -44,19 +42,7 @@ const Editor = ({ title, content }: EditorProps) => {
       <h1>{title}</h1>
       {content ? (
         <EditorProvider
-          extensions={[
-            GlobalDragHandle.configure({
-              dragHandleWidth: 20,
-              scrollTreshold: 100,
-            }),
-            StarterKit.configure({
-              heading: false,
-              paragraph: false,
-            }),
-            HeadingWithId,
-            ParagraphWithId,
-            ensureUniqueIds,
-          ]}
+          extensions={extensions}
           content={content}
           onUpdate={({ editor }) => {
             handleContentChange(editor.getHTML());

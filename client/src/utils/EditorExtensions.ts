@@ -3,6 +3,7 @@ import { Plugin } from "@tiptap/pm/state";
 import { Fragment } from "@tiptap/pm/model";
 import Paragraph from "@tiptap/extension-paragraph";
 import Heading from "@tiptap/extension-heading";
+import CodeBlock from "@tiptap/extension-code-block";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import StarterKit from "@tiptap/starter-kit";
 import { nanoid } from "nanoid";
@@ -34,7 +35,7 @@ function getIdForChangeInBlockType(
   return null;
 }
 
-export const HeadingWithId = Heading.extend({
+const CustomHeading = Heading.extend({
   renderHTML({ node }) {
     const hasLevel = this.options.levels.includes(node.attrs.level);
     const level = hasLevel ? node.attrs.level : this.options.levels[0];
@@ -43,21 +44,27 @@ export const HeadingWithId = Heading.extend({
   },
 });
 
-export const ParagraphWithId = Paragraph.extend({
+const CustomParagraph = Paragraph.extend({
   renderHTML({ node }) {
     return ["p", { id: node.attrs.blockId }, 0];
   },
 });
 
+const CustomCodeBlock = CodeBlock.extend({
+  renderHTML({ node }) {
+    return ["pre", { id: node.attrs.blockId }, ["code", 0]];
+  },
+});
+
 // an extension to ensure that each (root) block node has a unique id, after the editor processes the content (from HTML to Prosemirror nodes)
-export const ensureUniqueIds = Extension.create({
+const ensureUniqueIds = Extension.create({
   name: "ensureUniqueIds",
 
   // define block id as an attribute globally that can be applied to multiple node types (e.g., paragraphs)
   addGlobalAttributes() {
     return [
       {
-        types: ["heading", "paragraph"],
+        types: ["heading", "paragraph", "codeBlock"],
         attributes: {
           blockId: {
             default: null, // can be null due to parseHTML
@@ -119,17 +126,20 @@ export const ensureUniqueIds = Extension.create({
   },
 });
 
-// for the time being, disable lists because nested layer makes handling block id complicated
 export const extensions = [
   GlobalDragHandle.configure({
     dragHandleWidth: 20,
     scrollTreshold: 100,
   }),
   StarterKit.configure({
-    heading: false,
-    paragraph: false,
+    bulletList: false, // disabled due to nested structure, making it difficult to integrate with block id
+    orderedList: false, // same as above
+    listItem: false, // same as above
+    blockquote: false, // same as above
+    horizontalRule: false, // disabled because it doesn't work with current drag handle
   }),
-  HeadingWithId,
-  ParagraphWithId,
+  CustomHeading,
+  CustomParagraph,
+  CustomCodeBlock,
   ensureUniqueIds,
-]
+];

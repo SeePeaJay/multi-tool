@@ -44,6 +44,18 @@ function Starred() {
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
 
+        // console.log(await authFetch(
+        //   `/api/search`,
+        //   {
+        //     credentials: "include",
+        //     method: "POST",
+        //     headers: {
+        //       "Content-Type": "application/json",
+        //     },
+        //     body: JSON.stringify({ query: "Sta" }),
+        //   },
+        // ));
+
         localStorage.setItem("Note:Starred", starredContent);
         setEditorContent(starredContent);
         console.log(starredContent);

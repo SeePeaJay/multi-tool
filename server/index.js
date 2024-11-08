@@ -5,7 +5,7 @@ const cors = require("cors");
 const cookieSession = require("cookie-session");
 const { Dropbox } = require("dropbox");
 const fetch = require("node-fetch");
-const sanitizeHtml = require('sanitize-html');
+const sanitizeHtml = require("sanitize-html");
 
 const app = express();
 const port = 3000;
@@ -81,6 +81,30 @@ app.get("/api/starred", authCheck, async (req, res) => {
         .status(500)
         .send("An error occurred while trying to obtain Starred page");
     }
+  }
+});
+
+app.post("/api/search", authCheck, async (req, res) => {
+  try {
+    const accessToken = req.session.accessToken;
+    dbx.auth.setAccessToken(accessToken);
+
+    const searchResponse = await dbx.filesSearchV2({
+      query: req.body.query,
+      options: {
+        file_status: "active",
+        filename_only: true,
+      },
+    });
+
+    const noteList = searchResponse.result.matches.map((match) => match.metadata.metadata.name);
+
+    res.status(200).send(noteList);
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .send("An error occurred while trying to search for list of notes");
   }
 });
 

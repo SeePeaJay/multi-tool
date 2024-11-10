@@ -134,19 +134,19 @@ export const noteLinkSuggestionOptions: MentionOptions["suggestion"] = {
 };
 
 const NoteLink = Mention.configure({
-  HTMLAttributes: {
-    class: "note-link",
-  },
+  // HTMLAttributes: {
+  //   class: "note-link",
+  // },
   // renderText({ node }) {
   //   return `[[${node.attrs.label ?? node.attrs.id}]]`;
   // },
   renderHTML({ options, node }) {
-    // console.log(options.HTMLAttributes);
-    // const { "data-id": _, "data-type": __, ...attributesToRender } = options.HTMLAttributes;
+    // console.log(options.HTMLAttributes, node.attrs);
+    const { "data-id": _, ...attributesToRender } = options.HTMLAttributes;
 
     return [
       "span",
-      options.HTMLAttributes,
+      attributesToRender,
       `[[${node.attrs.label ?? node.attrs.id}]]`,
     ];
   },

@@ -137,6 +137,7 @@ app.post("/api/notes/:noteTitle", authCheck, async (req, res) => {
     const sanitizedContent = sanitizeHtml(req.body.updatedContent, {
       allowedAttributes: {
         "*": ["id"],
+        span: ["data-type", "class", "data-id", "data-label"],
       },
     });
     console.log(noteTitle, sanitizedContent);

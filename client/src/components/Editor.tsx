@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { EditorProvider } from "@tiptap/react";
 import debounce from "lodash.debounce";
 import { useAuthFetch } from "../hooks/AuthFetch";
-import { extensions } from "../utils/EditorExtensions";
+import { extensions } from "../utils/extensions";
 import SkeletonEditor from "./SkeletonEditor";
 import "./Editor.css";
 

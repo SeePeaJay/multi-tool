@@ -7,7 +7,9 @@ import CodeBlock from "@tiptap/extension-code-block";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import StarterKit from "@tiptap/starter-kit";
 import { nanoid } from "nanoid";
-import NoteLink from "./NoteLinkExtension";
+import Notelink from "./notelink";
+import Tag from "./tag";
+import { noteSuggestionOptions } from "./noteSuggestionOptions";
 
 interface ExtendedFragment extends Fragment {
   content: any;
@@ -142,6 +144,11 @@ export const extensions = [
   CustomHeading,
   CustomParagraph,
   CustomCodeBlock,
-  NoteLink,
+  Notelink.configure({
+    suggestion: noteSuggestionOptions,
+  }),
+  Tag.configure({
+    suggestion: noteSuggestionOptions,
+  }),
   ensureUniqueIds,
 ];

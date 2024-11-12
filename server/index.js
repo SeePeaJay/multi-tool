@@ -97,7 +97,9 @@ app.post("/api/search", authCheck, async (req, res) => {
       },
     });
 
-    const noteList = searchResponse.result.matches.map((match) => match.metadata.metadata.name);
+    const noteList = searchResponse.result.matches.map(
+      (match) => match.metadata.metadata.name,
+    );
 
     res.status(200).send(noteList);
   } catch (error) {
@@ -137,7 +139,7 @@ app.post("/api/notes/:noteTitle", authCheck, async (req, res) => {
     const sanitizedContent = sanitizeHtml(req.body.updatedContent, {
       allowedAttributes: {
         "*": ["id"],
-        span: ["data-type", "data-label"],
+        span: ["class", "data-type", "data-label"],
       },
     });
     console.log(noteTitle, sanitizedContent);

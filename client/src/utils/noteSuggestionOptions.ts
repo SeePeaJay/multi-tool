@@ -1,10 +1,14 @@
+/*
+ * This file defines defines a suggestion config that can be used for both notelink and tag.
+ */
+
 import { ReactRenderer } from "@tiptap/react";
-import Mention, { MentionOptions } from "@tiptap/extension-mention";
+import tippy, { Instance as TippyInstance } from "tippy.js";
 import NoteSuggestionMenu, {
   NoteSuggestionMenuRef,
   NoteSuggestion,
 } from "../components/NoteSuggestionMenu";
-import tippy, { Instance as TippyInstance } from "tippy.js";
+import { NotelinkOptions } from "./notelink";
 
 const DOM_RECT_FALLBACK: DOMRect = {
   bottom: 0,
@@ -20,9 +24,7 @@ const DOM_RECT_FALLBACK: DOMRect = {
   },
 };
 
-// Define the NoteLink extension with proper typing
-export const noteLinkSuggestionOptions: MentionOptions["suggestion"] = {
-  char: "[[",
+export const noteSuggestionOptions: NotelinkOptions["suggestion"] = {
   allowSpaces: true,
 
   // Replace this `items` code with a call to your API that returns suggestions
@@ -40,24 +42,6 @@ export const noteLinkSuggestionOptions: MentionOptions["suggestion"] = {
         "Joan Collins",
         "Winona Ryder",
         "Christina Applegate",
-        "Alyssa Milano",
-        "Molly Ringwald",
-        "Ally Sheedy",
-        "Debbie Harry",
-        "Olivia Newton-John",
-        "Elton John",
-        "Michael J. Fox",
-        "Axl Rose",
-        "Emilio Estevez",
-        "Ralph Macchio",
-        "Rob Lowe",
-        "Jennifer Grey",
-        "Mickey Rourke",
-        "John Cusack",
-        "Matthew Broderick",
-        "Justine Bateman",
-        "Lisa Bonet",
-        "Benicio Monserrate Rafael del Toro Sánchez",
       ]
         // Typically we'd be getting this data from an API where we'd have a
         // definitive "id" to use for each suggestion item, but for the sake of
@@ -132,26 +116,3 @@ export const noteLinkSuggestionOptions: MentionOptions["suggestion"] = {
     };
   },
 };
-
-const NoteLink = Mention.configure({
-  // HTMLAttributes: {
-  //   class: "note-link",
-  // },
-  // renderText({ node }) {
-  //   return `[[${node.attrs.label ?? node.attrs.id}]]`;
-  // },
-  renderHTML({ options, node }) {
-    // console.log(options.HTMLAttributes, node.attrs);
-    const { "data-id": _, ...attributesToRender } = options.HTMLAttributes;
-
-    return [
-      "span",
-      attributesToRender,
-      `[[${node.attrs.label ?? node.attrs.id}]]`,
-    ];
-  },
-  deleteTriggerWithBackspace: true,
-  suggestion: noteLinkSuggestionOptions,
-});
-
-export default NoteLink;

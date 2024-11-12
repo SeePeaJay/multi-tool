@@ -1,5 +1,10 @@
+/*
+ * This file defines defines the actual dropdown menu to be rendered for both notelink and tag suggestion.
+ * Based on https://github.com/ueberdosis/tiptap/discussions/2274#discussioncomment-6745835
+ */
+
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
-import { MentionNodeAttrs } from "@tiptap/extension-mention";
+import { NotelinkNodeAttrs } from "../utils/notelink";
 import type { SuggestionOptions, SuggestionProps } from "@tiptap/suggestion";
 
 export type NoteSuggestion = {
@@ -8,9 +13,6 @@ export type NoteSuggestion = {
 };
 
 export type NoteSuggestionMenuRef = {
-  // For convenience using this SuggestionList from within the
-  // mentionSuggestionOptions, we'll match the signature of SuggestionOptions's
-  // `onKeyDown` returned in its `render` function
   onKeyDown: NonNullable<
     ReturnType<
       NonNullable<SuggestionOptions<NoteSuggestion>["render"]>
@@ -28,34 +30,24 @@ const NoteSuggestionMenu = forwardRef<
 
   const selectItem = (index: number) => {
     if (index >= props.items.length) {
-      // Make sure we actually have enough items to select the given index. For
-      // instance, if a user presses "Enter" when there are no options, the index will
-      // be 0 but there won't be any items, so just ignore the callback here
+      /*
+       * Make sure we actually have enough items to select the given index.
+       * For instance, if a user presses "Enter" when there are no options, the index will
+       * be 0 but there won't be any items, so just ignore the callback here
+       */
       return;
     }
 
     const suggestion = props.items[index];
 
-    // Set all of the attributes of our Mention node based on the suggestion
+    // Set all of the attributes of our Notelink/Tag node based on the suggestion
     // data. The fields of `suggestion` will depend on whatever data you
     // return from your `items` function in your "suggestion" options handler.
-    // Our suggestion handler returns `MentionSuggestion`s (which we've
-    // indicated via SuggestionProps<MentionSuggestion>). We are passing an
-    // object of the `MentionNodeAttrs` shape when calling `command` (utilized
-    // by the Mention extension to create a Mention Node).
-    const mentionItem: MentionNodeAttrs = {
-      id: suggestion.id,
+    const notelinkItem: NotelinkNodeAttrs = {
       label: suggestion.mentionLabel,
     };
-    // there is currently a bug in the Tiptap SuggestionProps
-    // type where if you specify the suggestion type (like
-    // `SuggestionProps<MentionSuggestion>`), it will incorrectly require that
-    // type variable for `command`'s argument as well (whereas instead the
-    // type of that argument should be the Mention Node attributes). This
-    // should be fixed once https://github.com/ueberdosis/tiptap/pull/4136 is
-    // merged and we can add a separate type arg to `SuggestionProps` to
-    // specify the type of the commanded selected item.
-    props.command(mentionItem);
+    
+    props.command(notelinkItem);
   };
 
   const upHandler = () => {

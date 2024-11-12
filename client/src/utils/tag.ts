@@ -11,7 +11,7 @@ import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
 export interface TagNodeAttrs {
   /**
    * The label to be rendered by the editor as the displayed text for this tag
-   * item, if provided. Stored as a `data-label` attribute. See `renderLabel`.
+   * item, if provided. Stored as a `data-label` attribute.
    */
   label: string | null;
 }
@@ -27,18 +27,6 @@ export type TagOptions<
    * @example { class: 'foo' }
    */
   HTMLAttributes: Record<string, any>;
-
-  /**
-   * A function to render the label of a tag.
-   * @deprecated use renderText and renderHTML instead
-   * @param props The render props
-   * @returns The label
-   * @example ({ options, node }) => `${options.suggestion.char}${node.attrs.label}`
-   */
-  renderLabel?: (props: {
-    options: TagOptions<SuggestionItem, Attrs>;
-    node: ProseMirrorNode;
-  }) => string;
 
   /**
    * A function to render the text of a tag.
@@ -186,23 +174,6 @@ const Tag = Node.create<TagOptions>({
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    if (this.options.renderLabel !== undefined) {
-      console.warn(
-        "renderLabel is deprecated use renderText and renderHTML instead",
-      );
-      return [
-        "span",
-        mergeAttributes(
-          { "data-type": this.name },
-          this.options.HTMLAttributes,
-          HTMLAttributes,
-        ),
-        this.options.renderLabel({
-          options: this.options,
-          node,
-        }),
-      ];
-    }
     const mergedOptions = { ...this.options };
 
     mergedOptions.HTMLAttributes = mergeAttributes(
@@ -230,15 +201,6 @@ const Tag = Node.create<TagOptions>({
   },
 
   renderText({ node }) {
-    if (this.options.renderLabel !== undefined) {
-      console.warn(
-        "renderLabel is deprecated use renderText and renderHTML instead",
-      );
-      return this.options.renderLabel({
-        options: this.options,
-        node,
-      });
-    }
     return this.options.renderText({
       options: this.options,
       node,

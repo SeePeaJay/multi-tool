@@ -1,5 +1,5 @@
 /*
- * This file defines defines a suggestion config that can be used for both notelink and tag.
+ * This file defines a base suggestion config that can be used for both notelink and tag.
  */
 
 import { ReactRenderer } from "@tiptap/react";
@@ -24,7 +24,7 @@ const DOM_RECT_FALLBACK: DOMRect = {
   },
 };
 
-export const noteSuggestionOptions: NotelinkOptions["suggestion"] = {
+export const baseNoteSuggestionConfig: NotelinkOptions["suggestion"] = {
   allowSpaces: true,
 
   // Replace this `items` code with a call to your API that returns suggestions

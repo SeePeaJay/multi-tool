@@ -9,7 +9,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { nanoid } from "nanoid";
 import Notelink from "./notelink";
 import Tag from "./tag";
-import { noteSuggestionOptions } from "./noteSuggestionOptions";
+import { baseNoteSuggestionConfig } from "./baseNoteSuggestionConfig";
 
 interface ExtendedFragment extends Fragment {
   content: any;
@@ -145,10 +145,10 @@ export const extensions = [
   CustomParagraph,
   CustomCodeBlock,
   Notelink.configure({
-    suggestion: noteSuggestionOptions,
+    suggestion: baseNoteSuggestionConfig,
   }),
   Tag.configure({
-    suggestion: noteSuggestionOptions,
+    suggestion: baseNoteSuggestionConfig,
   }),
   ensureUniqueIds,
 ];

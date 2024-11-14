@@ -45,3 +45,21 @@
     pointer-events: none;
   }
 }
+
+.notelink {
+  color: rgb(37 99 235);
+
+  &:hover {
+    cursor: pointer;
+    text-decoration-line: underline;
+  }
+}
+
+.tag {
+  color: rgb(209 213 219);
+
+  &:hover {
+    cursor: pointer;
+    text-decoration-line: underline;
+  }
+}

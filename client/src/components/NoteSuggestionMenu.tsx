@@ -46,7 +46,7 @@ const NoteSuggestionMenu = forwardRef<
     const notelinkItem: NotelinkNodeAttrs = {
       label: suggestion.mentionLabel,
     };
-    
+
     props.command(notelinkItem);
   };
 
@@ -88,11 +88,11 @@ const NoteSuggestionMenu = forwardRef<
   }));
 
   return (
-    <div className="dropdown-menu">
+    <div className="relative flex flex-col gap-0.5 overflow-auto rounded-xl border border-solid border-gray-300 bg-white p-1.5 shadow">
       {props.items.length ? (
         props.items.map((item, index) => (
           <button
-            className={index === selectedIndex ? "is-selected" : ""}
+            className={`flex w-full items-center gap-1 bg-transparent rounded-lg p-1 text-left hover:bg-slate-100 ${index === selectedIndex ? "bg-slate-200" : ""}`}
             key={index}
             onClick={() => selectItem(index)}
           >

@@ -115,13 +115,23 @@ app.get("/api/notes", authCheck, async (req, res) => {
     const accessToken = req.session.accessToken;
     dbx.auth.setAccessToken(accessToken);
 
-    const sampleList = [
-      { id: 1, title: "Note 1" },
-      { id: 2, title: "Note 2" },
-      { id: 3, title: "Note 3" },
-    ];
+    const noteList = [];
 
-    res.status(200).json(sampleList);
+    // initial request
+    let listResponse = await dbx.filesListFolder({
+      path: "",
+    });
+    noteList.push(...listResponse.result.entries.map((entry) => entry.name.split(".")[0]));
+
+    // continue fetching if there are more files
+    while (listResponse.result.has_more) {
+      listResponse = await dbx.filesListFolderContinue({
+        cursor: listResponse.result.cursor,
+      });
+      noteList.push(...listResponse.result.entries.map((entry) => entry.name.split(".")[0]));
+    }
+
+    res.status(200).json(noteList);
   } catch (error) {
     console.error(error);
     res

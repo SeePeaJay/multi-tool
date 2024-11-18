@@ -2,7 +2,7 @@
  * This file defines a custom notelink node, based on Tiptap's mention.ts.
  */
 
-import { mergeAttributes, Node } from "@tiptap/core";
+import { mergeAttributes, nodeInputRule, Node } from "@tiptap/core";
 import { DOMOutputSpec, Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { PluginKey } from "@tiptap/pm/state";
 import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
@@ -244,6 +244,18 @@ const Notelink = Node.create<NotelinkOptions>({
       Suggestion({
         editor: this.editor,
         ...this.options.suggestion,
+      }),
+    ];
+  },
+
+  addInputRules() {
+    return [
+      nodeInputRule({
+        find: /(\[\[([^\]]+)\]\])$/, // need to capture the whole thing, then a nested one for label
+        type: this.type,
+        getAttributes: (match) => ({
+          label: match[2],
+        }),
       }),
     ];
   },

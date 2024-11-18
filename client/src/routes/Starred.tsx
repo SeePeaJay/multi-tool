@@ -13,7 +13,7 @@ function Starred() {
 
   const [editorContent, setEditorContent] = useState("");
 
-  const fetchAccessTokenAndStarred = async () => {
+  const fetchAccessTokenAndResources = async () => {
     try {
       const query = new URLSearchParams(location.search);
       const code = query.get("code");
@@ -39,26 +39,20 @@ function Starred() {
       if (cachedStarredContent) {
         setEditorContent(cachedStarredContent);
       } else {
+        // fetch then store list of notes for later usage
+        const noteList = await authFetch(
+          `/api/notes`,
+          { credentials: "include" },
+        );
+        localStorage.setItem("Note list", JSON.stringify(noteList));
+
+        // fetch Starred then set it
         const starredContent = await authFetch(
           `/api/starred`,
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
-
-        // console.log(await authFetch(
-        //   `/api/search`,
-        //   {
-        //     credentials: "include",
-        //     method: "POST",
-        //     headers: {
-        //       "Content-Type": "application/json",
-        //     },
-        //     body: JSON.stringify({ query: "Sta" }),
-        //   },
-        // ));
-
         localStorage.setItem("Note:Starred", starredContent);
         setEditorContent(starredContent);
-        console.log(starredContent);
       }
     } catch (error) {
       console.error(error);
@@ -66,7 +60,7 @@ function Starred() {
   };
 
   useEffect(() => {
-    fetchAccessTokenAndStarred();
+    fetchAccessTokenAndResources();
   }, []);
 
   return (

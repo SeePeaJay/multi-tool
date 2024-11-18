@@ -27,34 +27,23 @@ const DOM_RECT_FALLBACK: DOMRect = {
 export const baseNoteSuggestionConfig: NotelinkOptions["suggestion"] = {
   allowSpaces: true,
 
-  // Replace this `items` code with a call to your API that returns suggestions
-  // of whatever sort you like (including potentially additional data beyond
-  // just an ID and a label). It need not be async but is written that way for
-  // the sake of example.
-  items: async ({ query }): Promise<NoteSuggestion[]> =>
-    Promise.resolve(
-      [
-        "Lea Thompson",
-        "Cyndi Lauper",
-        "Tom Cruise",
-        "Madonna",
-        "Jerry Hall",
-        "Joan Collins",
-        "Winona Ryder",
-        "Christina Applegate",
-      ]
-        // Typically we'd be getting this data from an API where we'd have a
-        // definitive "id" to use for each suggestion item, but for the sake of
-        // example, we'll just set the index within this hardcoded list as the
-        // ID of each item.
+  items: async ({ query }): Promise<NoteSuggestion[]> => {
+    if (!query) {
+      return Promise.resolve([]);
+    }
+
+    const storedList = localStorage.getItem("Note list"); // if too slow, could store to var first then use it
+    const noteList: string[] = storedList ? JSON.parse(storedList) : [];
+
+    return Promise.resolve(
+      noteList
         .map((name, index) => ({ mentionLabel: name, id: index.toString() }))
-        // Find matching entries based on what the user has typed so far (after
-        // the @ symbol)
         .filter((item) =>
           item.mentionLabel.toLowerCase().startsWith(query.toLowerCase()),
         )
         .slice(0, 5),
-    ),
+    );
+  },
 
   render: () => {
     let component: ReactRenderer<NoteSuggestionMenuRef> | undefined;

@@ -48,7 +48,7 @@ function Starred() {
 
         // fetch Starred then set it
         const starredContent = await authFetch(
-          `/api/starred`,
+          `/api/notes/Starred`,
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
         localStorage.setItem("Note:Starred", starredContent);

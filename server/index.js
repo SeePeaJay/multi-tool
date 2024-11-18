@@ -52,12 +52,12 @@ app.get("/api/auth", async (req, res) => {
   }
 });
 
-app.get("/api/starred", authCheck, async (req, res) => {
+app.get("/api/notes/:noteTitle", authCheck, async (req, res) => {
   try {
     const accessToken = req.session.accessToken;
     dbx.auth.setAccessToken(accessToken);
 
-    const fileResponse = await dbx.filesDownload({ path: "/Starred.html" });
+    const fileResponse = await dbx.filesDownload({ path: `/${req.params.noteTitle}.html` });
 
     const fileContent = fileResponse.result.fileBinary.toString("utf8");
 
@@ -68,7 +68,7 @@ app.get("/api/starred", authCheck, async (req, res) => {
       const defaultContent = "<p></p>";
 
       await dbx.filesUpload({
-        path: "/Starred.html",
+        path: `/${req.params.noteTitle}.html`,
         contents: defaultContent,
         mode: { ".tag": "add" },
       });
@@ -79,7 +79,7 @@ app.get("/api/starred", authCheck, async (req, res) => {
 
       res
         .status(500)
-        .send("An error occurred while trying to obtain Starred page");
+        .send(`An error occurred while trying to obtain note ${req.params.noteTitle}`);
     }
   }
 });

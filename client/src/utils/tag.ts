@@ -5,7 +5,9 @@
 import { mergeAttributes, Node } from "@tiptap/core";
 import { DOMOutputSpec, Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { PluginKey } from "@tiptap/pm/state";
+import { ReactNodeViewRenderer } from "@tiptap/react";
 import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
+import NotelinkNodeView from "../components/NotelinkNodeView";
 
 // see `addAttributes` below
 export interface TagNodeAttrs {
@@ -149,6 +151,11 @@ const Tag = Node.create<TagOptions>({
 
   addAttributes() {
     return {
+      type: {
+        default: this.name,
+        parseHTML: () => this.name,
+        renderHTML: () => ({ "data-type": this.name }),
+      },
       label: {
         default: null,
         parseHTML: (element) => element.getAttribute("data-label"),
@@ -177,7 +184,6 @@ const Tag = Node.create<TagOptions>({
     const mergedOptions = { ...this.options };
 
     mergedOptions.HTMLAttributes = mergeAttributes(
-      { "data-type": this.name },
       this.options.HTMLAttributes,
       HTMLAttributes,
     );
@@ -190,7 +196,6 @@ const Tag = Node.create<TagOptions>({
       return [
         "span",
         mergeAttributes(
-          { "data-type": this.name },
           this.options.HTMLAttributes,
           HTMLAttributes,
         ),
@@ -246,6 +251,28 @@ const Tag = Node.create<TagOptions>({
         ...this.options.suggestion,
       }),
     ];
+  },
+
+  /*
+   * Not adding an input rule for now since it causes weird glitches when you type whitespace
+   */
+  // addInputRules() {
+  //   return [
+  //     nodeInputRule({
+  //       find: /(#([^\s]+)\s)$/, // need to capture the whole thing, then a nested one for label
+  //       type: this.type,
+  //       getAttributes: (match) => ({
+  //         label: match[2],
+  //       }),
+  //     }),
+  //   ];
+  // },
+
+  /*
+   * This replaces `renderHTML` with a component containing a router link, but doesn't affect the html output
+   */
+  addNodeView() {
+    return ReactNodeViewRenderer(NotelinkNodeView);
   },
 });
 

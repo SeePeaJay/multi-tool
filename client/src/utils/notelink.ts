@@ -5,7 +5,9 @@
 import { mergeAttributes, nodeInputRule, Node } from "@tiptap/core";
 import { DOMOutputSpec, Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { PluginKey } from "@tiptap/pm/state";
+import { ReactNodeViewRenderer } from "@tiptap/react";
 import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
+import NotelinkNodeView from "../components/NotelinkNodeView";
 
 // see `addAttributes` below
 export interface NotelinkNodeAttrs {
@@ -149,6 +151,11 @@ const Notelink = Node.create<NotelinkOptions>({
 
   addAttributes() {
     return {
+      type: {
+        default: this.name,
+        parseHTML: () => this.name,
+        renderHTML: () => ({ "data-type": this.name }),
+      },
       label: {
         default: null,
         parseHTML: (element) => element.getAttribute("data-label"),
@@ -177,7 +184,6 @@ const Notelink = Node.create<NotelinkOptions>({
     const mergedOptions = { ...this.options };
 
     mergedOptions.HTMLAttributes = mergeAttributes(
-      { "data-type": this.name },
       this.options.HTMLAttributes,
       HTMLAttributes,
     );
@@ -190,7 +196,6 @@ const Notelink = Node.create<NotelinkOptions>({
       return [
         "span",
         mergeAttributes(
-          { "data-type": this.name },
           this.options.HTMLAttributes,
           HTMLAttributes,
         ),
@@ -248,6 +253,9 @@ const Notelink = Node.create<NotelinkOptions>({
     ];
   },
 
+  /*
+   * This captures the link in case the user creates a link by typing `]]`
+   */
   addInputRules() {
     return [
       nodeInputRule({
@@ -258,6 +266,13 @@ const Notelink = Node.create<NotelinkOptions>({
         }),
       }),
     ];
+  },
+
+  /*
+   * This replaces `renderHTML` with a component containing a router link, but doesn't affect the html output
+   */
+  addNodeView() {
+    return ReactNodeViewRenderer(NotelinkNodeView);
   },
 });
 

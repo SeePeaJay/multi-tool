@@ -92,7 +92,7 @@ const NoteSuggestionMenu = forwardRef<
       {props.items.length ? (
         props.items.map((item, index) => (
           <button
-            className={`flex w-full items-center gap-1 bg-transparent rounded-lg p-1 text-left hover:bg-slate-100 ${index === selectedIndex ? "bg-slate-200" : ""}`}
+            className={`flex w-full items-center gap-1 rounded-lg p-1 text-left hover:bg-slate-200 ${index === selectedIndex ? "bg-slate-100" : ""}`}
             key={index}
             onClick={() => selectItem(index)}
           >

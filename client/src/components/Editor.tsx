@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import { EditorProvider } from "@tiptap/react";
+import { useEffect, useRef, useCallback } from "react";
+import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
 import debounce from "lodash.debounce";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import { extensions } from "../utils/extensions";
@@ -14,13 +14,23 @@ interface EditorProps {
 const Editor = ({ title, content }: EditorProps) => {
   const authFetch = useAuthFetch();
 
+  /*
+   * This maintains a reference object that points to the `title`.
+   * 
+   * You can't directly use `title`, because it is an empty value on first render, which will be captured and used by 
+   * `handleContentChange`.
+   * 
+   * A reference allows `handleContentChange` to obtain the latest version of `title` whenever it wants.
+   */
+  const titleRef = useRef(title);
+
+  const editorRef = useRef<TiptapEditor | null>(null);
+
   // debounce the content change handler
   const handleContentChange = useCallback(
     debounce(async (updatedContent: string) => {
-      console.log(updatedContent);
-
       const sanetizedContent = await authFetch(
-        `/api/notes/Starred`,
+        `/api/notes/${titleRef.current}`,
         {
           credentials: "include",
           method: "POST",
@@ -31,10 +41,26 @@ const Editor = ({ title, content }: EditorProps) => {
         }, // include cookies with request; required for cookie session to function
       );
 
-      localStorage.setItem(`Note:${title}`, sanetizedContent);
-    }, 500),
+      localStorage.setItem(`Note:${titleRef.current}`, sanetizedContent);
+    }, 1000),
     [],
   );
+
+  // update `titleRef` whenever `title` is resolved
+  useEffect(() => {
+    titleRef.current = title;
+  }, [title]);
+
+  // dynamically update editor content whenever new `content` is passed from parent
+  useEffect(() => {
+    if (editorRef.current && content) {
+      // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a lifecycle
+      // method. ..."
+      setTimeout(() => {
+        editorRef.current!.commands.setContent(content);
+      });
+    }
+  }, [content]);
 
   // Tiptap's content prop is static, so only render element when content is ready
   return (
@@ -42,8 +68,12 @@ const Editor = ({ title, content }: EditorProps) => {
       <h1>{title}</h1>
       {content ? (
         <EditorProvider
+          key={title}
           extensions={extensions}
           content={content}
+          onCreate={({ editor }) => {
+            editorRef.current = editor;
+          }}
           onUpdate={({ editor }) => {
             handleContentChange(editor.getHTML());
           }}

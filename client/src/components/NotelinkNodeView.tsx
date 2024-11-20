@@ -13,7 +13,7 @@ const NotelinkNodeView = ({ node }: NotelinkNodeViewProps) => {
   return (
     <NodeViewWrapper as="span" className={node.attrs.type}>
       <Link
-        to={`/notes/${label}`}
+        to={`/app/notes/${label}`}
       >{`${suggestionChar}${label}${suggestionChar === "[[" ? "]]" : ""}`}</Link>
     </NodeViewWrapper>
   );

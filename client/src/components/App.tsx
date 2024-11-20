@@ -5,6 +5,7 @@ import Navbar from "../components/Navbar";
 import Root from "../routes/Root";
 import Starred from "../routes/Starred";
 import Notes from "../routes/Notes";
+import Note from "../routes/Note";
 import ProtectedRoute from "../routes/ProtectedRoute";
 import "react-toastify/dist/ReactToastify.min.css";
 
@@ -33,6 +34,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Notes />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/app/notes/:noteTitle"
+          element={
+            <ProtectedRoute>
+              <Note />
             </ProtectedRoute>
           }
         />

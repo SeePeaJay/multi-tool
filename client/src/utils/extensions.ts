@@ -135,6 +135,9 @@ export const extensions = [
     scrollTreshold: 100,
   }),
   StarterKit.configure({
+    heading: false,
+    paragraph: false,
+    codeBlock: false,
     bulletList: false, // disabled due to nested structure, making it difficult to integrate with block id
     orderedList: false, // same as above
     listItem: false, // same as above

@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
 import debounce from "lodash.debounce";
 import { useAuthFetch } from "../hooks/AuthFetch";
+import { useLoading } from "../contexts/LoadingContext";
 import { extensions } from "../utils/extensions";
 import SkeletonEditor from "./SkeletonEditor";
 import "./Editor.css";
@@ -13,13 +14,14 @@ interface EditorProps {
 
 const Editor = ({ title, content }: EditorProps) => {
   const authFetch = useAuthFetch();
+  const { isLoading } = useLoading();
 
   /*
    * This maintains a reference object that points to the `title`.
-   * 
-   * You can't directly use `title`, because it is an empty value on first render, which will be captured and used by 
+   *
+   * You can't directly use `title`, because it is an empty value on first render, which will be captured and used by
    * `handleContentChange`.
-   * 
+   *
    * A reference allows `handleContentChange` to obtain the latest version of `title` whenever it wants.
    */
   const titleRef = useRef(title);
@@ -66,7 +68,9 @@ const Editor = ({ title, content }: EditorProps) => {
   return (
     <>
       <h1>{title}</h1>
-      {content ? (
+      {isLoading ? (
+        <SkeletonEditor />
+      ) : (
         <EditorProvider
           key={title}
           extensions={extensions}
@@ -78,8 +82,6 @@ const Editor = ({ title, content }: EditorProps) => {
             handleContentChange(editor.getHTML());
           }}
         ></EditorProvider>
-      ) : (
-        <SkeletonEditor />
       )}
     </>
   );

@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuthFetch } from "../hooks/AuthFetch";
+import { useLoading } from "../contexts/LoadingContext";
 import Editor from "../components/Editor";
 
 function Note() {
   const navigate = useNavigate();
   const authFetch = useAuthFetch();
+  const { setIsLoading } = useLoading();
   const { noteTitle } = useParams();
   const [editorContent, setEditorContent] = useState("");
 
@@ -21,6 +23,8 @@ function Note() {
       if (cachedNoteContent) {
         setEditorContent(cachedNoteContent);
       } else {
+        setIsLoading(true);
+
         // fetch note then set it
         const noteContent = await authFetch(
           `/api/notes/${noteTitle}`,
@@ -28,6 +32,8 @@ function Note() {
         );
         localStorage.setItem(`Note:${noteTitle}`, noteContent);
         setEditorContent(noteContent);
+
+        setIsLoading(false);
       }
     } catch (error) {
       console.error(error);

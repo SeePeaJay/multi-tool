@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
+import { useLoading } from "../contexts/LoadingContext";
 import LoadingScreen from "../components/LoadingScreen";
 import Editor from "../components/Editor";
 
@@ -10,7 +11,7 @@ function Starred() {
   const navigate = useNavigate();
   const { isAuthenticated, setIsAuthenticated } = useAuth();
   const authFetch = useAuthFetch();
-
+  const { setIsLoading } = useLoading();
   const [editorContent, setEditorContent] = useState("");
 
   const fetchAccessTokenAndResources = async () => {
@@ -39,11 +40,12 @@ function Starred() {
       if (cachedStarredContent) {
         setEditorContent(cachedStarredContent);
       } else {
+        setIsLoading(true);
+
         // fetch then store list of notes for later usage
-        const noteList = await authFetch(
-          `/api/notes`,
-          { credentials: "include" },
-        );
+        const noteList = await authFetch(`/api/notes`, {
+          credentials: "include",
+        });
         localStorage.setItem("Note list", JSON.stringify(noteList));
 
         // fetch Starred then set it
@@ -53,6 +55,8 @@ function Starred() {
         );
         localStorage.setItem("Note:Starred", starredContent);
         setEditorContent(starredContent);
+
+        setIsLoading(false);
       }
     } catch (error) {
       console.error(error);

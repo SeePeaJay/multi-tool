@@ -4,7 +4,7 @@ import { db } from "../db";
 import { useAuth } from "../contexts/AuthContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import { useLoading } from "../contexts/LoadingContext";
-import LoadingScreen from "../components/LoadingScreen";
+import InitialLoadingScreen from "../components/InitialLoadingScreen";
 import Editor from "../components/Editor";
 
 function Starred() {
@@ -82,7 +82,7 @@ function Starred() {
           <Editor title="Starred" content={editorContent} />
         </div>
       ) : (
-        <LoadingScreen />
+        <InitialLoadingScreen />
       )}
     </>
   );

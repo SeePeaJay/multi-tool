@@ -4,6 +4,7 @@
 
 import { ReactRenderer } from "@tiptap/react";
 import tippy, { Instance as TippyInstance } from "tippy.js";
+import { db } from "../db";
 import NoteSuggestionMenu, {
   NoteSuggestionMenuRef,
   NoteSuggestion,
@@ -32,17 +33,21 @@ export const baseNoteSuggestionConfig: NotelinkOptions["suggestion"] = {
       return Promise.resolve([]);
     }
 
-    const storedList = localStorage.getItem("Note list"); // if too slow, could store to var first then use it
-    const noteList: string[] = storedList ? JSON.parse(storedList) : [];
+    try {
+      const storedList = await db.notes.toArray().then((notes) => notes.map((note) => note.key));
 
-    return Promise.resolve(
-      noteList
-        .map((name, index) => ({ mentionLabel: name, id: index.toString() }))
-        .filter((item) =>
-          item.mentionLabel.toLowerCase().startsWith(query.toLowerCase()),
-        )
-        .slice(0, 5),
-    );
+      return Promise.resolve(
+        storedList
+          .map((name, index) => ({ mentionLabel: name, id: index.toString() }))
+          .filter((item) =>
+            item.mentionLabel.toLowerCase().startsWith(query.toLowerCase()),
+          )
+          .slice(0, 5),
+      );
+    } catch (error) {
+      console.error("Failed to fetch note titles:", error);
+      return [];
+    }
   },
 
   render: () => {

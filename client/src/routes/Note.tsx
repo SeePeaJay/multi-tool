@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { db } from "../db";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import { useLoading } from "../contexts/LoadingContext";
 import Editor from "../components/Editor";
@@ -18,10 +19,10 @@ function Note() {
     }
 
     try {
-      const cachedNoteContent = localStorage.getItem(`Note:${noteTitle}`);
+      const cachedNote = await db.table("notes").get(noteTitle);
 
-      if (cachedNoteContent) {
-        setEditorContent(cachedNoteContent);
+      if (cachedNote?.content) {
+        setEditorContent(cachedNote.content);
       } else {
         setIsLoading(true);
 
@@ -30,7 +31,8 @@ function Note() {
           `/api/notes/${noteTitle}`,
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
-        localStorage.setItem(`Note:${noteTitle}`, noteContent);
+        await db.notes.put({ key: noteTitle, content: noteContent });
+
         setEditorContent(noteContent);
 
         setIsLoading(false);

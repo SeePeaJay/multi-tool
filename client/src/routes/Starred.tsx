@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { db } from "../db";
 import { useAuth } from "../contexts/AuthContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import { useLoading } from "../contexts/LoadingContext";
@@ -35,10 +36,10 @@ function Starred() {
         navigate(location.pathname, { replace: true });
       }
 
-      const cachedStarredContent = localStorage.getItem("Note:Starred");
+      const cachedStarred = await db.table("notes").get("Starred");
 
-      if (cachedStarredContent) {
-        setEditorContent(cachedStarredContent);
+      if (cachedStarred) {
+        setEditorContent(cachedStarred.content);
       } else {
         setIsLoading(true);
 
@@ -46,14 +47,21 @@ function Starred() {
         const noteList = await authFetch(`/api/notes`, {
           credentials: "include",
         });
-        localStorage.setItem("Note list", JSON.stringify(noteList));
+        await Promise.all(
+          noteList.map((noteTitle: string) =>
+            db.notes.put({
+              key: noteTitle,
+              content: "",
+            }),
+          ),
+        );
 
         // fetch Starred then set it
         const starredContent = await authFetch(
           `/api/notes/Starred`,
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
-        localStorage.setItem("Note:Starred", starredContent);
+        await db.notes.put({ key: "Starred", content: starredContent });
         setEditorContent(starredContent);
 
         setIsLoading(false);

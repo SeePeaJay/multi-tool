@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
 import debounce from "lodash.debounce";
+import { db } from "../db";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import { useLoading } from "../contexts/LoadingContext";
 import { extensions } from "../utils/extensions";
@@ -43,7 +44,14 @@ const Editor = ({ title, content }: EditorProps) => {
         }, // include cookies with request; required for cookie session to function
       );
 
-      localStorage.setItem(`Note:${titleRef.current}`, sanetizedContent);
+      try {
+        await db.notes.put({
+          key: titleRef.current,
+          content: sanetizedContent,
+        });
+      } catch (error) {
+        console.error("Failed to save content:", error);
+      }
     }, 1000),
     [],
   );

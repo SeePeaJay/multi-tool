@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import SessionChecker from "../components/SessionChecker";
 import Navbar from "../components/Navbar";
@@ -11,7 +11,7 @@ import "react-toastify/dist/ReactToastify.min.css";
 
 function App() {
   return (
-    <>
+    <BrowserRouter>
       <SessionChecker />
       <ToastContainer
         position="top-center"
@@ -46,7 +46,7 @@ function App() {
           }
         />
       </Routes>
-    </>
+    </BrowserRouter>
   );
 }
 

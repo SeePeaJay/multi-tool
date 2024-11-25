@@ -12,10 +12,10 @@ import NotelinkNodeView from "../components/NotelinkNodeView";
 // see `addAttributes` below
 export interface TagNodeAttrs {
   /**
-   * The label to be rendered by the editor as the displayed text for this tag
-   * item, if provided. Stored as a `data-label` attribute.
+   * The target title to be rendered by the editor as the displayed text for this tag
+   * item, if provided. Stored as a `data-target-title` attribute.
    */
-  label: string | null;
+  targetTitle: string | null;
 }
 
 // define a type for addOptions below
@@ -34,7 +34,7 @@ export type TagOptions<
    * A function to render the text of a tag.
    * @param props The render props
    * @returns The text
-   * @example ({ options, node }) => `${options.suggestion.char}${node.attrs.label}`
+   * @example ({ options, node }) => `${options.suggestion.char}${node.attrs.targetTitle}`
    */
   renderText: (props: {
     options: TagOptions<SuggestionItem, Attrs>;
@@ -45,7 +45,7 @@ export type TagOptions<
    * A function to render the HTML of a tag.
    * @param props The render props
    * @returns The HTML as a ProseMirror DOM Output Spec
-   * @example ({ options, node }) => ['span', { 'data-type': 'tag' }, `${options.suggestion.char}${node.attrs.label}`]
+   * @example ({ options, node }) => ['span', { 'data-type': 'tag' }, `${options.suggestion.char}${node.attrs.targetTitle}`]
    */
   renderHTML: (props: {
     options: TagOptions<SuggestionItem, Attrs>;
@@ -87,13 +87,13 @@ const Tag = Node.create<TagOptions>({
         class: "tag",
       },
       renderText({ options, node }) {
-        return `${options.suggestion.char}${node.attrs.label}`;
+        return `${options.suggestion.char}${node.attrs.targetTitle}`;
       },
       renderHTML({ options, node }) {
         return [
           "span",
           mergeAttributes(this.HTMLAttributes, options.HTMLAttributes),
-          `${options.suggestion.char}${node.attrs.label}`,
+          `${options.suggestion.char}${node.attrs.targetTitle}`,
         ];
       },
       deleteTriggerWithBackspace: true,
@@ -156,16 +156,16 @@ const Tag = Node.create<TagOptions>({
         parseHTML: () => this.name,
         renderHTML: () => ({ "data-type": this.name }),
       },
-      label: {
+      targetTitle: {
         default: null,
-        parseHTML: (element) => element.getAttribute("data-label"),
+        parseHTML: (element) => element.getAttribute("data-target-title"),
         renderHTML: (attributes) => {
-          if (!attributes.label) {
+          if (!attributes.targetTitle) {
             return {};
           }
 
           return {
-            "data-label": attributes.label,
+            "data-target-title": attributes.targetTitle,
           };
         },
       },
@@ -256,17 +256,6 @@ const Tag = Node.create<TagOptions>({
   /*
    * Not adding an input rule for now since it causes weird glitches when you type whitespace
    */
-  // addInputRules() {
-  //   return [
-  //     nodeInputRule({
-  //       find: /(#([^\s]+)\s)$/, // need to capture the whole thing, then a nested one for label
-  //       type: this.type,
-  //       getAttributes: (match) => ({
-  //         label: match[2],
-  //       }),
-  //     }),
-  //   ];
-  // },
 
   /*
    * This replaces `renderHTML` with a component containing a router link, but doesn't affect the html output

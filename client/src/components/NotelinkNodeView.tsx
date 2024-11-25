@@ -7,14 +7,14 @@ interface NotelinkNodeViewProps {
 }
 
 const NotelinkNodeView = ({ node }: NotelinkNodeViewProps) => {
-  const label = node.attrs.label;
+  const targetTitle = node.attrs.targetTitle;
   const suggestionChar = node.attrs.type === "notelink" ? "[[" : "#";
 
   return (
     <NodeViewWrapper as="span" className={node.attrs.type}>
       <Link
-        to={`/app/notes/${label}`}
-      >{`${suggestionChar}${label}${suggestionChar === "[[" ? "]]" : ""}`}</Link>
+        to={`/app/notes/${targetTitle}`}
+      >{`${suggestionChar}${targetTitle}${suggestionChar === "[[" ? "]]" : ""}`}</Link>
     </NodeViewWrapper>
   );
 };

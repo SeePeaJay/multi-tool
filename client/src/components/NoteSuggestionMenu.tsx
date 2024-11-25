@@ -44,7 +44,7 @@ const NoteSuggestionMenu = forwardRef<
     // data. The fields of `suggestion` will depend on whatever data you
     // return from your `items` function in your "suggestion" options handler.
     const notelinkItem: NotelinkNodeAttrs = {
-      label: suggestion.mentionLabel,
+      targetTitle: suggestion.mentionLabel,
     };
 
     props.command(notelinkItem);

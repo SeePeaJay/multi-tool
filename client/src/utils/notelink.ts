@@ -12,10 +12,10 @@ import NotelinkNodeView from "../components/NotelinkNodeView";
 // see `addAttributes` below
 export interface NotelinkNodeAttrs {
   /**
-   * The label to be rendered by the editor as the displayed text for this notelink
-   * item, if provided. Stored as a `data-label` attribute.
+   * The target title to be rendered by the editor as the displayed text for this notelink
+   * item, if provided. Stored as a `data-target-title` attribute.
    */
-  label: string | null;
+  targetTitle: string | null;
 }
 
 // define a type for addOptions below
@@ -34,7 +34,7 @@ export type NotelinkOptions<
    * A function to render the text of a notelink.
    * @param props The render props
    * @returns The text
-   * @example ({ options, node }) => `${options.suggestion.char}${node.attrs.label}`
+   * @example ({ options, node }) => `${options.suggestion.char}${node.attrs.targetTitle}`
    */
   renderText: (props: {
     options: NotelinkOptions<SuggestionItem, Attrs>;
@@ -45,7 +45,7 @@ export type NotelinkOptions<
    * A function to render the HTML of a notelink.
    * @param props The render props
    * @returns The HTML as a ProseMirror DOM Output Spec
-   * @example ({ options, node }) => ['span', { 'data-type': 'notelink' }, `${options.suggestion.char}${node.attrs.label}`]
+   * @example ({ options, node }) => ['span', { 'data-type': 'notelink' }, `${options.suggestion.char}${node.attrs.targetTitle}`]
    */
   renderHTML: (props: {
     options: NotelinkOptions<SuggestionItem, Attrs>;
@@ -87,13 +87,13 @@ const Notelink = Node.create<NotelinkOptions>({
         class: "notelink",
       },
       renderText({ options, node }) {
-        return `${options.suggestion.char}${node.attrs.label}]]`;
+        return `${options.suggestion.char}${node.attrs.targetTitle}]]`;
       },
       renderHTML({ options, node }) {
         return [
           "span",
           mergeAttributes(this.HTMLAttributes, options.HTMLAttributes),
-          `${options.suggestion.char}${node.attrs.label}]]`,
+          `${options.suggestion.char}${node.attrs.targetTitle}]]`,
         ];
       },
       deleteTriggerWithBackspace: true,
@@ -156,16 +156,16 @@ const Notelink = Node.create<NotelinkOptions>({
         parseHTML: () => this.name,
         renderHTML: () => ({ "data-type": this.name }),
       },
-      label: {
+      targetTitle: {
         default: null,
-        parseHTML: (element) => element.getAttribute("data-label"),
+        parseHTML: (element) => element.getAttribute("data-target-title"),
         renderHTML: (attributes) => {
-          if (!attributes.label) {
+          if (!attributes.targetTitle) {
             return {};
           }
 
           return {
-            "data-label": attributes.label,
+            "data-target-title": attributes.targetTitle,
           };
         },
       },
@@ -259,10 +259,10 @@ const Notelink = Node.create<NotelinkOptions>({
   addInputRules() {
     return [
       nodeInputRule({
-        find: /(\[\[([^\]]+)\]\])$/, // need to capture the whole thing, then a nested one for label
+        find: /(\[\[([^\]]+)\]\])$/, // need to capture the whole thing, then a nested one for target title
         type: this.type,
         getAttributes: (match) => ({
-          label: match[2],
+          targetTitle: match[2],
         }),
       }),
     ];

@@ -3,7 +3,7 @@
  */
 
 import { mergeAttributes, nodeInputRule, Node } from "@tiptap/core";
-import { DOMOutputSpec, Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { PluginKey } from "@tiptap/pm/state";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
@@ -42,17 +42,6 @@ export type NotelinkOptions<
   }) => string;
 
   /**
-   * A function to render the HTML of a notelink.
-   * @param props The render props
-   * @returns The HTML as a ProseMirror DOM Output Spec
-   * @example ({ options, node }) => ['span', { 'data-type': 'notelink' }, `${options.suggestion.char}${node.attrs.targetTitle}`]
-   */
-  renderHTML: (props: {
-    options: NotelinkOptions<SuggestionItem, Attrs>;
-    node: ProseMirrorNode;
-  }) => DOMOutputSpec;
-
-  /**
    * Whether to delete the trigger character with backspace.
    * @default true
    */
@@ -83,18 +72,9 @@ const Notelink = Node.create<NotelinkOptions>({
   // to be used for functions below
   addOptions() {
     return {
-      HTMLAttributes: {
-        class: "notelink",
-      },
+      HTMLAttributes: {},
       renderText({ options, node }) {
         return `${options.suggestion.char}${node.attrs.targetTitle}]]`;
-      },
-      renderHTML({ options, node }) {
-        return [
-          "span",
-          mergeAttributes(this.HTMLAttributes, options.HTMLAttributes),
-          `${options.suggestion.char}${node.attrs.targetTitle}]]`,
-        ];
       },
       deleteTriggerWithBackspace: true,
       suggestion: {
@@ -180,29 +160,16 @@ const Notelink = Node.create<NotelinkOptions>({
     ];
   },
 
-  renderHTML({ node, HTMLAttributes }) {
-    const mergedOptions = { ...this.options };
-
-    mergedOptions.HTMLAttributes = mergeAttributes(
-      this.options.HTMLAttributes,
-      HTMLAttributes,
-    );
-    const html = this.options.renderHTML({
-      options: mergedOptions,
-      node,
-    });
-
-    if (typeof html === "string") {
-      return [
-        "span",
-        mergeAttributes(
-          this.options.HTMLAttributes,
-          HTMLAttributes,
-        ),
-        html,
-      ];
-    }
-    return html;
+  renderHTML({ HTMLAttributes }) {
+    return [
+      "span",
+      mergeAttributes(
+        {
+          class: "notelink",
+        },
+        HTMLAttributes,
+      ),
+    ];
   },
 
   renderText({ node }) {

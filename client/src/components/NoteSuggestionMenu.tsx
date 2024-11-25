@@ -8,8 +8,10 @@ import { NotelinkNodeAttrs } from "../utils/notelink";
 import type { SuggestionOptions, SuggestionProps } from "@tiptap/suggestion";
 
 export type NoteSuggestion = {
-  id: string;
-  mentionLabel: string;
+  suggestionId: string;
+  suggestionLabel: string;
+  targetTitle: string;
+  targetBlockId: string | null;
 };
 
 export type NoteSuggestionMenuRef = {
@@ -44,7 +46,8 @@ const NoteSuggestionMenu = forwardRef<
     // data. The fields of `suggestion` will depend on whatever data you
     // return from your `items` function in your "suggestion" options handler.
     const notelinkItem: NotelinkNodeAttrs = {
-      targetTitle: suggestion.mentionLabel,
+      targetTitle: suggestion.targetTitle,
+      targetBlockId: suggestion.targetBlockId,
     };
 
     props.command(notelinkItem);
@@ -96,7 +99,8 @@ const NoteSuggestionMenu = forwardRef<
             key={index}
             onClick={() => selectItem(index)}
           >
-            {item.mentionLabel}
+            <span dangerouslySetInnerHTML={{ __html: item.suggestionLabel }} />
+            {/* this should be ok; content should already be sanitized server-side before being used here */}
           </button>
         ))
       ) : (

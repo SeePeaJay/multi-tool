@@ -16,6 +16,7 @@
     "@tiptap/react": "^2.8.0",
     "@tiptap/starter-kit": "^2.8.0",
     "@tiptap/suggestion": "^2.9.1",
+    "@types/react-router-hash-link": "^2.4.9",
     "dexie": "^4.0.10",
     "dexie-react-hooks": "^1.1.7",
     "lodash.debounce": "^4.0.8",
@@ -23,6 +24,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.27.0",
+    "react-router-hash-link": "^2.4.3",
     "react-toastify": "^10.0.6",
     "tippy.js": "^6.3.7",
     "tiptap-extension-global-drag-handle": "^0.1.16"

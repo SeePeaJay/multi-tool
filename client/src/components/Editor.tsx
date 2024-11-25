@@ -4,7 +4,7 @@ import debounce from "lodash.debounce";
 import { db } from "../db";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import { useLoading } from "../contexts/LoadingContext";
-import { extensions } from "../utils/extensions";
+import { createExtensions } from "../utils/extensions";
 import SkeletonEditor from "./SkeletonEditor";
 import "./Editor.css";
 
@@ -81,7 +81,7 @@ const Editor = ({ title, content }: EditorProps) => {
       ) : (
         <EditorProvider
           key={title}
-          extensions={extensions}
+          extensions={createExtensions(authFetch)}
           content={content}
           onCreate={({ editor }) => {
             editorRef.current = editor;

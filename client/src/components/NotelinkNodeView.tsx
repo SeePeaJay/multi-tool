@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { HashLink } from "react-router-hash-link";
 import { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { NodeViewWrapper } from "@tiptap/react";
 
@@ -7,14 +7,19 @@ interface NotelinkNodeViewProps {
 }
 
 const NotelinkNodeView = ({ node }: NotelinkNodeViewProps) => {
-  const targetTitle = node.attrs.targetTitle;
   const suggestionChar = node.attrs.type === "notelink" ? "[[" : "#";
+  const targetTitle = node.attrs.targetTitle;
+  const targetBlockId = node.attrs.targetBlockId;
 
   return (
     <NodeViewWrapper as="span" className={node.attrs.type}>
-      <Link
-        to={`/app/notes/${targetTitle}`}
-      >{`${suggestionChar}${targetTitle}${suggestionChar === "[[" ? "]]" : ""}`}</Link>
+      <HashLink
+        to={`/app/notes/${targetTitle}${targetBlockId ? `#${targetBlockId}` : ""}`}
+      >
+        {suggestionChar === "[["
+          ? `${suggestionChar}${targetTitle}${targetBlockId ? `::${targetBlockId}` : ""}]]`
+          : `${suggestionChar}${targetTitle}`}
+      </HashLink>
     </NodeViewWrapper>
   );
 };

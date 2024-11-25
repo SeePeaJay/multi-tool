@@ -16,6 +16,8 @@ export interface NotelinkNodeAttrs {
    * item, if provided. Stored as a `data-target-title` attribute.
    */
   targetTitle: string;
+
+  targetBlockId?: string | null;
 }
 
 // define a type for addOptions below
@@ -142,6 +144,19 @@ const Notelink = Node.create<NotelinkOptions>({
         renderHTML: (attributes) => {
           return {
             "data-target-title": attributes.targetTitle,
+          };
+        },
+      },
+      targetBlockId: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-target-block-id"),
+        renderHTML: (attributes) => {
+          if (!attributes.targetBlockId) {
+            return {};
+          }
+
+          return {
+            "data-target-block-id": attributes.targetBlockId,
           };
         },
       },

@@ -9,7 +9,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { nanoid } from "nanoid";
 import Notelink from "./notelink";
 import Tag from "./tag";
-import { baseNoteSuggestionConfig } from "./baseNoteSuggestionConfig";
+import { createBaseNoteSuggestionConfig } from "./baseNoteSuggestionConfig";
 
 interface ExtendedFragment extends Fragment {
   content: any;
@@ -129,7 +129,9 @@ const ensureUniqueIds = Extension.create({
   },
 });
 
-export const extensions = [
+export const createExtensions = (
+  authFetch: (url: string, options?: RequestInit) => Promise<string>,
+) => [
   GlobalDragHandle.configure({
     dragHandleWidth: 20,
     scrollTreshold: 100,
@@ -148,10 +150,10 @@ export const extensions = [
   CustomParagraph,
   CustomCodeBlock,
   Notelink.configure({
-    suggestion: baseNoteSuggestionConfig,
+    suggestion: createBaseNoteSuggestionConfig(authFetch),
   }),
   Tag.configure({
-    suggestion: baseNoteSuggestionConfig,
+    suggestion: createBaseNoteSuggestionConfig(),
   }),
   ensureUniqueIds,
 ];

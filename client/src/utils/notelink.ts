@@ -15,7 +15,7 @@ export interface NotelinkNodeAttrs {
    * The target title to be rendered by the editor as the displayed text for this notelink
    * item, if provided. Stored as a `data-target-title` attribute.
    */
-  targetTitle: string | null;
+  targetTitle: string;
 }
 
 // define a type for addOptions below
@@ -137,13 +137,9 @@ const Notelink = Node.create<NotelinkOptions>({
         renderHTML: () => ({ "data-type": this.name }),
       },
       targetTitle: {
-        default: null,
+        default: "",
         parseHTML: (element) => element.getAttribute("data-target-title"),
         renderHTML: (attributes) => {
-          if (!attributes.targetTitle) {
-            return {};
-          }
-
           return {
             "data-target-title": attributes.targetTitle,
           };

@@ -171,7 +171,7 @@ const Notelink = Node.create<NotelinkOptions>({
     ];
   },
 
-  renderHTML({ HTMLAttributes }) {
+  renderHTML({ node, HTMLAttributes }) {
     return [
       "span",
       mergeAttributes(
@@ -180,6 +180,7 @@ const Notelink = Node.create<NotelinkOptions>({
         },
         HTMLAttributes,
       ),
+      `[[${node.attrs.targetTitle}${node.attrs.targetBlockId ? `::${node.attrs.targetBlockId}` : ""}]]`,
     ];
   },
 

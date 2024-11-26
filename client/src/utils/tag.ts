@@ -156,7 +156,7 @@ const Tag = Node.create<TagOptions>({
     ];
   },
 
-  renderHTML({ HTMLAttributes }) {
+  renderHTML({ node, HTMLAttributes }) {
     return [
       "span",
       mergeAttributes(
@@ -165,6 +165,7 @@ const Tag = Node.create<TagOptions>({
         },
         HTMLAttributes,
       ),
+      `${this.options.suggestion.char}${node.attrs.targetTitle}`,
     ];
   },
 

@@ -3,57 +3,11 @@
  */
 
 import { mergeAttributes, Node } from "@tiptap/core";
-import { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { PluginKey } from "@tiptap/pm/state";
 import { ReactNodeViewRenderer } from "@tiptap/react";
-import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
+import Suggestion from "@tiptap/suggestion";
 import NotelinkNodeView from "../components/NotelinkNodeView";
-
-// see `addAttributes` below
-export interface TagNodeAttrs {
-  /**
-   * The target title to be rendered by the editor as the displayed text for this tag
-   * item, if provided. Stored as a `data-target-title` attribute.
-   */
-  targetTitle: string;
-}
-
-// define a type for addOptions below
-export type TagOptions<
-  SuggestionItem = any,
-  Attrs extends Record<string, any> = TagNodeAttrs,
-> = {
-  /**
-   * The HTML attributes for a tag node.
-   * @default {}
-   * @example { class: 'foo' }
-   */
-  HTMLAttributes: Record<string, any>;
-
-  /**
-   * A function to render the text of a tag.
-   * @param props The render props
-   * @returns The text
-   * @example ({ options, node }) => `${options.suggestion.char}${node.attrs.targetTitle}`
-   */
-  renderText: (props: {
-    options: TagOptions<SuggestionItem, Attrs>;
-    node: ProseMirrorNode;
-  }) => string;
-
-  /**
-   * Whether to delete the trigger character with backspace.
-   * @default true
-   */
-  deleteTriggerWithBackspace: boolean;
-
-  /**
-   * The suggestion options.
-   * @default {}
-   * @example { char: '@', pluginKey: TagPluginKey, command: ({ editor, range, props }) => { ... } }
-   */
-  suggestion: Omit<SuggestionOptions<SuggestionItem, Attrs>, "editor">;
-};
+import { NotelinkOptions } from "./notelink";
 
 /**
  * The plugin key for the tag plugin.
@@ -64,7 +18,7 @@ export const TagPluginKey = new PluginKey("tag");
 /**
  * This extension allows you to insert tags into the editor.
  */
-const Tag = Node.create<TagOptions>({
+const Tag = Node.create<NotelinkOptions>({
   name: "tag",
 
   priority: 101,
@@ -72,10 +26,6 @@ const Tag = Node.create<TagOptions>({
   // to be used for functions below
   addOptions() {
     return {
-      HTMLAttributes: {},
-      renderText({ options, node }) {
-        return `${options.suggestion.char}${node.attrs.targetTitle}`;
-      },
       deleteTriggerWithBackspace: true,
       suggestion: {
         char: "#",
@@ -170,10 +120,7 @@ const Tag = Node.create<TagOptions>({
   },
 
   renderText({ node }) {
-    return this.options.renderText({
-      options: this.options,
-      node,
-    });
+    return `${this.options.suggestion.char}${node.attrs.targetTitle}`;
   },
 
   addKeyboardShortcuts() {

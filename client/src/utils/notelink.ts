@@ -3,7 +3,6 @@
  */
 
 import { mergeAttributes, nodeInputRule, Node } from "@tiptap/core";
-import { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { PluginKey } from "@tiptap/pm/state";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
@@ -25,24 +24,6 @@ export type NotelinkOptions<
   SuggestionItem = any,
   Attrs extends Record<string, any> = NotelinkNodeAttrs,
 > = {
-  /**
-   * The HTML attributes for a notelink node.
-   * @default {}
-   * @example { class: 'foo' }
-   */
-  HTMLAttributes: Record<string, any>;
-
-  /**
-   * A function to render the text of a notelink.
-   * @param props The render props
-   * @returns The text
-   * @example ({ options, node }) => `${options.suggestion.char}${node.attrs.targetTitle}`
-   */
-  renderText: (props: {
-    options: NotelinkOptions<SuggestionItem, Attrs>;
-    node: ProseMirrorNode;
-  }) => string;
-
   /**
    * Whether to delete the trigger character with backspace.
    * @default true
@@ -74,10 +55,6 @@ const Notelink = Node.create<NotelinkOptions>({
   // to be used for functions below
   addOptions() {
     return {
-      HTMLAttributes: {},
-      renderText({ options, node }) {
-        return `${options.suggestion.char}${node.attrs.targetTitle}]]`;
-      },
       deleteTriggerWithBackspace: true,
       suggestion: {
         char: "[[",
@@ -185,10 +162,7 @@ const Notelink = Node.create<NotelinkOptions>({
   },
 
   renderText({ node }) {
-    return this.options.renderText({
-      options: this.options,
-      node,
-    });
+    return `[[${node.attrs.targetTitle}${node.attrs.targetBlockId ? `::${node.attrs.targetBlockId}` : ""}]]`;
   },
 
   addKeyboardShortcuts() {

@@ -17,23 +17,15 @@ const Editor = ({ title, content }: EditorProps) => {
   const authFetch = useAuthFetch();
   const { isLoading } = useLoading();
 
-  /*
-   * This maintains a reference object that points to the `title`.
-   *
-   * You can't directly use `title`, because it is an empty value on first render, which will be captured and used by
-   * `handleContentChange`.
-   *
-   * A reference allows `handleContentChange` to obtain the latest version of `title` whenever it wants.
-   */
-  const titleRef = useRef(title);
-
   const editorRef = useRef<TiptapEditor | null>(null);
 
   // debounce the content change handler
   const handleContentChange = useCallback(
-    debounce(async (updatedContent: string) => {
+    debounce(async (titleToUpdate: string, updatedContent: string) => {
+      console.log(titleToUpdate);
+
       const sanetizedContent = await authFetch(
-        `/api/notes/${titleRef.current}`,
+        `/api/notes/${titleToUpdate}`,
         {
           credentials: "include",
           method: "POST",
@@ -46,7 +38,7 @@ const Editor = ({ title, content }: EditorProps) => {
 
       try {
         await db.notes.put({
-          key: titleRef.current,
+          key: titleToUpdate,
           content: sanetizedContent,
         });
       } catch (error) {
@@ -55,11 +47,6 @@ const Editor = ({ title, content }: EditorProps) => {
     }, 1000),
     [],
   );
-
-  // update `titleRef` whenever `title` is resolved
-  useEffect(() => {
-    titleRef.current = title;
-  }, [title]);
 
   // dynamically update editor content whenever new `content` is passed from parent
   useEffect(() => {
@@ -87,7 +74,7 @@ const Editor = ({ title, content }: EditorProps) => {
             editorRef.current = editor;
           }}
           onUpdate={({ editor }) => {
-            handleContentChange(editor.getHTML());
+            handleContentChange(title, editor.getHTML()); // passing in `title` ties the update to that `title` even if user switches to a different page before the actual update is made; this change also removes the need for `titleRef`
           }}
         ></EditorProvider>
       )}

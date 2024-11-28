@@ -104,8 +104,6 @@ const Notelink = Node.create<NotelinkOptions>({
 
   inline: true,
 
-  selectable: false,
-
   atom: true,
 
   addAttributes() {

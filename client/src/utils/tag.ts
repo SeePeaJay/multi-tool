@@ -75,8 +75,6 @@ const Tag = Node.create<NotelinkOptions>({
 
   inline: true,
 
-  selectable: false,
-
   atom: true,
 
   addAttributes() {

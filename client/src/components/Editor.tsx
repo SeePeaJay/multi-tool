@@ -20,7 +20,7 @@ const Editor = ({ title, content }: EditorProps) => {
   const editorRef = useRef<TiptapEditor | null>(null);
 
   // debounce the content change handler
-  const handleContentChange = useCallback(
+  const debounceContentUpdate = useCallback(
     debounce(async (titleToUpdate: string, updatedContent: string) => {
       console.log(titleToUpdate);
 
@@ -74,7 +74,7 @@ const Editor = ({ title, content }: EditorProps) => {
             editorRef.current = editor;
           }}
           onUpdate={({ editor }) => {
-            handleContentChange(title, editor.getHTML()); // passing in `title` ties the update to that `title` even if user switches to a different page before the actual update is made; this change also removes the need for `titleRef`
+            debounceContentUpdate(title, editor.getHTML()); // passing in `title` ties the update to that `title` even if user switches to a different page before the actual update is made; this change also removes the need for `titleRef`
           }}
         ></EditorProvider>
       )}

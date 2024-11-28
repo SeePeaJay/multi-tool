@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
-import Navbar from "../components/Navbar";
-import Root from "../routes/Root";
-import Starred from "../routes/Starred";
-import Notes from "../routes/Notes";
-import Note from "../routes/Note";
-import ProtectedRoute from "../routes/ProtectedRoute";
+import Navbar from "./components/Navbar";
+import Root from "./routes/Root";
+import Starred from "./routes/Starred";
+import Notes from "./routes/Notes";
+import Note from "./routes/Note";
+import ProtectedRoute from "./routes/ProtectedRoute";
 import "react-toastify/dist/ReactToastify.min.css";
 
 function App() {

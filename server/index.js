@@ -30,7 +30,7 @@ app.use(
   cookieSession({
     name: "session",
     keys: ["secret"],
-    maxAge: 1 * 1 * 60 * 1000, // default lifespan of access token, 14400s
+    maxAge: 4 * 60 * 60 * 1000, // default lifespan of access token, 14400s
   }),
 );
 

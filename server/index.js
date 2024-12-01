@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const cookieSession = require("cookie-session");
 const { Dropbox } = require("dropbox");
+const { nanoid } = require("nanoid");
 const fetch = require("node-fetch");
 const sanitizeHtml = require("sanitize-html");
 
@@ -65,7 +66,7 @@ app.get("/api/notes/:noteTitle", authCheck, async (req, res) => {
   } catch (error) {
     // if file isn't found, create it
     if (error.status === 409) {
-      const defaultContent = "<p></p>";
+      const defaultContent = `<div data-title-id="${nanoid(6)}"></div><p class="frontmatter"></p><p></p>`;
 
       await dbx.filesUpload({
         path: `/${req.params.noteTitle}.html`,
@@ -148,8 +149,9 @@ app.post("/api/notes/:noteTitle", authCheck, async (req, res) => {
     const noteTitle = req.params.noteTitle;
     const sanitizedContent = sanitizeHtml(req.body.updatedContent, {
       allowedAttributes: {
-        "*": ["id"],
-        span: ["class", "data-type", "data-target-title", "data-target-block-id"],
+        "*": ["id", "class"],
+        div: ["data-title-id"],
+        span: ["data-type", "data-target-title", "data-target-block-id"],
       },
     });
     console.log(noteTitle, sanitizedContent);

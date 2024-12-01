@@ -1,12 +1,19 @@
-import Paragraph from "@tiptap/extension-paragraph";
-import Heading from "@tiptap/extension-heading";
 import CodeBlock from "@tiptap/extension-code-block";
-import GlobalDragHandle from "tiptap-extension-global-drag-handle";
+import Document from "@tiptap/extension-document";
+import Heading from "@tiptap/extension-heading";
+import Paragraph from "@tiptap/extension-paragraph";
 import StarterKit from "@tiptap/starter-kit";
+import GlobalDragHandle from "tiptap-extension-global-drag-handle";
+import { createBaseNoteSuggestionConfig } from "./baseNoteSuggestionConfig";
+import EnsureUniqueIds from "./ensureUniqueIds";
+import Frontmatter from "./frontmatter";
 import Notelink from "./notelink";
 import Tag from "./tag";
-import EnsureUniqueIds from "./ensureUniqueIds";
-import { createBaseNoteSuggestionConfig } from "./baseNoteSuggestionConfig";
+import TitleId from "./titleId";
+
+const CustomDocument = Document.extend({
+  content: "titleId frontmatter block+",
+});
 
 const CustomHeading = Heading.extend({
   renderHTML({ node }) {
@@ -18,6 +25,9 @@ const CustomHeading = Heading.extend({
 });
 
 const CustomParagraph = Paragraph.extend({
+  parseHTML() {
+    return [{ tag: "p:not(.frontmatter)" }]; // since frontmatter is rendered as a `p`, we need to distinguish them
+  },
   renderHTML({ node }) {
     return ["p", { id: node.attrs.blockId }, 0];
   },
@@ -35,8 +45,10 @@ export const createContentEditorExtensions = (
   GlobalDragHandle.configure({
     dragHandleWidth: 20,
     scrollTreshold: 100,
+    excludedTags: ["p.frontmatter"],
   }),
   StarterKit.configure({
+    document: false,
     heading: false,
     paragraph: false,
     codeBlock: false,
@@ -46,6 +58,9 @@ export const createContentEditorExtensions = (
     blockquote: false, // same as above
     horizontalRule: false, // disabled because it doesn't work with current drag handle
   }),
+  CustomDocument,
+  TitleId,
+  Frontmatter,
   CustomHeading,
   CustomParagraph,
   CustomCodeBlock,

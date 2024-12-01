@@ -3,7 +3,7 @@ import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
 import debounce from "lodash.debounce";
 import { db } from "../db";
 import { useAuthFetch } from "../hooks/AuthFetch";
-import { createExtensions } from "../utils/extensions";
+import { createContentEditorExtensions } from "../utils/contentEditorExtensions";
 import "./Editor.css";
 
 interface ContentEditorProps {
@@ -60,7 +60,7 @@ const ContentEditor = ({ title, content }: ContentEditorProps) => {
   return (
     <EditorProvider
       key={title}
-      extensions={createExtensions(authFetch)}
+      extensions={createContentEditorExtensions(authFetch)}
       content={content}
       onCreate={({ editor }) => {
         editorRef.current = editor;

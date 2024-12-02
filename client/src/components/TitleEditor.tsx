@@ -18,6 +18,14 @@ const TitleEditor = ({ title }: TitleEditorProps) => {
   const extensions = [
     Document.extend({
       content: "title",
+      addKeyboardShortcuts() {
+        return {
+          Enter: () => {
+            this.editor.commands.blur();
+            return true;
+          },
+        };
+      },
     }),
     Title,
     Text,
@@ -29,7 +37,7 @@ const TitleEditor = ({ title }: TitleEditorProps) => {
       // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a lifecycle
       // method. ..."
       setTimeout(() => {
-        editorRef.current!.commands.setContent(`<h1>${title}</h1>`);
+        editorRef.current!.commands.setContent(`<h1 class="title">${title}</h1>`);
       });
     }
   }, [title]);
@@ -38,9 +46,12 @@ const TitleEditor = ({ title }: TitleEditorProps) => {
     <EditorProvider
       key={title}
       extensions={extensions}
-      content={`<h1>${title}</h1>`}
+      content={`<h1 class="title">${title}</h1>`}
       onCreate={({ editor }) => {
         editorRef.current = editor;
+      }}
+      onBlur={() => {
+        console.log("Title editor blurred; should rename");
       }}
     ></EditorProvider>
   );

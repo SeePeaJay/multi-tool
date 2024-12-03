@@ -10,6 +10,7 @@ function Note() {
   const authFetch = useAuthFetch();
   const { setIsLoading } = useLoading();
   const { noteTitle } = useParams();
+  const [noteId, setNoteId] = useState("");
   const [editorContent, setEditorContent] = useState("");
 
   const fetchNote = async () => {
@@ -19,21 +20,23 @@ function Note() {
     }
 
     try {
-      const cachedNote = await db.table("notes").get(noteTitle);
+      const cachedNote = await db.table("notes").get({ title: noteTitle });
 
       if (cachedNote?.content) {
+        setNoteId(cachedNote.id);
         setEditorContent(cachedNote.content);
       } else {
         setIsLoading(true);
 
         // fetch note then set it
-        const noteContent = await authFetch(
+        const noteData = await authFetch(
           `/api/notes/${noteTitle}`,
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
-        await db.notes.put({ key: noteTitle, content: noteContent });
 
-        setEditorContent(noteContent);
+        await db.notes.put({ id: cachedNote?.id || noteData.newNoteId, title: noteTitle, content: noteData.content });
+        setNoteId(cachedNote?.id || noteData.newNoteId);
+        setEditorContent(noteData.content);
 
         setIsLoading(false);
       }
@@ -49,7 +52,7 @@ function Note() {
 
   return (
     <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
-      {noteTitle && <Editor title={noteTitle} content={editorContent} />}
+      {noteTitle && <Editor noteId={noteId} title={noteTitle} content={editorContent} />}
     </div>
   );
 }

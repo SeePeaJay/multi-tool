@@ -13,6 +13,7 @@ function Starred() {
   const { isAuthenticated, setIsAuthenticated } = useAuth();
   const authFetch = useAuthFetch();
   const { setIsLoading } = useLoading();
+  const [starredId, setStarredId] = useState("");
   const [editorContent, setEditorContent] = useState("");
 
   const fetchAccessTokenAndResources = async () => {
@@ -36,9 +37,10 @@ function Starred() {
         navigate(location.pathname, { replace: true });
       }
 
-      const cachedStarred = await db.table("notes").get("Starred");
+      const cachedStarred = await db.table("notes").get({ title: "Starred" });
 
       if (cachedStarred) {
+        setStarredId(cachedStarred.id);
         setEditorContent(cachedStarred.content);
       } else {
         setIsLoading(true);
@@ -48,21 +50,25 @@ function Starred() {
           credentials: "include",
         });
         await Promise.all(
-          noteList.map((noteTitle: string) =>
+          Object.keys(noteList).map((noteId: string) =>
             db.notes.put({
-              key: noteTitle,
+              id: noteId,
+              title: noteList[noteId],
               content: "",
             }),
           ),
         );
 
         // fetch Starred then set it
-        const starredContent = await authFetch(
+        const starredData = await authFetch(
           `/api/notes/Starred`,
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
-        await db.notes.put({ key: "Starred", content: starredContent });
-        setEditorContent(starredContent);
+        const starred = await db.table("notes").get({ title: "Starred" });
+
+        await db.notes.update(starred.id, { content: starredData.content });
+        setStarredId(starred.id);
+        setEditorContent(starredData.content);
 
         setIsLoading(false);
       }
@@ -79,7 +85,7 @@ function Starred() {
     <>
       {isAuthenticated ? (
         <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
-          <Editor title="Starred" content={editorContent} />
+          <Editor noteId={starredId} title="Starred" content={editorContent} />
         </div>
       ) : (
         <InitialLoadingScreen />

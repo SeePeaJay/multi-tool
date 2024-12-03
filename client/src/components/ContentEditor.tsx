@@ -7,11 +7,12 @@ import { createContentEditorExtensions } from "../utils/contentEditorExtensions"
 import "./Editor.css";
 
 interface ContentEditorProps {
+  noteId: string;
   title: string;
   content: string;
 }
 
-const ContentEditor = ({ title, content }: ContentEditorProps) => {
+const ContentEditor = ({ noteId, title, content }: ContentEditorProps) => {
   const authFetch = useAuthFetch();
 
   const editorRef = useRef<TiptapEditor | null>(null);
@@ -34,8 +35,7 @@ const ContentEditor = ({ title, content }: ContentEditorProps) => {
       );
 
       try {
-        await db.notes.put({
-          key: titleToUpdate,
+        await db.notes.update(noteId, {
           content: sanetizedContent,
         });
       } catch (error) {

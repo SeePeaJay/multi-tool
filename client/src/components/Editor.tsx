@@ -5,11 +5,12 @@ import TitleEditor from "./TitleEditor";
 import ContentEditor from "./ContentEditor";
 
 interface EditorProps {
+  noteId: string;
   title: string;
   content: string;
 }
 
-const Editor = ({ title, content }: EditorProps) => {
+const Editor = ({ noteId, title, content }: EditorProps) => {
   const { isLoading } = useLoading();
 
   // Tiptap's content prop is static, so only render element when content is ready
@@ -20,7 +21,7 @@ const Editor = ({ title, content }: EditorProps) => {
       ) : (
         <>
           <TitleEditor title={title} />
-          <ContentEditor title={title} content={content} />
+          <ContentEditor noteId={noteId} title={title} content={content} />
         </>
       )}
     </>

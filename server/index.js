@@ -54,11 +54,20 @@ app.get("/api/auth", async (req, res) => {
   } catch (error) {
     // if id file isn't found, create it
     if (error.status === 409) {
-      const idFileContent = `{}`;
+      const starredId = nanoid(6);
+      const idFileContent = `{"${starredId}": "Starred"}`;
 
       await dbx.filesUpload({
         path: `/ids.json`,
         contents: idFileContent,
+        mode: { ".tag": "add" },
+      });
+
+      const starredContent = `<div data-title-id="${starredId}"></div><p class="frontmatter"></p><p></p>`;
+
+      await dbx.filesUpload({
+        path: `/Starred.html`,
+        contents: starredContent,
         mode: { ".tag": "add" },
       });
 
@@ -81,13 +90,12 @@ app.get("/api/notes/:noteTitle", authCheck, async (req, res) => {
 
     const fileContent = fileResponse.result.fileBinary.toString("utf8");
 
-    res.status(200).send(fileContent);
+    res.status(200).send({ content: fileContent });
   } catch (error) {
     // if file isn't found, create it
     if (error.status === 409) {
-      const defaultContent = `<div data-title-id="${nanoid(
-        6,
-      )}"></div><p class="frontmatter"></p><p></p>`;
+      const newNoteId = nanoid(6);
+      const defaultContent = `<div data-title-id="${newNoteId}"></div><p class="frontmatter"></p><p></p>`;
 
       await dbx.filesUpload({
         path: `/${req.params.noteTitle}.html`,
@@ -101,14 +109,14 @@ app.get("/api/notes/:noteTitle", authCheck, async (req, res) => {
       const idFileContent = idFileResponse.result.fileBinary.toString("utf8");
       const idObject = JSON.parse(idFileContent);
 
-      idObject[nanoid(6)] = req.params.noteTitle;
+      idObject[newNoteId] = req.params.noteTitle;
       await dbx.filesUpload({
         path: `/ids.json`,
         contents: JSON.stringify(idObject, null, 2),
         mode: { ".tag": "overwrite" },
       });
-      
-      res.status(200).send(defaultContent);
+
+      res.status(200).send({ newNoteId, content: defaultContent});
     } else {
       console.error(error);
 
@@ -152,27 +160,14 @@ app.get("/api/notes", authCheck, async (req, res) => {
     const accessToken = req.session.accessToken;
     dbx.auth.setAccessToken(accessToken);
 
-    const noteList = [];
-
     // initial request
-    let listResponse = await dbx.filesListFolder({
-      path: "",
+    const idFileResponse = await dbx.filesDownload({
+      path: `/ids.json`,
     });
-    noteList.push(
-      ...listResponse.result.entries.map((entry) => entry.name.split(".")[0]),
-    );
+    const idFileContent = idFileResponse.result.fileBinary.toString("utf8");
+    const idObject = JSON.parse(idFileContent);
 
-    // continue fetching if there are more files
-    while (listResponse.result.has_more) {
-      listResponse = await dbx.filesListFolderContinue({
-        cursor: listResponse.result.cursor,
-      });
-      noteList.push(
-        ...listResponse.result.entries.map((entry) => entry.name.split(".")[0]),
-      );
-    }
-
-    res.status(200).json(noteList);
+    res.status(200).json(idObject);
   } catch (error) {
     console.error(error);
     res

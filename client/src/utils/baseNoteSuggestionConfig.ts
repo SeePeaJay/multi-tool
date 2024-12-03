@@ -27,23 +27,22 @@ const DOM_RECT_FALLBACK: DOMRect = {
 };
 
 async function getBlockSuggestionItems(
-  cachedNote: { key: string; content: string },
+  cachedNote: { id: string; title: string; content: string },
   blockQuery: string,
-  authFetch: (url: string, options?: RequestInit) => Promise<string>,
+  authFetch: (url: string, options?: RequestInit) => Promise<{ newNoteId?: string; content: string }>,
 ): Promise<NoteSuggestion[]> {
   // if content is not cached, cache it first
   if (!cachedNote.content) {
-    const content = await authFetch(
-      `/api/notes/${cachedNote.key}`,
+    const data = await authFetch(
+      `/api/notes/${cachedNote.title}`,
       { credentials: "include" }, // include cookies with request; required for cookie session to function
     );
 
-    await db.notes.put({
-      key: cachedNote.key,
-      content,
+    await db.notes.update(cachedNote.id, {
+      content: data.content,
     });
 
-    cachedNote.content = content;
+    cachedNote.content = data.content;
   }
 
   // then, convert into list of blocks
@@ -61,7 +60,7 @@ async function getBlockSuggestionItems(
         return {
           suggestionId: index.toString(),
           suggestionLabel: block,
-          targetTitle: cachedNote.key,
+          targetTitle: cachedNote.title,
           targetBlockId: blockId,
         };
       })
@@ -77,7 +76,7 @@ async function getTitleSuggestionItems(
   try {
     const storedList = await db.notes
       .toArray()
-      .then((notes) => notes.map((note) => note.key));
+      .then((notes) => notes.map((note) => note.title));
 
     return Promise.resolve(
       storedList
@@ -101,7 +100,7 @@ async function getTitleSuggestionItems(
 }
 
 export const createBaseNoteSuggestionConfig = (
-  authFetch?: (url: string, options?: RequestInit) => Promise<string>,
+  authFetch?: (url: string, options?: RequestInit) => Promise<{ newNoteId?: string; content: string }>,
 ): NotelinkOptions["suggestion"] => ({
   allowSpaces: true,
 
@@ -111,7 +110,7 @@ export const createBaseNoteSuggestionConfig = (
     }
 
     const [titleQuery, blockQuery] = query.split("::");
-    const cachedNote = await db.table("notes").get(titleQuery);
+    const cachedNote = await db.table("notes").get({ title: titleQuery });
 
     // if title has exact match and blockquery exists (and authFetch exists, which is the case if this config object is
     // for [[...]] notelink)...

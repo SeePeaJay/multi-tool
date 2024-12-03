@@ -4,13 +4,19 @@
 
 import Dexie, { type EntityTable } from "dexie";
 
+interface Note {
+  id: string;
+  title: string;
+  content: string;
+}
+
 const db = new Dexie("AppDatabase") as Dexie & {
-  notes: EntityTable<{ key: string; content: string }>;
+  notes: EntityTable<Note, "id">;
 };
 
 // Schema declaration:
 db.version(1).stores({
-  notes: "key",
+  notes: "id, &title",
 });
 
 export { db };

@@ -174,6 +174,32 @@ app.post("/api/notes/:noteTitle", authCheck, async (req, res) => {
   }
 });
 
+app.post("/api/rename", authCheck, async (req, res) => {
+  try {
+    const accessToken = req.session.accessToken;
+    dbx.auth.setAccessToken(accessToken);
+
+    const { oldTitle, newTitle } = req.body;
+    console.log(oldTitle, newTitle);
+
+    // validate input
+    if (!oldTitle || !newTitle) {
+      return res.status(400).send("Both old and new note titles are required");
+    }
+
+    // Use Dropbox API to move (rename) the file
+    await dbx.filesMoveV2({
+      from_path: `/${oldTitle}.html`,
+      to_path: `/${newTitle}.html`,
+    });
+
+    res.status(200).send({ message: "Note renamed successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while trying to rename the note");
+  }
+});
+
 app.post("/api/logout", (req, res) => {
   req.session = null;
   res.clearCookie("session");

@@ -46,10 +46,27 @@ app.get("/api/auth", async (req, res) => {
 
     req.session.accessToken = token.result.access_token;
 
+    // check if id file exists
+    dbx.auth.setAccessToken(req.session.accessToken);
+    await dbx.filesDownload({ path: `/ids.json` });
+
     res.status(200).send({ message: "Authenticated successfully" });
   } catch (error) {
-    console.error(error);
-    res.status(500).send("An error occurred during authentication");
+    // if id file isn't found, create it
+    if (error.status === 409) {
+      const idFileContent = `{}`;
+
+      await dbx.filesUpload({
+        path: `/ids.json`,
+        contents: idFileContent,
+        mode: { ".tag": "add" },
+      });
+
+      res.status(200).send({ message: "Authenticated successfully" });
+    } else {
+      console.error(error);
+      res.status(500).send("An error occurred during authentication");
+    }
   }
 });
 
@@ -58,7 +75,9 @@ app.get("/api/notes/:noteTitle", authCheck, async (req, res) => {
     const accessToken = req.session.accessToken;
     dbx.auth.setAccessToken(accessToken);
 
-    const fileResponse = await dbx.filesDownload({ path: `/${req.params.noteTitle}.html` });
+    const fileResponse = await dbx.filesDownload({
+      path: `/${req.params.noteTitle}.html`,
+    });
 
     const fileContent = fileResponse.result.fileBinary.toString("utf8");
 
@@ -66,7 +85,9 @@ app.get("/api/notes/:noteTitle", authCheck, async (req, res) => {
   } catch (error) {
     // if file isn't found, create it
     if (error.status === 409) {
-      const defaultContent = `<div data-title-id="${nanoid(6)}"></div><p class="frontmatter"></p><p></p>`;
+      const defaultContent = `<div data-title-id="${nanoid(
+        6,
+      )}"></div><p class="frontmatter"></p><p></p>`;
 
       await dbx.filesUpload({
         path: `/${req.params.noteTitle}.html`,
@@ -74,13 +95,28 @@ app.get("/api/notes/:noteTitle", authCheck, async (req, res) => {
         mode: { ".tag": "add" },
       });
 
+      const idFileResponse = await dbx.filesDownload({
+        path: `/ids.json`,
+      });
+      const idFileContent = idFileResponse.result.fileBinary.toString("utf8");
+      const idObject = JSON.parse(idFileContent);
+
+      idObject[nanoid(6)] = req.params.noteTitle;
+      await dbx.filesUpload({
+        path: `/ids.json`,
+        contents: JSON.stringify(idObject, null, 2),
+        mode: { ".tag": "overwrite" },
+      });
+      
       res.status(200).send(defaultContent);
     } else {
       console.error(error);
 
       res
         .status(500)
-        .send(`An error occurred while trying to obtain note ${req.params.noteTitle}`);
+        .send(
+          `An error occurred while trying to obtain note ${req.params.noteTitle}`,
+        );
     }
   }
 });
@@ -122,14 +158,18 @@ app.get("/api/notes", authCheck, async (req, res) => {
     let listResponse = await dbx.filesListFolder({
       path: "",
     });
-    noteList.push(...listResponse.result.entries.map((entry) => entry.name.split(".")[0]));
+    noteList.push(
+      ...listResponse.result.entries.map((entry) => entry.name.split(".")[0]),
+    );
 
     // continue fetching if there are more files
     while (listResponse.result.has_more) {
       listResponse = await dbx.filesListFolderContinue({
         cursor: listResponse.result.cursor,
       });
-      noteList.push(...listResponse.result.entries.map((entry) => entry.name.split(".")[0]));
+      noteList.push(
+        ...listResponse.result.entries.map((entry) => entry.name.split(".")[0]),
+      );
     }
 
     res.status(200).json(noteList);

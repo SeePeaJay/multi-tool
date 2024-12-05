@@ -2,17 +2,16 @@ import { useEffect, useRef } from "react";
 import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
 import Document from "@tiptap/extension-document";
 import Text from "@tiptap/extension-text";
-// import { useAuthFetch } from "../hooks/AuthFetch";
+import { db } from "../db";
 import Title from "../utils/title";
 // import "./Editor.css";
 
 interface TitleEditorProps {
-  title: string;
+  noteId: string;
+  initialEditorContent: string;
 }
 
-const TitleEditor = ({ title }: TitleEditorProps) => {
-  // const authFetch = useAuthFetch();
-
+const TitleEditor = ({ noteId, initialEditorContent }: TitleEditorProps) => {
   const editorRef = useRef<TiptapEditor | null>(null);
 
   const extensions = [
@@ -31,22 +30,28 @@ const TitleEditor = ({ title }: TitleEditorProps) => {
     Text,
   ];
 
-  // dynamically update editor content whenever new `title` is passed from parent
+  // dynamically update editor content whenever new `noteId` is passed from parent
   useEffect(() => {
-    if (editorRef.current && title) {
-      // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a lifecycle
-      // method. ..."
-      setTimeout(() => {
-        editorRef.current!.commands.setContent(`<h1 class="title">${title}</h1>`);
-      });
+    async function updateTitle() {
+      if (editorRef.current && noteId) {
+        const note = await db.notes.get(noteId);
+  
+        // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a lifecycle
+        // method. ..."
+        setTimeout(() => {
+          editorRef.current!.commands.setContent(`<h1 class="title">${note?.title || ""}</h1>`);
+        });
+      }
     }
-  }, [title]);
+
+    updateTitle();
+  }, [noteId]);
 
   return (
     <EditorProvider
-      key={title}
+      key={noteId}
       extensions={extensions}
-      content={`<h1 class="title">${title}</h1>`}
+      content={`<h1 class="title">${initialEditorContent}</h1>`}
       onCreate={({ editor }) => {
         editorRef.current = editor;
       }}

@@ -13,8 +13,10 @@ function Starred() {
   const { isAuthenticated, setIsAuthenticated } = useAuth();
   const authFetch = useAuthFetch();
   const { setIsLoading } = useLoading();
-  const [starredId, setStarredId] = useState("");
-  const [editorContent, setEditorContent] = useState("");
+
+  const [noteId, setNoteId] = useState("");
+  const [initialTitleEditorContent, setInitialTitleEditorContent] = useState("");
+  const [initialContentEditorContent, setInitialContentEditorContent] = useState("");
 
   const fetchAccessTokenAndResources = async () => {
     try {
@@ -37,12 +39,9 @@ function Starred() {
         navigate(location.pathname, { replace: true });
       }
 
-      const cachedStarred = await db.table("notes").get({ title: "Starred" });
+      let starred = await db.table("notes").get({ title: "Starred" });
 
-      if (cachedStarred) {
-        setStarredId(cachedStarred.id);
-        setEditorContent(cachedStarred.content);
-      } else {
+      if (!starred) {
         setIsLoading(true);
 
         // fetch then store list of notes for later usage
@@ -58,20 +57,21 @@ function Starred() {
             }),
           ),
         );
+        starred = await db.table("notes").get({ title: "Starred" });
 
         // fetch Starred then set it
-        const starredData = await authFetch(
-          `/api/notes/Starred`,
+        const starredContent = await authFetch(
+          `/api/notes/${starred.id}`,
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
-        const starred = await db.table("notes").get({ title: "Starred" });
-
-        await db.notes.update(starred.id, { content: starredData.content });
-        setStarredId(starred.id);
-        setEditorContent(starredData.content);
+        await db.notes.update(starred.id, { content: starredContent });
 
         setIsLoading(false);
       }
+
+      setNoteId(starred.id);
+      setInitialTitleEditorContent(starred.title);
+      setInitialContentEditorContent(starred.content);
     } catch (error) {
       console.error(error);
     }
@@ -85,7 +85,11 @@ function Starred() {
     <>
       {isAuthenticated ? (
         <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
-          <Editor noteId={starredId} title="Starred" content={editorContent} />
+          <Editor
+            noteId={noteId}
+            initialTitleEditorContent={initialTitleEditorContent}
+            initialContentEditorContent={initialContentEditorContent}
+          />
         </div>
       ) : (
         <InitialLoadingScreen />

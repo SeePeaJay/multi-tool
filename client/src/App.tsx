@@ -36,7 +36,7 @@ function App() {
           }
         />
         <Route
-          path="/app/notes/:noteTitle"
+          path="/app/notes/:noteId"
           element={
             <ProtectedRoute>
               <Note />

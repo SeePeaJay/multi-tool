@@ -65,6 +65,7 @@ export const createContentEditorExtensions = (
   CustomParagraph,
   CustomCodeBlock,
   Notelink.configure({
+    authFetch,
     suggestion: createBaseNoteSuggestionConfig(authFetch),
   }),
   Tag.configure({

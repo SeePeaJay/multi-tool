@@ -5,9 +5,34 @@
 import { mergeAttributes, Node } from "@tiptap/core";
 import { PluginKey } from "@tiptap/pm/state";
 import { ReactNodeViewRenderer } from "@tiptap/react";
-import Suggestion from "@tiptap/suggestion";
+import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
 import NotelinkNodeView from "../components/NotelinkNodeView";
-import { NotelinkOptions } from "./notelink";
+
+export interface TagNodeAttrs {
+  /**
+   * The target id to be rendered by the editor. Stored as a `data-target-note-id` attribute.
+   */
+  targetNoteId: string;
+}
+
+// define a type for addOptions below
+export type TagOptions<
+  SuggestionItem = any,
+  Attrs extends Record<string, any> = TagNodeAttrs,
+> = {
+  /**
+   * Whether to delete the trigger character with backspace.
+   * @default true
+   */
+  deleteTriggerWithBackspace: boolean;
+
+  /**
+   * The suggestion options.
+   * @default {}
+   * @example { char: '@', pluginKey: NotelinkPluginKey, command: ({ editor, range, props }) => { ... } }
+   */
+  suggestion: Omit<SuggestionOptions<SuggestionItem, Attrs>, "editor">;
+};
 
 /**
  * The plugin key for the tag plugin.
@@ -18,7 +43,7 @@ export const TagPluginKey = new PluginKey("tag");
 /**
  * This extension allows you to insert tags into the editor.
  */
-const Tag = Node.create<NotelinkOptions>({
+const Tag = Node.create<TagOptions>({
   name: "tag",
 
   priority: 101,
@@ -84,12 +109,12 @@ const Tag = Node.create<NotelinkOptions>({
         parseHTML: () => this.name,
         renderHTML: () => ({ "data-type": this.name }),
       },
-      targetTitle: {
+      targetNoteId: {
         default: "",
-        parseHTML: (element) => element.getAttribute("data-target-title"),
+        parseHTML: (element) => element.getAttribute("data-target-note-id"),
         renderHTML: (attributes) => {
           return {
-            "data-target-title": attributes.targetTitle,
+            "data-target-note-id": attributes.targetNoteId,
           };
         },
       },
@@ -113,12 +138,12 @@ const Tag = Node.create<NotelinkOptions>({
         },
         HTMLAttributes,
       ),
-      `${this.options.suggestion.char}${node.attrs.targetTitle}`,
+      `${this.options.suggestion.char}${node.attrs.targetNoteId}`,
     ];
   },
 
   renderText({ node }) {
-    return `${this.options.suggestion.char}${node.attrs.targetTitle}`;
+    return `${this.options.suggestion.char}${node.attrs.targetNoteId}`;
   },
 
   addKeyboardShortcuts() {

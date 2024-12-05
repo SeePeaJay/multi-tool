@@ -3,9 +3,12 @@
  * Based on https://github.com/ueberdosis/tiptap/discussions/2274#discussioncomment-6745835
  */
 
+import { nanoid } from "nanoid";
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
-import { NotelinkNodeAttrs } from "../utils/notelink";
 import type { SuggestionOptions, SuggestionProps } from "@tiptap/suggestion";
+import { db } from "../db";
+import { useAuthFetch } from "../hooks/AuthFetch";
+import { NotelinkNodeAttrs } from "../utils/notelink";
 
 export type NoteSuggestion = {
   suggestionId: string;
@@ -28,9 +31,10 @@ const NoteSuggestionMenu = forwardRef<
   NoteSuggestionMenuRef,
   NoteSuggestionMenuProps
 >((props, ref) => {
+  const authFetch = useAuthFetch();
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const selectItem = (index: number) => {
+  const selectItem = async (index: number) => {
     if (index >= props.items.length) {
       /*
        * Make sure we actually have enough items to select the given index.
@@ -40,17 +44,62 @@ const NoteSuggestionMenu = forwardRef<
       return;
     }
 
-    const suggestion = props.items[index];
+    const selectedSuggestion = props.items[index];
+    const selectedNote = await db.notes.get({ title: selectedSuggestion.targetTitle });
+    let notelinkAttrsFromSelection: NotelinkNodeAttrs;
 
-    // Set all of the attributes of our Notelink/Tag node based on the suggestion
-    // data. The fields of `suggestion` will depend on whatever data you
-    // return from your `items` function in your "suggestion" options handler.
-    const notelinkItem: NotelinkNodeAttrs = {
-      targetTitle: suggestion.targetTitle,
-      targetBlockId: suggestion.targetBlockId,
-    };
+    if (selectedNote) {
+      notelinkAttrsFromSelection = {
+        targetNoteId: selectedNote!.id,
+        targetBlockId: selectedSuggestion.targetBlockId,
+      };
+    } else {
+      const targetNoteId = nanoid(6);
 
-    props.command(notelinkItem);
+      // then, add a new note entry to dexie
+      db.notes.put({
+        id: targetNoteId,
+        title: selectedSuggestion.targetTitle,
+        content: `<div data-title-id="${targetNoteId}"></div><p class="frontmatter"></p><p></p>`,
+      });
+
+      // then, sync this update to remote ids.json file
+      const notes = await db.notes.toArray();
+      const updatedIdObject = notes.reduce(
+        (acc, note) => {
+          acc[note.id] = note.title;
+          return acc;
+        },
+        {} as { [key: string]: string },
+      );
+      await authFetch(`/api/ids`, {
+        credentials: "include", // required for cookie session to function
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ updatedIdObject }),
+      });
+
+      // then, create a new note
+      await authFetch(`/api/notes/${targetNoteId}`, {
+        credentials: "include", // required for cookie session to function
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          updatedContent: `<div data-title-id="${targetNoteId}"></div><p class="frontmatter"></p><p></p>`,
+        }),
+      });
+
+      notelinkAttrsFromSelection = {
+        targetNoteId,
+        targetBlockId: null,
+      };
+    }
+
+    props.command(notelinkAttrsFromSelection);
   };
 
   const upHandler = () => {

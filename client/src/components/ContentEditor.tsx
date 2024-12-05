@@ -8,22 +8,18 @@ import "./Editor.css";
 
 interface ContentEditorProps {
   noteId: string;
-  title: string;
-  content: string;
+  initialEditorContent: string;
 }
 
-const ContentEditor = ({ noteId, title, content }: ContentEditorProps) => {
+const ContentEditor = ({ noteId, initialEditorContent }: ContentEditorProps) => {
   const authFetch = useAuthFetch();
-
   const editorRef = useRef<TiptapEditor | null>(null);
 
   // debounce the content change handler
   const debounceContentUpdate = useCallback(
-    debounce(async (titleToUpdate: string, updatedContent: string) => {
-      console.log(titleToUpdate);
-
+    debounce(async (noteIdToUpdate: string, updatedContent: string) => {
       const sanetizedContent = await authFetch(
-        `/api/notes/${titleToUpdate}`,
+        `/api/notes/${noteIdToUpdate}`,
         {
           credentials: "include",
           method: "POST",
@@ -35,7 +31,7 @@ const ContentEditor = ({ noteId, title, content }: ContentEditorProps) => {
       );
 
       try {
-        await db.notes.update(noteId, {
+        await db.notes.update(noteIdToUpdate, {
           content: sanetizedContent,
         });
       } catch (error) {
@@ -45,28 +41,34 @@ const ContentEditor = ({ noteId, title, content }: ContentEditorProps) => {
     [],
   );
 
-  // dynamically update editor content whenever new `content` is passed from parent
+  // dynamically update editor content whenever there is new `noteId`
   useEffect(() => {
-    if (editorRef.current && content) {
-      // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a lifecycle
-      // method. ..."
-      setTimeout(() => {
-        editorRef.current!.commands.setContent(content);
-      });
+    async function updateContent() {
+      if (editorRef.current && noteId) {
+        const note = await db.notes.get(noteId);
+  
+        // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a lifecycle
+        // method. ..."
+        setTimeout(() => {
+          editorRef.current!.commands.setContent(note?.content || "");
+        });
+      }
     }
-  }, [content]);
+  
+    updateContent();
+  }, [noteId]);
 
   // Tiptap's content prop is static, so only render element when content is ready
   return (
     <EditorProvider
-      key={title}
+      key={noteId}
       extensions={createContentEditorExtensions(authFetch)}
-      content={content}
+      content={initialEditorContent}
       onCreate={({ editor }) => {
         editorRef.current = editor;
       }}
       onUpdate={({ editor }) => {
-        debounceContentUpdate(title, editor.getHTML()); // passing in `title` ties the update to that `title` even if user switches to a different page before the actual update is made; this change also removes the need for `titleRef`
+        debounceContentUpdate(noteId, editor.getHTML()); // passing in `noteId` ties the update to that `noteId` even if user switches to a different page before the actual update is made
       }}
     ></EditorProvider>
   );

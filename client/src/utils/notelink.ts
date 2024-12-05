@@ -2,19 +2,17 @@
  * This file defines a custom notelink node, based on Tiptap's mention.ts.
  */
 
-import { mergeAttributes, nodeInputRule, Node } from "@tiptap/core";
+import { mergeAttributes, Node } from "@tiptap/core";
 import { PluginKey } from "@tiptap/pm/state";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
 import NotelinkNodeView from "../components/NotelinkNodeView";
 
-// see `addAttributes` below
 export interface NotelinkNodeAttrs {
   /**
-   * The target title to be rendered by the editor as the displayed text for this notelink
-   * item, if provided. Stored as a `data-target-title` attribute.
+   * The target id to be rendered by the editor. Stored as a `data-target-note-id` attribute.
    */
-  targetTitle: string;
+  targetNoteId: string;
 
   targetBlockId?: string | null;
 }
@@ -24,6 +22,8 @@ export type NotelinkOptions<
   SuggestionItem = any,
   Attrs extends Record<string, any> = NotelinkNodeAttrs,
 > = {
+  authFetch: (url: string, options?: RequestInit) => Promise<string>;
+
   /**
    * Whether to delete the trigger character with backspace.
    * @default true
@@ -55,6 +55,7 @@ const Notelink = Node.create<NotelinkOptions>({
   // to be used for functions below
   addOptions() {
     return {
+      authFetch: () => Promise.resolve(""),
       deleteTriggerWithBackspace: true,
       suggestion: {
         char: "[[",
@@ -113,12 +114,15 @@ const Notelink = Node.create<NotelinkOptions>({
         parseHTML: () => this.name,
         renderHTML: () => ({ "data-type": this.name }),
       },
-      targetTitle: {
+      initialTargetTitle: {
         default: "",
-        parseHTML: (element) => element.getAttribute("data-target-title"),
+      },
+      targetNoteId: {
+        default: "",
+        parseHTML: (element) => element.getAttribute("data-target-note-id"),
         renderHTML: (attributes) => {
           return {
-            "data-target-title": attributes.targetTitle,
+            "data-target-note-id": attributes.targetNoteId,
           };
         },
       },
@@ -155,12 +159,12 @@ const Notelink = Node.create<NotelinkOptions>({
         },
         HTMLAttributes,
       ),
-      `[[${node.attrs.targetTitle}${node.attrs.targetBlockId ? `::${node.attrs.targetBlockId}` : ""}]]`,
+      `[[${node.attrs.targetNoteId}${node.attrs.targetBlockId ? `::${node.attrs.targetBlockId}` : ""}]]`,
     ];
   },
 
   renderText({ node }) {
-    return `[[${node.attrs.targetTitle}${node.attrs.targetBlockId ? `::${node.attrs.targetBlockId}` : ""}]]`;
+    return `[[${node.attrs.targetNoteId}${node.attrs.targetBlockId ? `::${node.attrs.targetBlockId}` : ""}]]`;
   },
 
   addKeyboardShortcuts() {
@@ -200,21 +204,6 @@ const Notelink = Node.create<NotelinkOptions>({
       Suggestion({
         editor: this.editor,
         ...this.options.suggestion,
-      }),
-    ];
-  },
-
-  /*
-   * This captures the link in case the user creates a link by typing `]]`
-   */
-  addInputRules() {
-    return [
-      nodeInputRule({
-        find: /(\[\[([^\]]+)\]\])$/, // need to capture the whole thing, then a nested one for target title
-        type: this.type,
-        getAttributes: (match) => ({
-          targetTitle: match[2],
-        }),
       }),
     ];
   },

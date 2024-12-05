@@ -29,20 +29,20 @@ const DOM_RECT_FALLBACK: DOMRect = {
 async function getBlockSuggestionItems(
   cachedNote: { id: string; title: string; content: string },
   blockQuery: string,
-  authFetch: (url: string, options?: RequestInit) => Promise<{ newNoteId?: string; content: string }>,
+  authFetch: (url: string, options?: RequestInit) => Promise<string>,
 ): Promise<NoteSuggestion[]> {
   // if content is not cached, cache it first
   if (!cachedNote.content) {
-    const data = await authFetch(
-      `/api/notes/${cachedNote.title}`,
+    const content = await authFetch(
+      `/api/notes/${cachedNote.id}`,
       { credentials: "include" }, // include cookies with request; required for cookie session to function
     );
 
     await db.notes.update(cachedNote.id, {
-      content: data.content,
+      content,
     });
 
-    cachedNote.content = data.content;
+    cachedNote.content = content;
   }
 
   // then, convert into list of blocks
@@ -77,22 +77,30 @@ async function getTitleSuggestionItems(
     const storedList = await db.notes
       .toArray()
       .then((notes) => notes.map((note) => note.title));
-
-    return Promise.resolve(
-      storedList
-        .map((title, index) => ({
-          suggestionId: index.toString(),
-          suggestionLabel: title,
-          targetTitle: title,
-          targetBlockId: null,
-        }))
-        .filter((item) =>
-          item.suggestionLabel
-            .toLowerCase()
-            .startsWith(titleQuery.toLowerCase()),
-        )
-        .slice(0, 5),
+    const suggestions = storedList
+      .map((title, index) => ({
+        suggestionId: index.toString(),
+        suggestionLabel: title,
+        targetTitle: title,
+        targetBlockId: null,
+      }))
+      .filter((item) =>
+        item.suggestionLabel.toLowerCase().startsWith(titleQuery.toLowerCase()),
+      );
+    const hasExactMatch = suggestions.some(
+      (item) => item.suggestionLabel.toLowerCase() === titleQuery.toLowerCase(),
     );
+
+    if (!hasExactMatch) {
+      suggestions.unshift({
+        suggestionId: "-1",
+        suggestionLabel: `Create "${titleQuery}"`,
+        targetTitle: titleQuery,
+        targetBlockId: null,
+      });
+    }
+
+    return Promise.resolve(suggestions);
   } catch (error) {
     console.error("Failed to fetch note titles:", error);
     return [];
@@ -100,7 +108,7 @@ async function getTitleSuggestionItems(
 }
 
 export const createBaseNoteSuggestionConfig = (
-  authFetch?: (url: string, options?: RequestInit) => Promise<{ newNoteId?: string; content: string }>,
+  authFetch?: (url: string, options?: RequestInit) => Promise<string>,
 ): NotelinkOptions["suggestion"] => ({
   allowSpaces: true,
 

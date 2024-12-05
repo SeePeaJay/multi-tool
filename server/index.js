@@ -56,7 +56,6 @@ app.get("/api/auth", async (req, res) => {
     if (error.status === 409) {
       const starredId = nanoid(6);
       const idFileContent = `{"${starredId}": "Starred"}`;
-
       await dbx.filesUpload({
         path: `/ids.json`,
         contents: idFileContent,
@@ -64,7 +63,6 @@ app.get("/api/auth", async (req, res) => {
       });
 
       const starredContent = `<div data-title-id="${starredId}"></div><p class="frontmatter"></p><p></p>`;
-
       await dbx.filesUpload({
         path: `/Starred.html`,
         contents: starredContent,
@@ -79,53 +77,52 @@ app.get("/api/auth", async (req, res) => {
   }
 });
 
-app.get("/api/notes/:noteTitle", authCheck, async (req, res) => {
+app.get("/api/notes/:noteId", authCheck, async (req, res) => {
   try {
     const accessToken = req.session.accessToken;
     dbx.auth.setAccessToken(accessToken);
 
-    const fileResponse = await dbx.filesDownload({
-      path: `/${req.params.noteTitle}.html`,
+    const idFileResponse = await dbx.filesDownload({
+      path: `/ids.json`,
     });
-
+    const idFileContent = idFileResponse.result.fileBinary.toString("utf8");
+    const idObject = JSON.parse(idFileContent);
+    const noteTitle = idObject[req.params.noteId];
+    const fileResponse = await dbx.filesDownload({
+      path: `/${noteTitle}.html`,
+    });
     const fileContent = fileResponse.result.fileBinary.toString("utf8");
 
-    res.status(200).send({ content: fileContent });
+    res.status(200).send(fileContent);
   } catch (error) {
-    // if file isn't found, create it
-    if (error.status === 409) {
-      const newNoteId = nanoid(6);
-      const defaultContent = `<div data-title-id="${newNoteId}"></div><p class="frontmatter"></p><p></p>`;
+    console.error(error);
 
-      await dbx.filesUpload({
-        path: `/${req.params.noteTitle}.html`,
-        contents: defaultContent,
-        mode: { ".tag": "add" },
-      });
+    res
+      .status(500)
+      .send(
+        `An error occurred while trying to obtain note with id ${req.params.noteId}`,
+      );
+  }
+});
 
-      const idFileResponse = await dbx.filesDownload({
-        path: `/ids.json`,
-      });
-      const idFileContent = idFileResponse.result.fileBinary.toString("utf8");
-      const idObject = JSON.parse(idFileContent);
+app.post("/api/ids", authCheck, async (req, res) => {
+  try {
+    const accessToken = req.session.accessToken;
+    dbx.auth.setAccessToken(accessToken);
 
-      idObject[newNoteId] = req.params.noteTitle;
-      await dbx.filesUpload({
-        path: `/ids.json`,
-        contents: JSON.stringify(idObject, null, 2),
-        mode: { ".tag": "overwrite" },
-      });
+    console.log(req.body.updatedIdObject);
 
-      res.status(200).send({ newNoteId, content: defaultContent});
-    } else {
-      console.error(error);
+    await dbx.filesUpload({
+      path: `/ids.json`,
+      contents: JSON.stringify(req.body.updatedIdObject),
+      mode: { ".tag": "overwrite" },
+    });
 
-      res
-        .status(500)
-        .send(
-          `An error occurred while trying to obtain note ${req.params.noteTitle}`,
-        );
-    }
+    res.status(200).send("ok");
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).send(`An error occurred while trying to update id object`);
   }
 });
 
@@ -176,17 +173,22 @@ app.get("/api/notes", authCheck, async (req, res) => {
   }
 });
 
-app.post("/api/notes/:noteTitle", authCheck, async (req, res) => {
+app.post("/api/notes/:noteId", authCheck, async (req, res) => {
   try {
     const accessToken = req.session.accessToken;
     dbx.auth.setAccessToken(accessToken);
 
-    const noteTitle = req.params.noteTitle;
+    const idFileResponse = await dbx.filesDownload({
+      path: `/ids.json`,
+    });
+    const idFileContent = idFileResponse.result.fileBinary.toString("utf8");
+    const idObject = JSON.parse(idFileContent);
+    const noteTitle = idObject[req.params.noteId];
     const sanitizedContent = sanitizeHtml(req.body.updatedContent, {
       allowedAttributes: {
         "*": ["id", "class"],
         div: ["data-title-id"],
-        span: ["data-type", "data-target-title", "data-target-block-id"],
+        span: ["data-type", "data-target-note-id", "data-target-block-id"],
       },
     });
     console.log(noteTitle, sanitizedContent);

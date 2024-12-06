@@ -9,10 +9,9 @@ import EnsureUniqueIds from "./ensureUniqueIds";
 import Frontmatter from "./frontmatter";
 import Notelink from "./notelink";
 import Tag from "./tag";
-import TitleId from "./titleId";
 
 const CustomDocument = Document.extend({
-  content: "titleId frontmatter block+",
+  content: "frontmatter block+",
 });
 
 const CustomHeading = Heading.extend({
@@ -59,7 +58,6 @@ export const createContentEditorExtensions = (
     horizontalRule: false, // disabled because it doesn't work with current drag handle
   }),
   CustomDocument,
-  TitleId,
   Frontmatter,
   CustomHeading,
   CustomParagraph,

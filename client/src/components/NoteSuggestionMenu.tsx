@@ -60,7 +60,7 @@ const NoteSuggestionMenu = forwardRef<
       db.notes.put({
         id: targetNoteId,
         title: selectedSuggestion.targetTitle,
-        content: `<div data-title-id="${targetNoteId}"></div><p class="frontmatter"></p><p></p>`,
+        content: `<p class="frontmatter"></p><p></p>`,
       });
 
       // then, sync this update to remote ids.json file
@@ -89,7 +89,7 @@ const NoteSuggestionMenu = forwardRef<
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          updatedContent: `<div data-title-id="${targetNoteId}"></div><p class="frontmatter"></p><p></p>`,
+          updatedContent: `<p class="frontmatter"></p><p></p>`,
         }),
       });
 

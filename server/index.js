@@ -62,7 +62,7 @@ app.get("/api/auth", async (req, res) => {
         mode: { ".tag": "add" },
       });
 
-      const starredContent = `<div data-title-id="${starredId}"></div><p class="frontmatter"></p><p></p>`;
+      const starredContent = `<p class="frontmatter"></p><p></p>`;
       await dbx.filesUpload({
         path: `/Starred.html`,
         contents: starredContent,
@@ -187,7 +187,6 @@ app.post("/api/notes/:noteId", authCheck, async (req, res) => {
     const sanitizedContent = sanitizeHtml(req.body.updatedContent, {
       allowedAttributes: {
         "*": ["id", "class"],
-        div: ["data-title-id"],
         span: ["data-type", "data-target-note-id", "data-target-block-id"],
       },
     });

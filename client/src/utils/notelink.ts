@@ -15,6 +15,8 @@ export interface NotelinkNodeAttrs {
   targetNoteId: string;
 
   targetBlockId?: string | null;
+
+  initialTargetTitle?: string; 
 }
 
 // define a type for addOptions below
@@ -114,9 +116,6 @@ const Notelink = Node.create<NotelinkOptions>({
         parseHTML: () => this.name,
         renderHTML: () => ({ "data-type": this.name }),
       },
-      initialTargetTitle: {
-        default: "",
-      },
       targetNoteId: {
         default: "",
         parseHTML: (element) => element.getAttribute("data-target-note-id"),
@@ -139,6 +138,9 @@ const Notelink = Node.create<NotelinkOptions>({
           };
         },
       },
+      initialTargetTitle: {
+        default: "",
+      },
     };
   },
 
@@ -151,13 +153,16 @@ const Notelink = Node.create<NotelinkOptions>({
   },
 
   renderHTML({ node, HTMLAttributes }) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { initialTargetTitle, ...attributesToRender } = HTMLAttributes;
+
     return [
       "span",
       mergeAttributes(
         {
           class: "notelink",
         },
-        HTMLAttributes,
+        attributesToRender,
       ),
       `[[${node.attrs.targetNoteId}${node.attrs.targetBlockId ? `::${node.attrs.targetBlockId}` : ""}]]`,
     ];

@@ -13,6 +13,8 @@ export interface TagNodeAttrs {
    * The target id to be rendered by the editor. Stored as a `data-target-note-id` attribute.
    */
   targetNoteId: string;
+
+  initialTargetTitle?: string; 
 }
 
 // define a type for addOptions below
@@ -118,6 +120,9 @@ const Tag = Node.create<TagOptions>({
           };
         },
       },
+      initialTargetTitle: {
+        default: "",
+      },
     };
   },
 
@@ -130,13 +135,16 @@ const Tag = Node.create<TagOptions>({
   },
 
   renderHTML({ node, HTMLAttributes }) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { initialTargetTitle, ...attributesToRender } = HTMLAttributes;
+
     return [
       "span",
       mergeAttributes(
         {
           class: "tag",
         },
-        HTMLAttributes,
+        attributesToRender,
       ),
       `${this.options.suggestion.char}${node.attrs.targetNoteId}`,
     ];

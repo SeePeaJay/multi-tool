@@ -60,7 +60,7 @@ async function getBlockSuggestionItems(
         return {
           suggestionId: index.toString(),
           suggestionLabel: block,
-          targetTitle: cachedNote.title,
+          targetNoteId: cachedNote.id,
           targetBlockId: blockId,
         };
       })
@@ -74,14 +74,12 @@ async function getTitleSuggestionItems(
   titleQuery: string,
 ): Promise<NoteSuggestion[]> {
   try {
-    const storedList = await db.notes
-      .toArray()
-      .then((notes) => notes.map((note) => note.title));
-    const suggestions = storedList
-      .map((title, index) => ({
+    const cachedNotes = await db.notes.toArray();
+    const suggestions: NoteSuggestion[] = cachedNotes
+      .map((note, index) => ({
         suggestionId: index.toString(),
-        suggestionLabel: title,
-        targetTitle: title,
+        suggestionLabel: note.title,
+        targetNoteId: note.id,
         targetBlockId: null,
       }))
       .filter((item) =>
@@ -95,8 +93,9 @@ async function getTitleSuggestionItems(
       suggestions.unshift({
         suggestionId: "-1",
         suggestionLabel: `Create "${titleQuery}"`,
-        targetTitle: titleQuery,
+        targetNoteId: null,
         targetBlockId: null,
+        titleToCreate: titleQuery,
       });
     }
 

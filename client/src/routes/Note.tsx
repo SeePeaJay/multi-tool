@@ -10,7 +10,7 @@ function Note() {
   const authFetch = useAuthFetch();
   const { setIsLoading } = useLoading();
   const { noteId: noteIdParam } = useParams();
-  const [noteId, setNoteId] = useState(""); // can't pass noteId directly because editor will be empty when going through a link
+  const [noteId, setNoteId] = useState(""); // can't pass noteIdParam directly; see return statement comments for why
 
   const [initialTitleEditorContent, setInitialTitleEditorContent] =
     useState("");
@@ -26,14 +26,13 @@ function Note() {
     try {
       let cachedNote = await db.table("notes").get(noteIdParam);
 
+      // fetch note then set it
       if (!cachedNote?.content) {
         setIsLoading(true);
 
-        // fetch note then set it
-        const noteContent = await authFetch(
-          `/api/notes/${noteIdParam}`,
-          { credentials: "include" }, // include cookies with request; required for cookie session to function
-        );
+        const noteContent = await authFetch(`/api/notes/${noteIdParam}`, {
+          credentials: "include",
+        });
 
         await db.notes.update(noteIdParam, { content: noteContent });
         cachedNote = await db.table("notes").get(noteIdParam);
@@ -41,15 +40,16 @@ function Note() {
         setIsLoading(false);
       }
 
-      setNoteId(noteIdParam);
+      // make sure editor content is set BEFORE noteId is set, for return statement below
       setInitialTitleEditorContent(cachedNote.title);
       setInitialContentEditorContent(cachedNote.content);
+      setNoteId(noteIdParam);
     } catch (error) {
       console.error(error);
     }
   };
 
-  // when a different title is detected, fetch note accordingly, then pass the new title and content to child
+  // when a different title id param is detected, fetch note accordingly
   useEffect(() => {
     fetchNote();
     console.log(noteIdParam);
@@ -57,7 +57,9 @@ function Note() {
 
   return (
     <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
-      {noteIdParam && (
+      {noteId && ( // the && expression ensures Editor is only rendered after all the props are ready
+        // not using noteIdParam because content props are still empty by the time noteIdParam is true; we'll cause unnecessary rerender
+        // we should instead use noteId, but we have to make sure it's only set AFTER editor content is ready
         <Editor
           noteId={noteId}
           initialTitleEditorContent={initialTitleEditorContent}

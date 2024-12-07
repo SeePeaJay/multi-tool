@@ -210,20 +210,27 @@ app.post("/api/notes/:noteId", authCheck, async (req, res) => {
   }
 });
 
-app.post("/api/rename", authCheck, async (req, res) => {
+app.post("/api/rename/:noteId", authCheck, async (req, res) => {
   try {
     const accessToken = req.session.accessToken;
     dbx.auth.setAccessToken(accessToken);
 
-    const { oldTitle, newTitle } = req.body;
-    console.log(oldTitle, newTitle);
+    const idFileResponse = await dbx.filesDownload({
+      path: `/ids.json`,
+    });
+    const idFileContent = idFileResponse.result.fileBinary.toString("utf8");
+    const idObject = JSON.parse(idFileContent);
+    const oldTitle = idObject[req.params.noteId];
+    const { newTitle } = req.body;
 
-    // validate input
-    if (!oldTitle || !newTitle) {
-      return res.status(400).send("Both old and new note titles are required");
-    }
+    idObject[req.params.noteId] = newTitle;
+    await dbx.filesUpload({
+      path: `/ids.json`,
+      contents: JSON.stringify(idObject),
+      mode: { ".tag": "overwrite" },
+    });
 
-    // Use Dropbox API to move (rename) the file
+    // rename the file
     await dbx.filesMoveV2({
       from_path: `/${oldTitle}.html`,
       to_path: `/${newTitle}.html`,

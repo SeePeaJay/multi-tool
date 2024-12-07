@@ -69,9 +69,9 @@ function Starred() {
         setIsLoading(false);
       }
 
-      setNoteId(starred.id);
       setInitialTitleEditorContent(starred.title);
       setInitialContentEditorContent(starred.content);
+      setNoteId(starred.id);
     } catch (error) {
       console.error(error);
     }

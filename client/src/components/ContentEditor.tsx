@@ -41,14 +41,15 @@ const ContentEditor = ({ noteId, initialEditorContent }: ContentEditorProps) => 
     [],
   );
 
-  // dynamically update editor content whenever there is new `noteId`
+  // it appears editor provider's `content` only works the first time a non-empty string is provided
+  // we need this to dynamically update editor content whenever there is a new `noteId`
   useEffect(() => {
     async function updateContent() {
       if (editorRef.current && noteId) {
         const note = await db.notes.get(noteId);
   
-        // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a lifecycle
-        // method. ..."
+        // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a 
+        // lifecycle method. ..."
         setTimeout(() => {
           editorRef.current!.commands.setContent(note?.content || "");
         });
@@ -58,7 +59,6 @@ const ContentEditor = ({ noteId, initialEditorContent }: ContentEditorProps) => 
     updateContent();
   }, [noteId]);
 
-  // Tiptap's content prop is static, so only render element when content is ready
   return (
     <EditorProvider
       key={noteId}

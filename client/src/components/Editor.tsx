@@ -1,4 +1,3 @@
-import { useLoading } from "../contexts/LoadingContext";
 import SkeletonEditor from "./SkeletonEditor";
 import "./Editor.css";
 import TitleEditor from "./TitleEditor";
@@ -10,19 +9,26 @@ interface EditorProps {
   initialContentEditorContent: string;
 }
 
-const Editor = ({ noteId, initialTitleEditorContent, initialContentEditorContent }: EditorProps) => {
-  const { isLoading } = useLoading();
-
-  // Tiptap's content prop is static, so only render element when content is ready
+const Editor = ({
+  noteId,
+  initialTitleEditorContent,
+  initialContentEditorContent,
+}: EditorProps) => {
   return (
     <>
-      {isLoading ? (
-        <SkeletonEditor />
-      ) : (
+      {noteId ? ( // this noteId check ensures the editors are only rendered after all the props are ready
         <>
-          <TitleEditor noteId={noteId} initialEditorContent={initialTitleEditorContent} />
-          <ContentEditor noteId={noteId} initialEditorContent={initialContentEditorContent} />
+          <TitleEditor
+            noteId={noteId}
+            initialEditorContent={initialTitleEditorContent}
+          />
+          <ContentEditor
+            noteId={noteId}
+            initialEditorContent={initialContentEditorContent}
+          />
         </>
+      ) : (
+        <SkeletonEditor />
       )}
     </>
   );

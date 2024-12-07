@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { db } from "../db";
 import { useAuth } from "../contexts/AuthContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
-import { useLoading } from "../contexts/LoadingContext";
 import InitialLoadingScreen from "../components/InitialLoadingScreen";
 import Editor from "../components/Editor";
 
@@ -12,7 +11,6 @@ function Starred() {
   const navigate = useNavigate();
   const { isAuthenticated, setIsAuthenticated } = useAuth();
   const authFetch = useAuthFetch();
-  const { setIsLoading } = useLoading();
 
   const [noteId, setNoteId] = useState("");
   const [initialTitleEditorContent, setInitialTitleEditorContent] = useState("");
@@ -42,8 +40,6 @@ function Starred() {
       let starred = await db.table("notes").get({ title: "Starred" });
 
       if (!starred) {
-        setIsLoading(true);
-
         // fetch then store list of notes for later usage
         const noteList = await authFetch(`/api/notes`, {
           credentials: "include",
@@ -65,10 +61,9 @@ function Starred() {
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
         await db.notes.update(starred.id, { content: starredContent });
-
-        setIsLoading(false);
       }
 
+      // make sure editor content is set BEFORE noteId is set; see Editor's noteId check for why
       setInitialTitleEditorContent(starred.title);
       setInitialContentEditorContent(starred.content);
       setNoteId(starred.id);

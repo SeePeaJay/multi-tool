@@ -15,8 +15,10 @@ function Starred() {
   const { setIsLoading } = useLoading();
 
   const [noteId, setNoteId] = useState("");
-  const [initialTitleEditorContent, setInitialTitleEditorContent] = useState("");
-  const [initialContentEditorContent, setInitialContentEditorContent] = useState("");
+  const [initialTitleEditorContent, setInitialTitleEditorContent] =
+    useState("");
+  const [initialContentEditorContent, setInitialContentEditorContent] =
+    useState("");
 
   const fetchAccessTokenAndResources = async () => {
     try {
@@ -65,6 +67,7 @@ function Starred() {
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
         await db.notes.update(starred.id, { content: starredContent });
+        starred = await db.table("notes").get({ title: "Starred" });
       }
 
       // make sure note id and editor content are set BEFORE isLoading; see Editor's isLoading check for why

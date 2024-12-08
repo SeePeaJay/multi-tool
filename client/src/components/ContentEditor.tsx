@@ -41,8 +41,8 @@ const ContentEditor = ({ noteId, initialEditorContent }: ContentEditorProps) => 
     [],
   );
 
-  // it appears editor provider's `content` only works the first time a non-empty string is provided
-  // we need this to dynamically update editor content whenever there is a new `noteId`
+  // need this to dynamically update editor content whenever there is a new `noteId`
+  // editor provider's `content` only works the first time a non-empty string is provided
   useEffect(() => {
     async function updateContent() {
       if (editorRef.current && noteId) {
@@ -63,7 +63,7 @@ const ContentEditor = ({ noteId, initialEditorContent }: ContentEditorProps) => 
     <EditorProvider
       key={noteId}
       extensions={createContentEditorExtensions(authFetch)}
-      content={initialEditorContent}
+      content={initialEditorContent} // this is still needed because `updateTitle` won't execute properly if you auth then switch tab
       onCreate={({ editor }) => {
         editorRef.current = editor;
       }}

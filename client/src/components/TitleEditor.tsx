@@ -63,14 +63,14 @@ const TitleEditor = ({ noteId, initialEditorContent }: TitleEditorProps) => {
     }
   };
 
-  // it appears editor provider's `content` only works the first time a non-empty string is provided
-  // we need this to dynamically update editor content whenever there is a new `noteId`
+  // need this to dynamically update editor content whenever there is a new `noteId`
+  // editor provider's `content` only works the first time a non-empty string is provided
   useEffect(() => {
     async function updateTitle() {
       if (editorRef.current && noteId) {
         const note = await db.notes.get(noteId);
 
-        // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a 
+        // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a
         // lifecycle method. ..."
         setTimeout(() => {
           editorRef.current!.commands.setContent(
@@ -87,7 +87,7 @@ const TitleEditor = ({ noteId, initialEditorContent }: TitleEditorProps) => {
     <EditorProvider
       key={noteId}
       extensions={extensions}
-      content={`<h1 class="title">${initialEditorContent}</h1>`}
+      content={`<h1 class="title">${initialEditorContent}</h1>`} // this is still needed because `updateTitle` won't execute properly if you auth then switch tab
       onCreate={({ editor }) => {
         editorRef.current = editor;
       }}

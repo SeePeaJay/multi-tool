@@ -25,7 +25,7 @@ const Editor = ({
         <>
           <TitleEditor
             noteId={noteId}
-            initialEditorContent={initialTitleEditorContent}
+            initialEditorContent={initialTitleEditorContent} // as for why the initial contents are necessary, check comment on each editor's `content` attr
           />
           <ContentEditor
             noteId={noteId}

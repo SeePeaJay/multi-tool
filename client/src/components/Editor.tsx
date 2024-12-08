@@ -1,7 +1,8 @@
+import { useLoading } from "../contexts/LoadingContext";
 import SkeletonEditor from "./SkeletonEditor";
-import "./Editor.css";
 import TitleEditor from "./TitleEditor";
 import ContentEditor from "./ContentEditor";
+import "./Editor.css";
 
 interface EditorProps {
   noteId: string;
@@ -14,9 +15,13 @@ const Editor = ({
   initialTitleEditorContent,
   initialContentEditorContent,
 }: EditorProps) => {
+  const { isLoading } = useLoading();
+
   return (
     <>
-      {noteId ? ( // this noteId check ensures the editors are only rendered after all the props are ready
+      {isLoading ? ( // this isLoading check ensures the editors are only rendered after all the props are ready
+        <SkeletonEditor />
+      ) : (
         <>
           <TitleEditor
             noteId={noteId}
@@ -27,8 +32,6 @@ const Editor = ({
             initialEditorContent={initialContentEditorContent}
           />
         </>
-      ) : (
-        <SkeletonEditor />
       )}
     </>
   );

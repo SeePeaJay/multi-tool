@@ -3,10 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../db";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import Editor from "../components/Editor";
+import { useLoading } from "../contexts/LoadingContext";
 
 function Note() {
   const navigate = useNavigate();
   const authFetch = useAuthFetch();
+  const { setIsLoading } = useLoading();
   const { noteId: noteIdParam } = useParams();
 
   const [noteId, setNoteId] = useState(""); // can't pass noteIdParam directly; see return statement comments for why
@@ -26,6 +28,8 @@ function Note() {
 
       // fetch note then set it
       if (!cachedNote?.content) {
+        setIsLoading(true);
+
         const noteContent = await authFetch(`/api/notes/${noteIdParam}`, {
           credentials: "include",
         });
@@ -34,10 +38,11 @@ function Note() {
         cachedNote = await db.table("notes").get(noteIdParam);
       }
 
-      // make sure editor content is set BEFORE noteId is set; see Editor's noteId check for why
+      // make sure note id and editor content are set BEFORE isLoading; see Editor's isLoading check for why
+      setNoteId(noteIdParam);
       setInitialTitleEditorContent(cachedNote.title);
       setInitialContentEditorContent(cachedNote.content);
-      setNoteId(noteIdParam);
+      setIsLoading(false);
     } catch (error) {
       console.error(error);
     }

@@ -12,6 +12,21 @@
   }
 }
 
+/* this adjusts size of frontmatter text */
+p.frontmatter {
+  margin-top: -1rem; /* adjust based on vertical margin of heading */
+  font-size: 14px;
+}
+
+/* this adjusts remaining frontmatter style */
+.is-empty::before {
+  color: rgb(209 213 219); /* text-gray-300 */
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
 /* https://github.com/steven-tey/novel/blob/main/apps/web/styles/prosemirror.css#L131 */
 .drag-handle {
   position: fixed;

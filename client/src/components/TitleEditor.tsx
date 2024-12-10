@@ -1,11 +1,11 @@
 import { useEffect, useRef } from "react";
 import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
 import Document from "@tiptap/extension-document";
+import Placeholder from "@tiptap/extension-placeholder";
 import Text from "@tiptap/extension-text";
 import { db } from "../db";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import Title from "../utils/title";
-// import "./Editor.css";
 
 interface TitleEditorProps {
   noteId: string;
@@ -31,6 +31,9 @@ const TitleEditor = ({ noteId, initialEditorContent }: TitleEditorProps) => {
     }),
     Title,
     Text,
+    Placeholder.configure({
+      placeholder: "Add a title...",
+    }),
   ];
 
   const handleBlur = async () => {

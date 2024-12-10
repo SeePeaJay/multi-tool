@@ -4,7 +4,6 @@ import debounce from "lodash.debounce";
 import { db } from "../db";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import { createContentEditorExtensions } from "../utils/contentEditorExtensions";
-import "./Editor.css";
 
 interface ContentEditorProps {
   noteId: string;

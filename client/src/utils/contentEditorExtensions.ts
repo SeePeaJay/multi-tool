@@ -2,6 +2,7 @@ import CodeBlock from "@tiptap/extension-code-block";
 import Document from "@tiptap/extension-document";
 import Heading from "@tiptap/extension-heading";
 import Paragraph from "@tiptap/extension-paragraph";
+import Placeholder from "@tiptap/extension-placeholder";
 import StarterKit from "@tiptap/starter-kit";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import { createBaseNoteSuggestionConfig } from "./baseNoteSuggestionConfig";
@@ -38,6 +39,18 @@ const CustomCodeBlock = CodeBlock.extend({
   },
 });
 
+const CustomPlaceholder = Placeholder.configure({
+  placeholder: ({ node }) => {
+    if (node.type.name === "frontmatter") {
+      return "Add metadata...";
+    }
+
+    return "";
+  },
+  showOnlyWhenEditable: false,
+  showOnlyCurrent: false,
+});
+
 export const createContentEditorExtensions = (
   authFetch: (url: string, options?: RequestInit) => Promise<string>,
 ) => [
@@ -70,4 +83,5 @@ export const createContentEditorExtensions = (
     suggestion: createBaseNoteSuggestionConfig(),
   }),
   EnsureUniqueIds,
+  CustomPlaceholder,
 ];

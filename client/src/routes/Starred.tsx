@@ -70,10 +70,10 @@ function Starred() {
         starred = await db.table("notes").get({ title: "Starred" });
       }
 
-      // make sure note id and editor content are set BEFORE isLoading; see Editor's isLoading check for why
-      setNoteId(starred.id);
+      // make sure editor content is set BEFORE `noteId` and `isLoading`; see Editor's isLoading check and TitleEditor's `previousTitleRef` for why
       setInitialTitleEditorContent(starred.title);
       setInitialContentEditorContent(starred.content);
+      setNoteId(starred.id);
       setIsLoading(false);
     } catch (error) {
       console.error(error);

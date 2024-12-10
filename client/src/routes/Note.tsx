@@ -38,10 +38,10 @@ function Note() {
         cachedNote = await db.table("notes").get(noteIdParam);
       }
 
-      // make sure note id and editor content are set BEFORE isLoading; see Editor's isLoading check for why
-      setNoteId(noteIdParam);
+      // make sure editor content is set BEFORE `noteId` and `isLoading`; see Editor's isLoading check and TitleEditor's `previousTitleRef` for why
       setInitialTitleEditorContent(cachedNote.title);
       setInitialContentEditorContent(cachedNote.content);
+      setNoteId(noteIdParam);
       setIsLoading(false);
     } catch (error) {
       console.error(error);

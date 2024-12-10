@@ -15,7 +15,7 @@ interface TitleEditorProps {
 const TitleEditor = ({ noteId, initialEditorContent }: TitleEditorProps) => {
   const authFetch = useAuthFetch();
   const editorRef = useRef<TiptapEditor | null>(null);
-  const previousTitleRef = useRef(initialEditorContent); // a copy of the last set title value, used to reset when rename fails
+  const previousTitleRef = useRef(""); // a copy of the last set title value, used to reset when rename fails
 
   const extensions = [
     Document.extend({
@@ -82,6 +82,10 @@ const TitleEditor = ({ noteId, initialEditorContent }: TitleEditorProps) => {
         });
       }
     }
+
+    previousTitleRef.current = initialEditorContent;
+    // manually update `previousTitleRef` whenever there is new batch of content
+    // this line is necessary because otherwise, if users refresh the page, `isLoading` won't toggle and `TitleEditor` won't re-render, meaning `previousTitleRef` would've been stuck with an empty title
 
     updateTitle();
   }, [noteId]);

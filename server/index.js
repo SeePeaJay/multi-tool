@@ -243,6 +243,39 @@ app.post("/api/rename/:noteId", authCheck, async (req, res) => {
   }
 });
 
+app.post("/api/delete/:noteId", authCheck, async (req, res) => {
+  try {
+    const accessToken = req.session.accessToken;
+    dbx.auth.setAccessToken(accessToken);
+
+    const idFileResponse = await dbx.filesDownload({
+      path: `/ids.json`,
+    });
+    const idFileContent = idFileResponse.result.fileBinary.toString("utf8");
+    const idObject = JSON.parse(idFileContent);
+    const titleToDelete = idObject[req.params.noteId];
+
+    delete idObject[req.params.noteId];
+
+    await dbx.filesUpload({
+      path: `/ids.json`,
+      contents: JSON.stringify(idObject),
+      mode: { ".tag": "overwrite" },
+    });
+
+    // delete the file
+    await dbx.filesDeleteV2({
+      path: `/${titleToDelete}.html`,
+    });
+
+    res.status(200).send({ message: "Note deleted successfully" });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).send("An error occurred while trying to delete the note");
+  }
+});
+
 app.post("/api/logout", (req, res) => {
   req.session = null;
   res.clearCookie("session");

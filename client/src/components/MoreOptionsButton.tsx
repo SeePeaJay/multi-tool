@@ -1,32 +1,61 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { db } from "../db";
 import DeleteIcon from "./icons/DeleteIcon";
 
 function MoreOptionsButton() {
   const location = useLocation();
+  const navigate = useNavigate();
   const buttonRef = useRef(null);
+  const menuRef = useRef(null);
+  const modalRef = useRef(null);
 
   const [displayedTitle, setDisplayedTitle] = useState("");
   const [shouldShowMenu, setShouldShowMenu] = useState(false);
+  const [shouldShowModal, setShouldShowModal] = useState(false);
 
-  const toggleMenu = () => {
-    setShouldShowMenu(!shouldShowMenu);
+  // can't just rely on `handleClickOutsideOfButtonAndMenu` to close the menu after deleting, since the delete handler won't be called
+  const hideMenuAndShowModal = () => {
+    setShouldShowMenu(false);
+    setShouldShowModal(true);
   };
-  const handleClickOutside = (event: Event) => {
+
+  const handleClickOutsideOfButtonAndMenu = (event: Event) => {
     if (
       buttonRef.current &&
-      !(buttonRef.current as Node).contains(event.target as Node)
+      menuRef.current &&
+      !(buttonRef.current as Node).contains(event.target as Node) &&
+      !(menuRef.current as Node).contains(event.target as Node)
     ) {
       setShouldShowMenu(false);
     }
   };
 
+  const handleClickOutsideOfModal = (event: Event) => {
+    if (
+      modalRef.current &&
+      !(modalRef.current as Node).contains(event.target as Node)
+    ) {
+      setShouldShowModal(false);
+    }
+  };
+
+  const deleteNote = () => {
+    console.log("deleting note");
+    setShouldShowModal(false);
+    navigate("/app/notes", { replace: true });
+  };
+
   useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutsideOfButtonAndMenu);
+    document.addEventListener("mousedown", handleClickOutsideOfModal);
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutsideOfButtonAndMenu,
+      );
+      document.removeEventListener("mousedown", handleClickOutsideOfModal);
     };
   }, []);
 
@@ -67,24 +96,44 @@ function MoreOptionsButton() {
         ref={buttonRef}
         role="button"
         className={`btn btn-sm relative -left-4 z-10 text-gray-400 ${shouldShowMenu ? "" : "btn-ghost"}`}
-        onClick={toggleMenu}
+        onClick={() => setShouldShowMenu(!shouldShowMenu)}
       >
         {displayedTitle}
       </div>
-      {shouldShowMenu && (
-        <ul
-          className="menu !fixed left-2/4 top-[40px] z-[1] w-52 -translate-x-2/4 rounded-box border border-solid border-gray-100 bg-base-100 p-1.5 shadow-lg"
+      <ul
+        ref={menuRef}
+        className={`menu !fixed left-2/4 top-[40px] z-[1] w-52 -translate-x-2/4 rounded-box border border-solid border-gray-100 bg-base-100 p-1.5 shadow-lg ${shouldShowMenu ? "" : "invisible"}`}
+      >
+        <li
+          className={`${displayedTitle !== "Starred" ? "" : "invisible"}`}
+          onClick={hideMenuAndShowModal}
         >
-          {displayedTitle !== "Starred" && (
-            <li>
-              <a className="p-1">
-                <DeleteIcon />
-                Delete
-              </a>
-            </li>
-          )}
-        </ul>
-      )}
+          <a className="p-1">
+            <DeleteIcon />
+            Delete
+          </a>
+        </li>
+      </ul>
+      <div
+        ref={modalRef}
+        className={`modal-box fixed left-2/4 z-10 -translate-x-2/4 border border-solid border-gray-100 ${shouldShowModal ? "" : "invisible"}`}
+      >
+        <h3 className="text-center text-lg font-bold">
+          Are you sure you want to delete "{displayedTitle}"?
+        </h3>
+        <div className="flex justify-center">
+          <button className="btn btn-error btn-sm" onClick={deleteNote}>
+            Confirm
+          </button>
+          <>&nbsp;</>
+          <button
+            className="btn btn-sm"
+            onClick={() => setShouldShowModal(false)}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

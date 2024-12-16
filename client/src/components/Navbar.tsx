@@ -1,11 +1,13 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import StackIcon from "./icons/StackIcon";
 import StarIcon from "./icons/StarIcon";
 import LoginIcon from "./icons/LoginIcon";
 import LogoutIcon from "./icons/LogoutIcon";
+import MoreOptionsButton from "./MoreOptionsButton";
 
 function Navbar() {
+  const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, setIsAuthenticated } = useAuth();
 
@@ -52,9 +54,15 @@ function Navbar() {
           <></>
         )}
       </div>
+      {isAuthenticated && (location.pathname === "/app" || location.pathname.startsWith("/app/notes/")) && (
+        <MoreOptionsButton />
+      )}
       <div className="flex items-center">
         {isAuthenticated ? (
-          <span className="mr-2 cursor-pointer text-gray-400 hover:text-gray-600" onClick={logout}>
+          <span
+            className="mr-2 cursor-pointer text-gray-400 hover:text-gray-600"
+            onClick={logout}
+          >
             <LogoutIcon />
           </span>
         ) : (

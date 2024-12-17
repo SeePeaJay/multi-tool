@@ -4,9 +4,24 @@ import { HashLink } from "react-router-hash-link";
 import { db } from "../db";
 
 function Notes() {
-  const notes = useLiveQuery(() => db.notes.toArray(), []);
-
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const notes = useLiveQuery(() => {
+    const filteredNotes = db.notes.filter((note) =>
+      note.title.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+
+    if (sortOrder === "desc") {
+      return filteredNotes.reverse().sortBy("title");
+    }
+
+    return filteredNotes.sortBy("title");
+  }, [searchTerm, sortOrder]);
+
+  const sortByTitle = () => {
+    const newSortOrder = sortOrder === "asc" ? "desc" : "asc";
+    setSortOrder(newSortOrder);
+  };
 
   return (
     <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
@@ -23,7 +38,9 @@ function Notes() {
       <table className="table table-sm">
         <thead>
           <tr>
-            <th>Title</th>
+            <th onClick={sortByTitle} className="cursor-pointer">
+              Title {sortOrder === "asc" ? "▲" : "▼"}
+            </th>
           </tr>
         </thead>
         <tbody>

@@ -14,8 +14,7 @@ const NotelinkNodeView = ({ node }: NotelinkNodeViewProps) => {
   const [targetTitle, setTargetTitle] = useState<string>("");
 
   const suggestionChar = node.attrs.type === "notelink" ? "[[" : "#";
-  const targetNoteId = node.attrs.targetNoteId;
-  const targetBlockId = node.attrs.targetBlockId;
+  const { targetNoteId, targetBlockId, initialTargetTitle } = node.attrs;
 
   // on start, find the target title for this notelink/tag to display
   useEffect(() => {
@@ -57,13 +56,13 @@ const NotelinkNodeView = ({ node }: NotelinkNodeViewProps) => {
 
         if (cachedNote) {
           setTargetTitle(cachedNote.title);
-        } else {
-          setTargetTitle(node.attrs.initialTargetTitle);
+        } else if (initialTargetTitle) {
+          setTargetTitle(initialTargetTitle);
 
           // add a new note entry to dexie
           await db.notes.put({
             id: targetNoteId,
-            title: node.attrs.initialTargetTitle,
+            title: initialTargetTitle,
             content: `<p class="frontmatter"></p><p></p>`,
           });
 
@@ -71,7 +70,6 @@ const NotelinkNodeView = ({ node }: NotelinkNodeViewProps) => {
         }
       } catch (error) {
         console.error("Error fetching note title:", error);
-        setTargetTitle("Error: cannot fetch note title");
       }
     };
 
@@ -79,14 +77,18 @@ const NotelinkNodeView = ({ node }: NotelinkNodeViewProps) => {
   }, []);
 
   return (
-    <NodeViewWrapper as="span" className={node.attrs.type}>
-      <HashLink
-        to={`/app/notes/${targetNoteId}${targetBlockId ? `#${targetBlockId}` : ""}`}
-      >
-        {suggestionChar === "[["
-          ? `${suggestionChar}${targetTitle}${targetBlockId ? `::${targetBlockId}` : ""}]]`
-          : `${suggestionChar}${targetTitle}`}
-      </HashLink>
+    <NodeViewWrapper as="span" className={`${node.attrs.type} ${targetTitle === "" ? "text-blue-100" : ""}`}>
+      {targetTitle === "" ? (
+        <>Cannot find note with id "{targetNoteId}"</>
+      ) : (
+        <HashLink
+          to={`/app/notes/${targetNoteId}${targetBlockId ? `#${targetBlockId}` : ""}`}
+        >
+          {suggestionChar === "[["
+            ? `${suggestionChar}${targetTitle}${targetBlockId ? `::${targetBlockId}` : ""}]]`
+            : `${suggestionChar}${targetTitle}`}
+        </HashLink>
+      )}
     </NodeViewWrapper>
   );
 };

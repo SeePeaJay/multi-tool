@@ -1,15 +1,17 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useLoading } from "../contexts/LoadingContext";
+import MoreOptionsButton from "./MoreOptionsButton";
 import StackIcon from "./icons/StackIcon";
 import StarIcon from "./icons/StarIcon";
 import LoginIcon from "./icons/LoginIcon";
 import LogoutIcon from "./icons/LogoutIcon";
-import MoreOptionsButton from "./MoreOptionsButton";
 
 function Navbar() {
-  const location = useLocation();
-  const navigate = useNavigate();
   const { isAuthenticated, setIsAuthenticated } = useAuth();
+  const location = useLocation();
+  const { isLoading } = useLoading();
+  const navigate = useNavigate();
 
   const logout = async () => {
     try {
@@ -54,9 +56,10 @@ function Navbar() {
           <></>
         )}
       </div>
-      {isAuthenticated && (location.pathname === "/app" || location.pathname.startsWith("/app/notes/")) && (
-        <MoreOptionsButton />
-      )}
+      {isAuthenticated &&
+        !isLoading &&
+        (location.pathname === "/app" ||
+          location.pathname.startsWith("/app/notes/")) && <MoreOptionsButton />}
       <div className="flex items-center">
         {isAuthenticated ? (
           <span

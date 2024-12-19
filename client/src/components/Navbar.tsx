@@ -70,7 +70,7 @@ function Navbar() {
           </span>
         ) : (
           <a
-            href={`https://www.dropbox.com/oauth2/authorize?client_id=${import.meta.env.VITE_CLIENT_ID}&redirect_uri=${import.meta.env.VITE_REDIRECT_URI}&response_type=code`}
+            href={`https://www.dropbox.com/oauth2/authorize?client_id=${import.meta.env.VITE_CLIENT_ID}&redirect_uri=${import.meta.env.VITE_REDIRECT_URI}&token_access_type=offline&response_type=code`}
             className="mr-2 text-gray-400 hover:text-gray-600"
           >
             <LoginIcon />

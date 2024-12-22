@@ -20,15 +20,21 @@ const redirectUri = process.env.DROPBOX_REDIRECT_URI;
 async function authCheck(req, res, next) {
   if (req.session) {
     dbx.auth.setAccessToken(req.session.accessToken);
-
-    console.log("\nbefore refresh: " + dbx.auth.getAccessToken());
+    const accessTokenBeforeCheck = dbx.auth.getAccessToken();
 
     dbx.auth.setRefreshToken(req.session.refreshToken);
     await dbx.auth.checkAndRefreshAccessToken();
 
-    console.log("\nafter refresh: " + dbx.auth.getAccessToken());
+    const accessTokenAfterCheck = dbx.auth.getAccessToken();
+    req.session.accessToken = accessTokenAfterCheck;
 
-    req.session.accessToken = dbx.auth.getAccessToken();
+    if (accessTokenBeforeCheck !== accessTokenAfterCheck) {
+      const expirationDate = new Date(Date.now() + 1 * 1 * 60 * 1000);
+      res.cookie("expiration", expirationDate.toISOString(), {
+        httpOnly: false,
+        expires: expirationDate,
+      });
+    }
 
     next();
   } else {
@@ -42,7 +48,7 @@ app.use(
   cookieSession({
     name: "session",
     keys: ["secret"],
-    // maxAge: 1 * 1 * 60 * 1000, // default lifespan of access token, 14400s
+    maxAge: 1 * 1 * 60 * 1000,
   }),
 );
 

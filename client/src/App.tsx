@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import Navbar from "./components/Navbar";
 import Root from "./routes/Root";
@@ -10,7 +10,7 @@ import "react-toastify/dist/ReactToastify.min.css";
 
 function App() {
   return (
-    <BrowserRouter>
+    <>
       <ToastContainer
         position="top-center"
         autoClose={5000}
@@ -44,7 +44,7 @@ function App() {
           }
         />
       </Routes>
-    </BrowserRouter>
+    </>
   );
 }
 

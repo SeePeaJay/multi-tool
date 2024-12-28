@@ -18,17 +18,19 @@ const dbx = new Dropbox({
 const redirectUri = process.env.DROPBOX_REDIRECT_URI;
 
 async function authCheck(req, res, next) {
-  if (req.session) {
+  if (req.session && req.session.accessToken) {
+    req.session.sessionExpirationDate = Date.now() + 1 * 1 * 60 * 1000;
+    const expirationDate = new Date(req.session.sessionExpirationDate);
+    res.cookie("expiration", expirationDate.toISOString(), {
+        httpOnly: false,
+        expires: expirationDate,
+    });
+
     dbx.auth.setAccessToken(req.session.accessToken);
-
-    console.log("\nbefore refresh: " + dbx.auth.getAccessToken());
-
     dbx.auth.setRefreshToken(req.session.refreshToken);
     await dbx.auth.checkAndRefreshAccessToken();
-
-    console.log("\nafter refresh: " + dbx.auth.getAccessToken());
-
-    req.session.accessToken = dbx.auth.getAccessToken();
+    const accessTokenAfterCheck = dbx.auth.getAccessToken();
+    req.session.accessToken = accessTokenAfterCheck;
 
     next();
   } else {
@@ -42,7 +44,7 @@ app.use(
   cookieSession({
     name: "session",
     keys: ["secret"],
-    // maxAge: 1 * 1 * 60 * 1000, // default lifespan of access token, 14400s
+    maxAge: 1 * 1 * 60 * 1000,
   }),
 );
 
@@ -56,8 +58,6 @@ app.get("/api/auth", async (req, res) => {
     const token = await dbx.auth.getAccessTokenFromCode(redirectUri, code); // POST https://api.dropbox.com/oauth2/token
 
     req.session.accessToken = token.result.access_token;
-    console.log("\ntoken.result.access_token: " + token.result.access_token);
-
     req.session.refreshToken = token.result.refresh_token;
 
     // check if id file exists

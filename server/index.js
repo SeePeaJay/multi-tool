@@ -19,11 +19,11 @@ const redirectUri = process.env.DROPBOX_REDIRECT_URI;
 
 async function authCheck(req, res, next) {
   if (req.session && req.session.accessToken) {
-    req.session.sessionExpirationDate = Date.now() + 1 * 1 * 60 * 1000;
-    const expirationDate = new Date(req.session.sessionExpirationDate);
-    res.cookie("expiration", expirationDate.toISOString(), {
-        httpOnly: false,
-        expires: expirationDate,
+    req.session.sessionExpiry = Date.now() + 1 * 1 * 60 * 1000;
+    const sessionExpirationDate = new Date(req.session.sessionExpiry);
+    res.cookie("expiration", sessionExpirationDate.toISOString(), {
+      httpOnly: false,
+      expires: sessionExpirationDate,
     });
 
     dbx.auth.setAccessToken(req.session.accessToken);

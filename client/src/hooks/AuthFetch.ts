@@ -6,22 +6,22 @@
 
 import Cookies from "js-cookie";
 import { useAuth } from "../contexts/AuthContext";
-import { useTimeout } from "../contexts/TimeoutContext";
+import { useSession } from "../contexts/SessionContext";
 
-const getSessionExpiration = () => {
+const getSessionExpiryFromCookie = () => {
   const expirationCookie = Cookies.get("expiration");
   return expirationCookie ? new Date(expirationCookie).getTime() : null;
 };
 
 export const useAuthFetch = () => {
   const { logout } = useAuth();
-  const { setSessionExpirationDate } = useTimeout();
+  const { setSessionExpiry } = useSession();
 
-  const updateSessionTimeout = () => {
-    const expirationTime = getSessionExpiration();
+  const updateSessionExpiry = () => {
+    const sessionExpiryFromCookie = getSessionExpiryFromCookie();
 
-    if (expirationTime) {
-      setSessionExpirationDate(expirationTime);
+    if (sessionExpiryFromCookie) {
+      setSessionExpiry(sessionExpiryFromCookie);
     }
   };
 
@@ -40,7 +40,7 @@ export const useAuthFetch = () => {
         }
       }
 
-      updateSessionTimeout();
+      updateSessionExpiry();
 
       // check content-type header to determine how to process response
       const contentType = response.headers.get("content-type");

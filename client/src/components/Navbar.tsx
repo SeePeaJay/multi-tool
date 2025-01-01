@@ -1,6 +1,7 @@
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useLoading } from "../contexts/LoadingContext";
+import { useSession } from "../contexts/SessionContext";
 import MoreOptionsButton from "./MoreOptionsButton";
 import StackIcon from "./icons/StackIcon";
 import StarIcon from "./icons/StarIcon";
@@ -8,25 +9,10 @@ import LoginIcon from "./icons/LoginIcon";
 import LogoutIcon from "./icons/LogoutIcon";
 
 function Navbar() {
-  const { isAuthenticated, setIsAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
   const { isLoading } = useLoading();
-  const navigate = useNavigate();
-
-  const logout = async () => {
-    try {
-      await fetch("/api/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      setIsAuthenticated(false);
-
-      navigate("/");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
+  const { logout } = useSession();
 
   return (
     <nav className="sticky top-0 z-50 flex h-10 w-full items-center justify-between bg-white/80 backdrop-blur">
@@ -64,7 +50,7 @@ function Navbar() {
         {isAuthenticated ? (
           <span
             className="mr-2 cursor-pointer text-gray-400 hover:text-gray-600"
-            onClick={logout}
+            onClick={() => { logout(); }}
           >
             <LogoutIcon />
           </span>

@@ -5,11 +5,14 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { useAuth } from "./AuthContext";
 
 // define shape of context
 interface SessionContextType {
   setSessionExpiry: (sessionExpiry: number | null) => void;
+  logout: (logoutMessage?: string) => void;
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
@@ -17,12 +20,54 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { logout } = useAuth();
+  const { setIsAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
   const timeoutRef = useRef<number | undefined>(undefined);
   const [sessionExpiry, setSessionExpiry] = useState<number | null>(() => {
     const storedTime = localStorage.getItem("sessionExpiry");
     return storedTime ? +storedTime : null;
   });
+
+  const showToastError = (message: string) => {
+    toast.error(message, {
+      position: "top-center",
+      autoClose: 5000,
+      hideProgressBar: true,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "colored",
+    });
+  };
+
+  const logout = (logoutMessage?: string) => {
+    try {
+      clearTimeout(timeoutRef.current);
+
+      fetch("/api/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      setIsAuthenticated(false);
+      
+      navigate("/");
+
+      if (logoutMessage) {
+        showToastError(logoutMessage);
+      }
+    } catch (error) {
+      let errorMessage = "Unknown error";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      console.error(error);
+      showToastError(errorMessage);
+    }
+  };
 
   useEffect(() => {
     // clear any existing timeout when sessionExpiry changes
@@ -37,10 +82,10 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (timeUntilExpiry > 0) {
         timeoutRef.current = setTimeout(() => {
-          logout();
+          logout("Session expired. Please log in again.");
         }, timeUntilExpiry);
       } else {
-        logout();
+        logout("Session expired. Please log in again.");
       }
     }
 
@@ -60,7 +105,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [sessionExpiry]);
 
   return (
-    <SessionContext.Provider value={{ setSessionExpiry }}>
+    <SessionContext.Provider value={{ setSessionExpiry, logout }}>
       {children}
     </SessionContext.Provider>
   );

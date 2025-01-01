@@ -5,7 +5,6 @@
 */
 
 import Cookies from "js-cookie";
-import { useAuth } from "../contexts/AuthContext";
 import { useSession } from "../contexts/SessionContext";
 
 const getSessionExpiryFromCookie = () => {
@@ -14,8 +13,7 @@ const getSessionExpiryFromCookie = () => {
 };
 
 export const useAuthFetch = () => {
-  const { logout } = useAuth();
-  const { setSessionExpiry } = useSession();
+  const { logout, setSessionExpiry } = useSession();
 
   const updateSessionExpiry = () => {
     const sessionExpiryFromCookie = getSessionExpiryFromCookie();

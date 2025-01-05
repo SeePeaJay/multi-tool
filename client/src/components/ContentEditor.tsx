@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
 import debounce from "lodash.debounce";
 import { db } from "../db";
+import { useSSE } from "../contexts/SSEContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import { createContentEditorExtensions } from "../utils/contentEditorExtensions";
 
@@ -10,9 +11,13 @@ interface ContentEditorProps {
   initialEditorContent: string;
 }
 
-const ContentEditor = ({ noteId, initialEditorContent }: ContentEditorProps) => {
+const ContentEditor = ({
+  noteId,
+  initialEditorContent,
+}: ContentEditorProps) => {
   const authFetch = useAuthFetch();
   const editorRef = useRef<TiptapEditor | null>(null);
+  const { rerenderTrigger, sessionId } = useSSE();
 
   // debounce the content change handler
   const debounceContentUpdate = useCallback(
@@ -33,6 +38,15 @@ const ContentEditor = ({ noteId, initialEditorContent }: ContentEditorProps) => 
         await db.notes.update(noteIdToUpdate, {
           content: sanetizedContent,
         });
+
+        authFetch(`/api/broadcast`, {
+          credentials: "include",
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ initiator: sessionId }),
+        });
       } catch (error) {
         console.error("Failed to save content:", error);
       }
@@ -46,17 +60,18 @@ const ContentEditor = ({ noteId, initialEditorContent }: ContentEditorProps) => 
     async function updateContent() {
       if (editorRef.current && noteId) {
         const note = await db.notes.get(noteId);
-  
-        // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a 
+
+        // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a
         // lifecycle method. ..."
         setTimeout(() => {
           editorRef.current!.commands.setContent(note?.content || "");
         });
       }
     }
-  
+
+    // console.log(rerenderTrigger);
     updateContent();
-  }, [noteId]);
+  }, [noteId, rerenderTrigger]);
 
   return (
     <EditorProvider

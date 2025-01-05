@@ -38,6 +38,14 @@ async function authCheck(req, res, next) {
   }
 }
 
+const broadcastUpdate = (userId, eventData) => {
+  if (global.connections && global.connections[userId]) {
+    global.connections[userId].forEach((sendUpdate) => {
+      sendUpdate(eventData);
+    });
+  }
+};
+
 app.use(express.json()); // make `req.body` available
 app.use(cors());
 app.use(
@@ -60,8 +68,14 @@ app.get("/api/auth", async (req, res) => {
     req.session.accessToken = token.result.access_token;
     req.session.refreshToken = token.result.refresh_token;
 
-    // check if id file exists
     dbx.auth.setAccessToken(req.session.accessToken);
+
+    const {
+      result: { account_id: currentUserId },
+    } = await dbx.usersGetCurrentAccount();
+    req.session.userId = currentUserId;
+
+    // check if id file exists
     await dbx.filesDownload({ path: `/ids.json` });
 
     res.status(200).send({ message: "Authenticated successfully" });
@@ -95,8 +109,6 @@ app.get("/api/notes/:noteId", authCheck, async (req, res) => {
   try {
     const accessToken = req.session.accessToken;
     dbx.auth.setAccessToken(accessToken);
-
-    console.log("\ndbx.auth.getAccessToken(): " + dbx.auth.getAccessToken());
 
     const idFileResponse = await dbx.filesDownload({
       path: `/ids.json`,
@@ -206,7 +218,7 @@ app.post("/api/notes/:noteId", authCheck, async (req, res) => {
         span: ["data-type", "data-target-note-id", "data-target-block-id"],
       },
     });
-    console.log(noteTitle, sanitizedContent);
+    // console.log(noteTitle, sanitizedContent);
 
     // validate input (basic check for empty strings)
     if (!noteTitle || !sanitizedContent) {
@@ -224,6 +236,44 @@ app.post("/api/notes/:noteId", authCheck, async (req, res) => {
     console.error(error);
     res.status(500).send("An error occurred while trying to update the note");
   }
+});
+
+app.post("/api/broadcast", authCheck, (req, res) => {
+  broadcastUpdate(req.session.userId, req.body.initiator);
+
+  res.status(200).send("ok");
+});
+
+app.get("/api/events", authCheck, (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders(); // flush the headers to establish SSE with client, replacing the need to res.write("...") before req.on("close", ...)
+
+  const userId = req.session.userId;
+
+  const sendUpdate = (eventData) => {
+    res.write(`data: ${eventData}\n\n`);
+  };
+  sendUpdate.id = req.query.sessionId;
+
+  if (!global.connections) {
+    global.connections = {};
+  }
+  if (!global.connections[userId]) {
+    global.connections[userId] = [];
+  }
+  global.connections[userId].push(sendUpdate);
+  // console.log(global.connections);
+
+  req.on("close", () => {
+    global.connections[userId] = global.connections[userId].filter(
+      (fn) => fn !== sendUpdate,
+    );
+
+    // console.log(global.connections);
+    res.end();
+  });
 });
 
 app.post("/api/rename/:noteId", authCheck, async (req, res) => {

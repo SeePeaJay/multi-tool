@@ -4,7 +4,7 @@
 
 import Dexie, { type EntityTable } from "dexie";
 
-interface Note {
+export interface Note {
   id: string;
   title: string;
   content: string;

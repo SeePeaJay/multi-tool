@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { HashLink } from "react-router-hash-link";
 import { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { NodeViewWrapper } from "@tiptap/react";
-import { db } from "../db";
+import { db, Note } from "../db";
+import { useSSE } from "../contexts/SSEContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 
 interface NotelinkNodeViewProps {
@@ -11,10 +12,25 @@ interface NotelinkNodeViewProps {
 
 const NotelinkNodeView = ({ node }: NotelinkNodeViewProps) => {
   const authFetch = useAuthFetch();
+  const { rerenderTrigger } = useSSE();
+
   const [targetTitle, setTargetTitle] = useState<string>("");
 
   const suggestionChar = node.attrs.type === "notelink" ? "[[" : "#";
   const { targetNoteId, targetBlockId, initialTargetTitle } = node.attrs;
+
+  // listen for local title renames, and update title accordingly
+  useEffect(() => {
+    const updatingHandler = async (modifications: Partial<Note>, primaryKey: string) => {
+      if (primaryKey === targetNoteId && modifications.title) {
+        setTargetTitle(modifications.title);
+      }
+    };
+
+    db.notes.hook("updating", updatingHandler);
+
+    return () => db.notes.hook("updating").unsubscribe(updatingHandler); // cleanup
+  }, []);
 
   // on start, find the target title for this notelink/tag to display
   useEffect(() => {
@@ -74,10 +90,13 @@ const NotelinkNodeView = ({ node }: NotelinkNodeViewProps) => {
     };
 
     displayTargetTitle();
-  }, []);
+  }, [rerenderTrigger]);
 
   return (
-    <NodeViewWrapper as="span" className={`${node.attrs.type} ${targetTitle === "" ? "text-blue-100" : ""}`}>
+    <NodeViewWrapper
+      as="span"
+      className={`${node.attrs.type} ${targetTitle === "" ? "text-blue-100" : ""}`}
+    >
       {targetTitle === "" ? (
         <>Cannot find note with id "{targetNoteId}"</>
       ) : (

@@ -1,27 +1,28 @@
 import { useEffect, useState } from "react";
 import { HashLink } from "react-router-hash-link";
-import { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { NodeViewWrapper } from "@tiptap/react";
+import { NodeViewWrapper, NodeViewProps } from "@tiptap/react";
 import { db, Note } from "../db";
 import { useSSE } from "../contexts/SSEContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 
-interface NotelinkNodeViewProps {
-  node: ProseMirrorNode;
-}
-
-const NotelinkNodeView = ({ node }: NotelinkNodeViewProps) => {
+const NotelinkNodeView: React.FC<NodeViewProps> = ({
+  node,
+  updateAttributes,
+}) => {
   const authFetch = useAuthFetch();
   const { rerenderTrigger } = useSSE();
 
-  const [targetTitle, setTargetTitle] = useState<string>("");
+  const [targetTitle, setTargetTitle] = useState("");
 
   const suggestionChar = node.attrs.type === "notelink" ? "[[" : "#";
   const { targetNoteId, targetBlockId, initialTargetTitle } = node.attrs;
 
   // listen for local title renames, and update title accordingly
   useEffect(() => {
-    const updatingHandler = async (modifications: Partial<Note>, primaryKey: string) => {
+    const updatingHandler = async (
+      modifications: Partial<Note>,
+      primaryKey: string,
+    ) => {
       if (primaryKey === targetNoteId && modifications.title) {
         setTargetTitle(modifications.title);
       }
@@ -83,6 +84,14 @@ const NotelinkNodeView = ({ node }: NotelinkNodeViewProps) => {
           });
 
           await pushNote();
+
+          // immediately remove initialTargetTitle after using it; otherwise it persists long enough to recreate the note you just deleted
+          updateAttributes({
+            initialTargetTitle: "",
+          });
+        } else {
+          // if neither, could be that the note has just been deleted; need to update displayed title accordingly
+          setTargetTitle("");
         }
       } catch (error) {
         console.error("Error fetching note title:", error);

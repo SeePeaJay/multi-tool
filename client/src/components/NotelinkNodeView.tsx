@@ -35,38 +35,6 @@ const NotelinkNodeView: React.FC<NodeViewProps> = ({
 
   // on start, find the target title for this notelink/tag to display
   useEffect(() => {
-    const pushNote = async () => {
-      // make sure to update remote ids.json file first (POST /api/notes/:noteId requires up-to-date ids.json)
-      const notes = await db.notes.toArray();
-      const updatedIdObject = notes.reduce(
-        (acc, note) => {
-          acc[note.id] = note.title;
-          return acc;
-        },
-        {} as { [key: string]: string },
-      );
-      await authFetch(`/api/ids`, {
-        credentials: "include", // required for cookie session to function
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ updatedIdObject }),
-      });
-
-      // then, create the note remotely
-      await authFetch(`/api/notes/${targetNoteId}`, {
-        credentials: "include", // required for cookie session to function
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          updatedContent: `<p class="frontmatter"></p><p></p>`,
-        }),
-      });
-    };
-
     const displayTargetTitle = async () => {
       try {
         const cachedNote = await db.notes.get(targetNoteId);
@@ -83,9 +51,18 @@ const NotelinkNodeView: React.FC<NodeViewProps> = ({
             content: `<p class="frontmatter"></p><p></p>`,
           });
 
-          await pushNote();
+          await authFetch(`/api/create/${targetNoteId}`, {
+            credentials: "include", // required for cookie session to function
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              title: initialTargetTitle,
+            }),
+          });
 
-          // immediately remove initialTargetTitle after using it; otherwise it persists long enough to recreate the note you just deleted
+          // immediately remove initialTargetTitle after using it; otherwise it persists long enough to recreate the note you just deleted; this also causes an additional update request as a side effect
           updateAttributes({
             initialTargetTitle: "",
           });

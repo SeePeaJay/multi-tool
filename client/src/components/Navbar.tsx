@@ -2,10 +2,10 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useLoading } from "../contexts/LoadingContext";
 import { useSession } from "../contexts/SessionContext";
+import LoginButton from "./LoginButton";
 import MoreOptionsButton from "./MoreOptionsButton";
 import StackIcon from "./icons/StackIcon";
 import StarIcon from "./icons/StarIcon";
-import LoginIcon from "./icons/LoginIcon";
 import LogoutIcon from "./icons/LogoutIcon";
 
 function Navbar() {
@@ -50,17 +50,16 @@ function Navbar() {
         {isAuthenticated ? (
           <span
             className="mr-2 cursor-pointer text-gray-400 hover:text-gray-600"
-            onClick={() => { logout(); }}
+            onClick={() => {
+              logout();
+            }}
           >
             <LogoutIcon />
           </span>
         ) : (
-          <a
-            href={`https://www.dropbox.com/oauth2/authorize?client_id=${import.meta.env.VITE_CLIENT_ID}&redirect_uri=${import.meta.env.VITE_REDIRECT_URI}&token_access_type=offline&response_type=code`}
-            className="mr-2 text-gray-400 hover:text-gray-600"
-          >
-            <LoginIcon />
-          </a>
+          <div className="mr-2 mt-2"> {/* create space for button */}
+            <LoginButton />
+          </div>
         )}
       </div>
     </nav>

@@ -21,9 +21,8 @@ function Starred() {
     useState("");
 
   const fetchAccessTokenAndResources = async () => {
-    try {
-      const query = new URLSearchParams(location.search);
-      const code = query.get("code");
+    try {      
+      const { code } = location.state || {};
 
       if (code) {
         // exchange auth code for access token

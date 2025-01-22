@@ -21,7 +21,7 @@ function Starred() {
     useState("");
 
   const fetchAccessTokenAndResources = async () => {
-    try {      
+    try {
       const { code } = location.state || {};
 
       if (code) {
@@ -55,6 +55,7 @@ function Starred() {
               id: noteId,
               title: noteList[noteId],
               content: "",
+              hasFetchedBacklinks: false,
             }),
           ),
         );

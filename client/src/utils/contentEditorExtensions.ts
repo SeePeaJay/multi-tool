@@ -7,12 +7,13 @@ import StarterKit from "@tiptap/starter-kit";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import { createBaseNoteSuggestionConfig } from "./baseNoteSuggestionConfig";
 import EnsureUniqueIds from "./ensureUniqueIds";
+import Backlinks from "./backlinks";
 import Frontmatter from "./frontmatter";
 import Notelink from "./notelink";
 import Tag from "./tag";
 
 const CustomDocument = Document.extend({
-  content: "frontmatter block+",
+  content: "frontmatter block+ backlinks",
 });
 
 const CustomHeading = Heading.extend({
@@ -82,6 +83,7 @@ export const createContentEditorExtensions = (
   Tag.configure({
     suggestion: createBaseNoteSuggestionConfig(),
   }),
+  Backlinks,
   EnsureUniqueIds,
   CustomPlaceholder,
 ];

@@ -48,7 +48,8 @@ const NotelinkNodeView: React.FC<NodeViewProps> = ({
           await db.notes.put({
             id: targetNoteId,
             title: initialTargetTitle,
-            content: `<p class="frontmatter"></p><p></p>`,
+            content: `<p class="frontmatter"></p><p></p><div class="backlinks"></div>`,
+            hasFetchedBacklinks: true,
           });
 
           await authFetch(`/api/create/${targetNoteId}`, {

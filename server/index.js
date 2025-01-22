@@ -68,17 +68,21 @@ const getIdObject = async (idOfIdfile) => {
   return JSON.parse(idFileContent);
 };
 
-const updateFile = async (fileId, fileContent) => {
+const updateFile = async (fileId, fileContent, isFileJson) => {
   const bufferStream = new stream.PassThrough();
+  const mimeType = isFileJson ? "application/json" : "text/html";
+  const useContentAsIndexableText = !isFileJson;
+
   bufferStream.end(fileContent);
   await drive.files.update({
     fileId: fileId,
     media: {
-      mimeType: "text/plain",
+      mimeType,
       body: bufferStream,
     },
+    useContentAsIndexableText,
   });
-}
+};
 
 app.use(express.json()); // make `req.body` available
 app.use(cors());
@@ -142,8 +146,9 @@ app.get("/api/auth", async (req, res) => {
         },
         media: {
           mimeType: "text/html",
-          body: `<p class="frontmatter"></p><p></p>`,
+          body: `<p class="frontmatter"></p><p></p><div class="backlinks"></div>`,
         },
+        useContentAsIndexableText: true,
       });
     } else {
       folderId = searchFolderResponse.data.files[0].id;
@@ -198,31 +203,44 @@ app.get("/api/notes/:noteId", authCheck, async (req, res) => {
   }
 });
 
-// app.post("/api/search", authCheck, async (req, res) => {
-//   try {
-//     const accessToken = req.session.accessToken;
-//     dbx.auth.setAccessToken(accessToken);
+app.post("/api/search", authCheck, async (req, res) => {
+  try {
+    oAuth2Client.setCredentials({
+      access_token: req.session.accessToken,
+    });
 
-//     const searchResponse = await dbx.filesSearchV2({
-//       query: req.body.query,
-//       options: {
-//         file_status: "active",
-//         filename_only: true,
-//       },
-//     });
+    const searchResponse = await drive.files.list({
+      q: `mimeType='text/html' and fullText contains '"${req.body.query}"' and trashed = false`,
+      fields: "files(id, name)",
+    });
 
-//     const noteList = searchResponse.result.matches.map(
-//       (match) => match.metadata.metadata.name,
-//     );
+    const idObject = await getIdObject(req.session.idOfIdfile);
+    const notes = [];
+    const list = searchResponse.data.files;
+    console.log(searchResponse.data.files);
 
-//     res.status(200).send(noteList);
-//   } catch (error) {
-//     console.error(error);
-//     res
-//       .status(500)
-//       .send("An error occurred while trying to search for list of notes");
-//   }
-// });
+    for (const fileMetadata of list) {
+      const fileId = fileMetadata.id;
+      const noteTitle = fileMetadata.name.split(".")[0];
+      const noteId = Object.keys(idObject).find(key => idObject[key] === noteTitle);
+
+      const contentResponse = await drive.files.get(
+        {
+          fileId,
+          alt: "media",
+        },
+        { responseType: "text" },
+      );
+
+      notes.push({ id: noteId, name: noteTitle, content: contentResponse.data });
+    }
+
+    res.status(200).send(notes);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while trying to search");
+  }
+});
 
 app.get("/api/notes", authCheck, async (req, res) => {
   try {
@@ -320,7 +338,7 @@ app.post("/api/create/:noteId", authCheck, async (req, res) => {
 
     idObject[req.params.noteId] = req.body.title;
 
-    await updateFile(req.session.idOfIdfile, JSON.stringify(idObject));
+    await updateFile(req.session.idOfIdfile, JSON.stringify(idObject), true);
 
     await drive.files.create({
       resource: {
@@ -329,7 +347,7 @@ app.post("/api/create/:noteId", authCheck, async (req, res) => {
       },
       media: {
         mimeType: "text/html",
-        body: `<p class="frontmatter"></p><p></p>`,
+        body: `<p class="frontmatter"></p><p></p><div class="backlinks"></div>`,
       },
     });
 
@@ -353,7 +371,7 @@ app.post("/api/rename/:noteId", authCheck, async (req, res) => {
 
     idObject[req.params.noteId] = newTitle;
 
-    await updateFile(req.session.idOfIdfile, JSON.stringify(idObject));
+    await updateFile(req.session.idOfIdfile, JSON.stringify(idObject), true);
 
     // rename the file
     const searchFileResponse = await drive.files.list({
@@ -386,7 +404,7 @@ app.post("/api/delete/:noteId", authCheck, async (req, res) => {
 
     delete idObject[req.params.noteId];
 
-    await updateFile(req.session.idOfIdfile, JSON.stringify(idObject));
+    await updateFile(req.session.idOfIdfile, JSON.stringify(idObject), true);
 
     // delete the file
     const searchFileResponse = await drive.files.list({

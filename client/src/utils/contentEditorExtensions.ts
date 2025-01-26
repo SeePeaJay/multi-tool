@@ -58,7 +58,7 @@ export const createContentEditorExtensions = (
   GlobalDragHandle.configure({
     dragHandleWidth: 20,
     scrollTreshold: 100,
-    excludedTags: ["p.frontmatter"],
+    excludedTags: ["p.frontmatter", "div.node-backlinks"],
   }),
   StarterKit.configure({
     document: false,

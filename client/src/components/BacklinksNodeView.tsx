@@ -141,12 +141,13 @@ const BacklinksNodeView: React.FC<NodeViewProps> = ({
   }, []);
 
   return (
-    backlinksWithInnerText && Object.keys(backlinksWithInnerText).length > 0 && (
+    backlinksWithInnerText &&
+    Object.keys(backlinksWithInnerText).length > 0 && (
       <NodeViewWrapper as="div" className={`backlinks`}>
         {Object.entries(node.attrs.backlinks as Record<string, string[]>).map(
           ([targetId, blockIds]) => (
-            <div key={targetId} className="backlinkList">
-              <NavLink to={`/app/notes/${targetId}`}>
+            <div key={targetId}>
+              <NavLink className="backlinkList" to={`/app/notes/${targetId}`}>
                 {backlinksWithInnerText[targetId].title}
               </NavLink>
               <div>
@@ -156,10 +157,12 @@ const BacklinksNodeView: React.FC<NodeViewProps> = ({
                     className="backlink"
                     to={`/app/notes/${targetId}#${blockId}`}
                     dangerouslySetInnerHTML={{
-                      __html: backlinksWithInnerText[targetId].backlinkList[blockId] /* this content is already sanitized by the server */
+                      __html:
+                        backlinksWithInnerText[targetId].backlinkList[
+                          blockId
+                        ] /* this content is already sanitized by the server */,
                     }}
-                  >
-                  </HashLink>
+                  ></HashLink>
                 ))}
               </div>
             </div>

@@ -16,3 +16,13 @@
     @apply bg-slate-50 font-mono p-5 rounded-md overflow-x-auto
   }
 }
+
+@layer components {
+  .backlinkList {
+    @apply text-xl text-blue-600 font-semibold;
+  }
+
+  .backlink {
+    @apply block bg-blue-50 rounded-lg p-2;
+  }
+}

@@ -37,7 +37,7 @@ db.notes.hook("updating", function (mods: Partial<Note>) {
     const markdown = turndownService.turndown(mods.content);
     const words = markdown.split(/\s+/);
 
-    return { contentWords: Array.from(new Set(words)) };
+    return { contentWords: words };
   }
 });
 

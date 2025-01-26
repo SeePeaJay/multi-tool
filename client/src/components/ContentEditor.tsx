@@ -1,8 +1,9 @@
+import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useRef, useCallback } from "react";
 import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
 import debounce from "lodash.debounce";
 import { db } from "../db";
-import { useSSE } from "../contexts/SSEContext";
+// import { useSSE } from "../contexts/SSEContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import { createContentEditorExtensions } from "../utils/contentEditorExtensions";
 
@@ -17,7 +18,9 @@ const ContentEditor = ({
 }: ContentEditorProps) => {
   const authFetch = useAuthFetch();
   const editorRef = useRef<TiptapEditor | null>(null);
-  const { rerenderTrigger, sessionId } = useSSE();
+  // const { rerenderTrigger, sessionId } = useSSE();
+
+  const note = useLiveQuery(() => db.notes.get(noteId), [noteId]);
 
   // debounce the content change handler
   const debounceContentUpdate = useCallback(
@@ -39,14 +42,14 @@ const ContentEditor = ({
           content: sanetizedContent,
         });
 
-        authFetch(`/api/broadcast`, {
-          credentials: "include",
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ initiator: sessionId }),
-        });
+        // authFetch(`/api/broadcast`, {
+        //   credentials: "include",
+        //   method: "POST",
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //   },
+        //   body: JSON.stringify({ initiator: sessionId }),
+        // });
       } catch (error) {
         console.error("Failed to save content:", error);
       }
@@ -55,23 +58,24 @@ const ContentEditor = ({
   );
 
   // need this to dynamically update editor content whenever there is a new `noteId`
-  // editor provider's `content` only works the first time a non-empty string is provided
+  // or other tabs have updated note content but current tab editor isn't up to date
   useEffect(() => {
     async function updateContent() {
       if (editorRef.current && noteId) {
-        const note = await db.notes.get(noteId);
-
         // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a
         // lifecycle method. ..."
         setTimeout(() => {
-          editorRef.current!.commands.setContent(note?.content || "");
+          const currentEditorContent = editorRef.current!.getHTML();
+
+          if (note?.content !== currentEditorContent) {
+            editorRef.current!.commands.setContent(note?.content || "");
+          }
         });
       }
     }
 
-    // console.log(rerenderTrigger);
     updateContent();
-  }, [noteId, rerenderTrigger]);
+  }, [noteId, note?.content]);
 
   return (
     <EditorProvider

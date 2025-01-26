@@ -1,9 +1,10 @@
+import { useLiveQuery } from "dexie-react-hooks";
+import isEqual from "lodash.isequal";
 import { useEffect } from "react";
-import { useParams } from "react-router-dom";
-// import { HashLink } from "react-router-hash-link";
+import { useParams, NavLink } from "react-router-dom";
+import { HashLink } from "react-router-hash-link";
 import { NodeViewWrapper, NodeViewProps } from "@tiptap/react";
 import { db } from "../db";
-import { useSSE } from "../contexts/SSEContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 
 const BacklinksNodeView: React.FC<NodeViewProps> = ({
@@ -12,19 +13,96 @@ const BacklinksNodeView: React.FC<NodeViewProps> = ({
 }) => {
   const authFetch = useAuthFetch();
   const { noteId: noteIdParam } = useParams();
-  const { rerenderTrigger } = useSSE();
+
+  const getBacklinksOwnerId = async () => {
+    if (noteIdParam) {
+      return noteIdParam; // you are in the Note route, which should have an ID at this point
+    }
+
+    const starred = await db.table("notes").get({ title: "Starred" });
+    return starred?.id || null; // initial load when "Starred" hasn't been fetched yet
+  };
+
+  const backlinksWithInnerText = useLiveQuery(async () => {
+    const output: Record<
+      string,
+      {
+        title: string;
+        backlinkList: Record<string, string>;
+      }
+    > = {};
+
+    const backlinksOwnerId = await getBacklinksOwnerId();
+    const hasFetchedBacklinks = (await db.notes.get(backlinksOwnerId))
+      ?.hasFetchedBacklinks;
+
+    // if "Starred" hasn't been fetched yet, or backlinks haven't been fetched yet, then there's no reason to continue
+    if (!backlinksOwnerId || !hasFetchedBacklinks) {
+      return undefined;
+    }
+
+    // query notes containing the keyword
+    const notes = await db.notes
+      .filter(
+        (note) =>
+          !!note.contentWords &&
+          note.contentWords.includes(`#${backlinksOwnerId}`),
+      )
+      .toArray();
+
+    notes.forEach((note) => {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(note.content, "text/html");
+
+      const targetSpans = doc.querySelectorAll(
+        `span.tag[data-type="tag"][data-target-note-id="${backlinksOwnerId}"]`,
+      );
+
+      const parentElements = Array.from(targetSpans)
+        .filter(
+          (span) => !span.parentElement?.classList.contains("frontmatter"),
+        )
+        .map((span) => span.parentElement!);
+
+      const backlinksFromNote: Record<string, string> = {};
+
+      parentElements.forEach((element) => {
+        backlinksFromNote[element.id] = element.outerHTML;
+      });
+
+      // console.log(output[note.id])
+      output[note.id] = {
+        title: note.title,
+        backlinkList: backlinksFromNote,
+      };
+    });
+
+    console.log(output);
+    return output;
+  });
 
   useEffect(() => {
-    const getBacklinksOwnerId = async () => {
-      if (noteIdParam) {
-        return noteIdParam; // you are in the Note route, which should have an ID at this point
-      }
+    const backlinks: Record<string, string[]> | null = backlinksWithInnerText
+      ? Object.fromEntries(
+          Object.entries(backlinksWithInnerText).map(([key, value]) => [
+            key,
+            Object.keys(value.backlinkList),
+          ]),
+        )
+      : null;
 
-      const starred = await db.table("notes").get({ title: "Starred" });
-      return starred?.id || null; // initial load when "Starred" hasn't been fetched yet
-    };
+    // update node
+    if (
+      backlinks && // backlinks can be undefined initially
+      node.attrs.backlinks && // it's possible node.attrs.backlinks is empty when switching back to a previous page
+      !isEqual(backlinks, node.attrs.backlinks)
+    ) {
+      updateAttributes({ backlinks });
+    }
+  }, [backlinksWithInnerText]);
 
-    const updateBacklinks = async () => {
+  useEffect(() => {
+    const fetchBacklinks = async () => {
       const backlinksOwnerId = await getBacklinksOwnerId();
 
       // if "Starred" hasn't been fetched yet, immediately exit
@@ -33,7 +111,6 @@ const BacklinksNodeView: React.FC<NodeViewProps> = ({
       }
 
       const cachedNote = await db.table("notes").get(backlinksOwnerId);
-      // console.log(cachedNote);
 
       if (!cachedNote.hasFetchedBacklinks) {
         // fetch notes that tag current note
@@ -58,41 +135,39 @@ const BacklinksNodeView: React.FC<NodeViewProps> = ({
           hasFetchedBacklinks: true,
         });
       }
-
-      // search for backlinks
-      const result = await db.notes
-        .where("contentWords")
-        .anyOf(`#${backlinksOwnerId}`)
-        .distinct()
-        .toArray();
-      console.log(result);
-
-      // update node
-      const backlinks: {
-        [key: string]: string[];
-      } = {};
-      const parser = new DOMParser();
-      result.forEach((note) => {
-        const doc = parser.parseFromString(note.content, "text/html");
-        const targetSpans = doc.querySelectorAll(
-          `span.tag[data-type="tag"][data-target-note-id="${backlinksOwnerId}"]`,
-        );
-        const parentElements = Array.from(targetSpans)
-          .filter(
-            (span) => !span.parentElement?.classList.contains("frontmatter"),
-          )
-          .map((span) => span.parentElement!.id);
-
-        backlinks[note.id] = parentElements;
-      });
-
-      console.log(backlinks);
     };
 
-    updateBacklinks();
-  }, [rerenderTrigger]);
+    fetchBacklinks();
+  }, []);
 
-  return <NodeViewWrapper as="div" className={`backlinks`}></NodeViewWrapper>;
+  return (
+    backlinksWithInnerText && Object.keys(backlinksWithInnerText).length > 0 && (
+      <NodeViewWrapper as="div" className={`backlinks`}>
+        {Object.entries(node.attrs.backlinks as Record<string, string[]>).map(
+          ([targetId, blockIds]) => (
+            <div key={targetId} className="backlinkList">
+              <NavLink to={`/app/notes/${targetId}`}>
+                {backlinksWithInnerText[targetId].title}
+              </NavLink>
+              <div>
+                {blockIds.map((blockId) => (
+                  <HashLink
+                    key={blockId}
+                    className="backlink"
+                    to={`/app/notes/${targetId}#${blockId}`}
+                    dangerouslySetInnerHTML={{
+                      __html: backlinksWithInnerText[targetId].backlinkList[blockId] /* this content is already sanitized by the server */
+                    }}
+                  >
+                  </HashLink>
+                ))}
+              </div>
+            </div>
+          ),
+        )}
+      </NodeViewWrapper>
+    )
+  );
 };
 
 export default BacklinksNodeView;

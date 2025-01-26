@@ -3,22 +3,8 @@
  */
 
 import { Node } from "@tiptap/core";
-import { PluginKey } from "@tiptap/pm/state";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import BacklinksNodeView from "../components/BacklinksNodeView";
-
-// export interface BacklinksNodeAttrs {
-//   // /**
-//   //  * The target id to be rendered by the editor. Stored as a `data-target-note-id` attribute.
-//   //  */
-//   // targetNoteId: string;
-
-//   // targetBlockId?: string | null;
-
-//   // initialTargetTitle?: string;
-
-//   // backlinks: string;
-// }
 
 // define a type for addOptions below
 export type BacklinksOptions<> = {
@@ -26,7 +12,7 @@ export type BacklinksOptions<> = {
 };
 
 /**
- * This extension allows you to insert notelinks into the editor.
+ * This extension allows you to insert backlinks into the editor.
  */
 const Backlinks = Node.create<BacklinksOptions>({
   name: "backlinks",
@@ -41,12 +27,51 @@ const Backlinks = Node.create<BacklinksOptions>({
 
   group: "backlinks",
 
-  parseHTML() {
-    return [{ tag: "div.backlinks" }];
+  addAttributes() {
+    return {
+      backlinks: {
+        default: {},
+      },
+    };
   },
 
-  renderHTML({ HTMLAttributes }) {
-    return ["div", { class: "backlinks", ...HTMLAttributes }];
+  parseHTML() {
+    return [
+      {
+        tag: "div.backlinks",
+        getAttrs: (element) => {
+          const backlinks: Record<string, string[]> = {};
+
+          element.querySelectorAll(".backlinkList").forEach((list) => {
+            const targetId = list.getAttribute("data-target-id");
+            const blockIds = Array.from(list.querySelectorAll(".backlink"))
+              .map((block) => block.getAttribute("data-block-id"))
+              .filter((id): id is string => id !== null);
+
+            if (targetId) {
+              backlinks[targetId] = blockIds;
+            }
+          });
+          return { backlinks };
+        },
+      },
+    ];
+  },
+
+  renderHTML({ node }) {
+    const backlinks: Record<string, string[]> = node.attrs.backlinks;
+
+    // generate child elements for each backlink
+    const children = Object.entries(backlinks).map(([targetId, blockIds]) => [
+      "div",
+      { class: "backlinkList", "data-target-id": targetId },
+      ...blockIds.map((blockId) => [
+        "div",
+        { class: "backlink", "data-block-id": blockId },
+      ]),
+    ]);
+
+    return ["div", { class: "backlinks" }, ...children];
   },
 
   addNodeView() {

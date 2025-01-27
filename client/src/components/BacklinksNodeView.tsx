@@ -125,7 +125,7 @@ const BacklinksNodeView: React.FC<NodeViewProps> = ({
 
         // update Dexie
         await Promise.all(
-          response.map((note: { id: string; name: string; content: string }) =>
+          response.map((note: { id: string; content: string }) =>
             db.notes.update(note.id, {
               content: note.content,
             }),

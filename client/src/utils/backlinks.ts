@@ -43,9 +43,9 @@ const Backlinks = Node.create<BacklinksOptions>({
           const backlinks: Record<string, string[]> = {};
 
           element.querySelectorAll(".backlinkList").forEach((list) => {
-            const targetId = list.getAttribute("data-target-id");
+            const targetId = list.getAttribute("data-target-note-id");
             const blockIds = Array.from(list.querySelectorAll(".backlink"))
-              .map((block) => block.getAttribute("data-block-id"))
+              .map((block) => block.getAttribute("data-target-block-id"))
               .filter((id): id is string => id !== null);
 
             if (targetId) {
@@ -64,10 +64,10 @@ const Backlinks = Node.create<BacklinksOptions>({
     // generate child elements for each backlink
     const children = Object.entries(backlinks).map(([targetId, blockIds]) => [
       "div",
-      { class: "backlinkList", "data-target-id": targetId },
+      { class: "backlinkList", "data-target-note-id": targetId },
       ...blockIds.map((blockId) => [
         "div",
-        { class: "backlink", "data-block-id": blockId },
+        { class: "backlink", "data-target-block-id": blockId },
       ]),
     ]);
 

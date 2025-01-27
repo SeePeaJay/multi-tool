@@ -236,7 +236,6 @@ app.post("/api/search", authCheck, async (req, res) => {
 
       notes.push({
         id: noteId,
-        name: noteTitle,
         content: contentResponse.data,
       });
     }
@@ -284,7 +283,7 @@ app.post("/api/notes/:noteId", authCheck, async (req, res) => {
       allowedAttributes: {
         "*": ["id", "class"],
         span: ["data-type", "data-target-note-id", "data-target-block-id"],
-        div: ["data-target-id", "data-block-id"],
+        div: ["data-target-note-id", "data-target-block-id"],
       },
     });
 

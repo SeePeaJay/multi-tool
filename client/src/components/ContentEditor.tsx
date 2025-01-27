@@ -3,7 +3,6 @@ import { useEffect, useRef, useCallback } from "react";
 import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
 import debounce from "lodash.debounce";
 import { db } from "../db";
-// import { useSSE } from "../contexts/SSEContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import { createContentEditorExtensions } from "../utils/contentEditorExtensions";
 
@@ -18,7 +17,6 @@ const ContentEditor = ({
 }: ContentEditorProps) => {
   const authFetch = useAuthFetch();
   const editorRef = useRef<TiptapEditor | null>(null);
-  // const { rerenderTrigger, sessionId } = useSSE();
 
   const note = useLiveQuery(() => db.notes.get(noteId), [noteId]);
 
@@ -41,15 +39,6 @@ const ContentEditor = ({
         await db.notes.update(noteIdToUpdate, {
           content: sanetizedContent,
         });
-
-        // authFetch(`/api/broadcast`, {
-        //   credentials: "include",
-        //   method: "POST",
-        //   headers: {
-        //     "Content-Type": "application/json",
-        //   },
-        //   body: JSON.stringify({ initiator: sessionId }),
-        // });
       } catch (error) {
         console.error("Failed to save content:", error);
       }

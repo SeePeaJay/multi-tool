@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { db } from "../db";
-import { useSSE } from "../contexts/SSEContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import DeleteIcon from "./icons/DeleteIcon";
 
@@ -9,7 +8,6 @@ function MoreOptionsButton() {
   const authFetch = useAuthFetch();
   const location = useLocation();
   const navigate = useNavigate();
-  const { sessionId } = useSSE();
 
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
@@ -59,14 +57,6 @@ function MoreOptionsButton() {
           method: "POST",
         },
       );
-      authFetch(`/api/broadcast`, {
-        credentials: "include",
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ initiator: sessionId }),
-      });
     } catch (error) {
       console.error(error);
     }

@@ -8,7 +8,6 @@ import React, {
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "./AuthContext";
-import { useSSE } from "./SSEContext";
 
 // define shape of context
 interface SessionContextType {
@@ -23,7 +22,6 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const { setIsAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { eventSourceRef } = useSSE();
 
   const timeoutRef = useRef<number | undefined>(undefined);
   const [sessionExpiry, setSessionExpiry] = useState<number | null>(() => {
@@ -52,8 +50,6 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
         method: "POST",
         credentials: "include",
       });
-
-      eventSourceRef.current!.close(); // event source should be defined at this point
 
       setIsAuthenticated(false);
 

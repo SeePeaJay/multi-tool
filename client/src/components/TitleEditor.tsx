@@ -4,7 +4,6 @@ import Document from "@tiptap/extension-document";
 import Placeholder from "@tiptap/extension-placeholder";
 import Text from "@tiptap/extension-text";
 import { db } from "../db";
-import { useSSE } from "../contexts/SSEContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import Title from "../utils/title";
 
@@ -15,7 +14,6 @@ interface TitleEditorProps {
 
 const TitleEditor = ({ noteId, initialEditorContent }: TitleEditorProps) => {
   const authFetch = useAuthFetch();
-  const { sessionId } = useSSE();
 
   const editorRef = useRef<TiptapEditor | null>(null);
   const previousTitleRef = useRef(""); // a copy of the last set title value, used to reset when rename fails
@@ -56,15 +54,6 @@ const TitleEditor = ({ noteId, initialEditorContent }: TitleEditorProps) => {
         });
 
         previousTitleRef.current = newTitle;
-
-        authFetch(`/api/broadcast`, {
-          credentials: "include",
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ initiator: sessionId }),
-        });
       } catch (error) {
         console.error("An error occurred while renaming:", error);
       }

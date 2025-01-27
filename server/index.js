@@ -47,14 +47,6 @@ async function authCheck(req, res, next) {
   }
 }
 
-const broadcastUpdate = (userId, eventData) => {
-  if (global.connections && global.connections[userId]) {
-    global.connections[userId].forEach((sendUpdate) => {
-      sendUpdate(eventData);
-    });
-  }
-};
-
 const getIdObject = async (idOfIdfile) => {
   const idFileResponse = await drive.files.get(
     {
@@ -294,44 +286,6 @@ app.post("/api/notes/:noteId", authCheck, async (req, res) => {
     console.error(error);
     res.status(500).send("An error occurred while trying to update the note");
   }
-});
-
-app.post("/api/broadcast", authCheck, (req, res) => {
-  broadcastUpdate(req.session.userId, req.body.initiator);
-
-  res.status(200).send("ok");
-});
-
-app.get("/api/events", authCheck, (req, res) => {
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.flushHeaders(); // flush the headers to establish SSE with client, replacing the need to res.write("...") before req.on("close", ...)
-
-  const userId = req.session.userId;
-
-  const sendUpdate = (eventData) => {
-    res.write(`data: ${eventData}\n\n`);
-  };
-  sendUpdate.id = req.query.sessionId;
-
-  if (!global.connections) {
-    global.connections = {};
-  }
-  if (!global.connections[userId]) {
-    global.connections[userId] = [];
-  }
-  global.connections[userId].push(sendUpdate);
-  // console.log(global.connections);
-
-  req.on("close", () => {
-    global.connections[userId] = global.connections[userId].filter(
-      (fn) => fn !== sendUpdate,
-    );
-
-    // console.log(global.connections);
-    res.end();
-  });
 });
 
 app.post("/api/create/:noteId", authCheck, async (req, res) => {

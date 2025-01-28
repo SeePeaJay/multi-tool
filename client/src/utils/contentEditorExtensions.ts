@@ -7,13 +7,13 @@ import StarterKit from "@tiptap/starter-kit";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import { createBaseNoteSuggestionConfig } from "./baseNoteSuggestionConfig";
 import EnsureUniqueIds from "./ensureUniqueIds";
-import Backlinks from "./backlinks";
+import { Backlinks, Backlink } from "./backlinks";
 import Frontmatter from "./frontmatter";
 import Notelink from "./notelink";
 import Tag from "./tag";
 
 const CustomDocument = Document.extend({
-  content: "frontmatter block+ backlinks",
+  content: "frontmatter block+",
 });
 
 const CustomHeading = Heading.extend({
@@ -59,6 +59,7 @@ export const createContentEditorExtensions = (
     dragHandleWidth: 20,
     scrollTreshold: 100,
     excludedTags: ["p.frontmatter", "div.node-backlinks"],
+    customNodes: ["backlink"],
   }),
   StarterKit.configure({
     document: false,
@@ -84,6 +85,7 @@ export const createContentEditorExtensions = (
     suggestion: createBaseNoteSuggestionConfig(),
   }),
   Backlinks,
+  Backlink,
   EnsureUniqueIds,
   CustomPlaceholder,
 ];

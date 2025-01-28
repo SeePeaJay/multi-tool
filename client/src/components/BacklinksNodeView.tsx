@@ -1,16 +1,12 @@
+import { NodeViewWrapper, NodeViewProps } from "@tiptap/react";
 import { useLiveQuery } from "dexie-react-hooks";
 import isEqual from "lodash.isequal";
 import { useEffect } from "react";
-import { useParams, NavLink } from "react-router-dom";
-import { HashLink } from "react-router-hash-link";
-import { NodeViewWrapper, NodeViewProps } from "@tiptap/react";
+import { useParams } from "react-router-dom";
 import { db } from "../db";
 import { useAuthFetch } from "../hooks/AuthFetch";
 
-const BacklinksNodeView: React.FC<NodeViewProps> = ({
-  node,
-  updateAttributes,
-}) => {
+const BacklinksNodeView: React.FC<NodeViewProps> = ({ editor }) => {
   const authFetch = useAuthFetch();
   const { noteId: noteIdParam } = useParams();
 
@@ -20,18 +16,11 @@ const BacklinksNodeView: React.FC<NodeViewProps> = ({
     }
 
     const starred = await db.table("notes").get({ title: "Starred" });
-    return starred?.id || null; // initial load when "Starred" hasn't been fetched yet
+    return starred?.id || null; // null bc initial load when "Starred" hasn't been fetched yet
   };
 
-  const backlinksWithInnerText = useLiveQuery(async () => {
-    const output: Record<
-      string,
-      {
-        title: string;
-        backlinkList: Record<string, string>;
-      }
-    > = {};
-
+  const backlinks = useLiveQuery(async () => {
+    const output: string[] = [];
     const backlinksOwnerId = await getBacklinksOwnerId();
     const hasFetchedBacklinks = (await db.notes.get(backlinksOwnerId))
       ?.hasFetchedBacklinks;
@@ -42,70 +31,119 @@ const BacklinksNodeView: React.FC<NodeViewProps> = ({
     }
 
     // query notes containing the keyword
-    const notes = await db.notes
+    const targetNotes = await db.notes
       .filter(
         (note) =>
           !!note.contentWords &&
           note.contentWords.includes(`#${backlinksOwnerId}`),
       )
       .toArray();
-
-    notes.forEach((note) => {
+    
+    targetNotes.forEach((note) => {
       const parser = new DOMParser();
       const doc = parser.parseFromString(note.content, "text/html");
-
       const targetSpans = doc.querySelectorAll(
         `span.tag[data-type="tag"][data-target-note-id="${backlinksOwnerId}"]`,
       );
-
-      const parentElements = Array.from(targetSpans)
-        .filter(
-          (span) => !span.parentElement?.classList.contains("frontmatter"),
-        )
-        .map((span) => span.parentElement!);
-
-      const backlinksFromNote: Record<string, string> = {};
+      const parentElements = Array.from(targetSpans).map(
+        (span) => span.parentElement!,
+      );
 
       parentElements.forEach((element) => {
-        backlinksFromNote[element.id] = element.outerHTML;
+        output.push(
+          `${note.id}::${
+            element.classList.contains("frontmatter") ? "" : element.id
+          }`,
+        );
       });
-
-      // console.log(output[note.id])
-      output[note.id] = {
-        title: note.title,
-        backlinkList: backlinksFromNote,
-      };
     });
 
-    console.log(output);
     return output;
   });
 
+  // insert backlink nodes for each note/block that tags the current note
+  // also remove them if their target do not tag the current note
   useEffect(() => {
-    const backlinks: Record<string, string[]> | null = backlinksWithInnerText
-      ? Object.fromEntries(
-          Object.entries(backlinksWithInnerText).map(([key, value]) => [
-            key,
-            Object.keys(value.backlinkList),
-          ]),
-        )
-      : null;
+    const backlinksFromEditor: Record<
+      string,
+      Array<{ pos: number; size: number }>
+    > = {};
 
-    // update node
+    // populate backlinksFromEditor
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name === "backlink") {
+        const { targetNoteId, targetBlockId } = node.attrs;
+
+        if (!backlinksFromEditor[`${targetNoteId}::${targetBlockId}`]) {
+          backlinksFromEditor[`${targetNoteId}::${targetBlockId}`] = [];
+        }
+
+        backlinksFromEditor[`${targetNoteId}::${targetBlockId}`].push({
+          pos,
+          size: node.nodeSize,
+        });
+      }
+    });
+
+    // convert to sets for comparison
+    const [setOfBacklinks, setOfBacklinksFromEditor] = [
+      new Set(backlinks),
+      new Set(Object.keys(backlinksFromEditor)),
+    ];
+
+    // diff the sets and create/remove backlinks accordingly
     if (
       backlinks && // backlinks can be undefined initially
-      node.attrs.backlinks && // it's possible node.attrs.backlinks is empty when switching back to a previous page
-      !isEqual(backlinks, node.attrs.backlinks)
+      !isEqual(setOfBacklinks, setOfBacklinksFromEditor)
     ) {
-      updateAttributes({ backlinks });
+      const backlinksToCreate = Array.from(
+        setOfBacklinks.difference(setOfBacklinksFromEditor),
+      );
+      const backlinksToRemove = Array.from(
+        setOfBacklinksFromEditor.difference(setOfBacklinks),
+      );
+
+      backlinksToRemove.forEach((backlink) => {
+        const posAndSizeOfBacklink = backlinksFromEditor[backlink];
+        const { tr } = editor.state;
+
+        posAndSizeOfBacklink.forEach(({ pos, size }) => {
+          tr.delete(pos, pos + size);
+        });
+
+        editor.view.dispatch(tr);
+      });
+
+      backlinksToCreate.forEach((backlink) => {
+        setTimeout(() => {
+          const [targetNoteId, targetBlockId] = backlink.split("::");
+
+          const endPosition = editor.state.doc.content.size;
+          editor.commands.insertContentAt(
+            endPosition,
+            `<div class="backlink" data-target-note-id="${targetNoteId}" data-target-block-id="${targetBlockId}">${targetBlockId}</div>`,
+          );
+        });
+      });
     }
-  }, [backlinksWithInnerText]);
+  }, [JSON.stringify(backlinks)]);
+  /*
+   * Why we use JSON.stringify:
+   * - updating the content of editor is one of the triggers that can recompute `backlinks`
+   * - when `backlinks` is recomputed, it results in a new reference value; if `backlinks` is used directly in the
+   *   dependency array, useEffect will rerun even if the content of the array hasn't actually changed
+   * - this is an issue if we have just removed a block link from the editor; useEffect will try to add it back
+   * - to avoid this issue, we use a stringified version of the array as a dependency, to ensure that useEffect only
+   *   reruns when the actual content changes (which was the intended goal anyway)
+   * - no need to worry about different order because the output should remain consistent as long as the input is the
+   *   same
+   */
 
   useEffect(() => {
     const fetchBacklinks = async () => {
       const backlinksOwnerId = await getBacklinksOwnerId();
 
-      // if "Starred" hasn't been fetched yet, immediately exit
+      // if "Starred" hasn't been fetched yet, immediately exit?
       if (!backlinksOwnerId) {
         return;
       }
@@ -120,7 +158,7 @@ const BacklinksNodeView: React.FC<NodeViewProps> = ({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ query: `#${backlinksOwnerId}` }), // `frontmatter`
+          body: JSON.stringify({ query: `#${backlinksOwnerId}` }),
         });
 
         // update Dexie
@@ -141,31 +179,9 @@ const BacklinksNodeView: React.FC<NodeViewProps> = ({
   }, []);
 
   return (
-    backlinksWithInnerText &&
-    Object.keys(backlinksWithInnerText).length > 0 && (
-      <NodeViewWrapper as="div" className={`backlinks`}>
-        {Object.entries(backlinksWithInnerText).map(([targetId, note]) => (
-          <div key={targetId}>
-            <NavLink className="backlinkList" to={`/app/notes/${targetId}`}>
-              {note.title}
-            </NavLink>
-            <div>
-              {Object.entries(note.backlinkList).map(([blockId, blockText]) => (
-                <HashLink
-                  key={blockId}
-                  className="backlink"
-                  to={`/app/notes/${targetId}#${blockId}`}
-                  dangerouslySetInnerHTML={{
-                    __html:
-                      blockText /* this content is already sanitized by the server */,
-                  }}
-                ></HashLink>
-              ))}
-            </div>
-          </div>
-        ))}
-      </NodeViewWrapper>
-    )
+    <NodeViewWrapper as="div" className="backlinks">
+      <div>Backlinks</div>
+    </NodeViewWrapper>
   );
 };
 

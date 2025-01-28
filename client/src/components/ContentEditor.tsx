@@ -46,6 +46,34 @@ const ContentEditor = ({
     [],
   );
 
+  // const diff = useCallback((html: string) => {
+  //   setContent(editor.getJSON());
+  //   const currentImages = [];
+  //   const deletedImages = previousImages.filter(
+  //     (url) => !currentImages.includes(url),
+  //   );
+  //   for (const url of deletedImages) {
+  //     console.log("Deleting image from blob storage:", url);
+  //     await fetch(`/api/upload/delete?url=${encodeURIComponent(url)}`, {
+  //       method: "DELETE",
+  //     });
+  //   }
+  //   setPreviousImages(currentImages);
+  //   setImagesList(currentImages);
+
+  //   const parser = new DOMParser();
+  //   const doc = parser.parseFromString(html, "text/html");
+  //   const backlinkListDivs = doc.querySelectorAll("div.backlinkList");
+  //   const targetNoteIds = Array.from(
+  //     new Set(
+  //       Array.from(backlinkListDivs).map((div) =>
+  //         div.getAttribute("data-target-note-id"),
+  //       ),
+  //     ),
+  //   );
+  //   console.log(targetNoteIds);
+  // }, []);
+
   // need this to dynamically update editor content whenever there is a new `noteId`
   // or other tabs have updated note content but current tab editor isn't up to date
   useEffect(() => {
@@ -75,6 +103,8 @@ const ContentEditor = ({
         editorRef.current = editor;
       }}
       onUpdate={({ editor }) => {
+        // diff(editor.getHTML());
+
         debounceContentUpdate(noteId, editor.getHTML()); // passing in `noteId` ties the update to that `noteId` even if user switches to a different page before the actual update is made
       }}
     ></EditorProvider>

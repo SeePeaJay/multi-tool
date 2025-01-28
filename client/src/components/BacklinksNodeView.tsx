@@ -144,30 +144,26 @@ const BacklinksNodeView: React.FC<NodeViewProps> = ({
     backlinksWithInnerText &&
     Object.keys(backlinksWithInnerText).length > 0 && (
       <NodeViewWrapper as="div" className={`backlinks`}>
-        {Object.entries(node.attrs.backlinks as Record<string, string[]>).map(
-          ([targetId, blockIds]) => (
-            <div key={targetId}>
-              <NavLink className="backlinkList" to={`/app/notes/${targetId}`}>
-                {backlinksWithInnerText[targetId].title}
-              </NavLink>
-              <div>
-                {blockIds.map((blockId) => (
-                  <HashLink
-                    key={blockId}
-                    className="backlink"
-                    to={`/app/notes/${targetId}#${blockId}`}
-                    dangerouslySetInnerHTML={{
-                      __html:
-                        backlinksWithInnerText[targetId].backlinkList[
-                          blockId
-                        ] /* this content is already sanitized by the server */,
-                    }}
-                  ></HashLink>
-                ))}
-              </div>
+        {Object.entries(backlinksWithInnerText).map(([targetId, note]) => (
+          <div key={targetId}>
+            <NavLink className="backlinkList" to={`/app/notes/${targetId}`}>
+              {note.title}
+            </NavLink>
+            <div>
+              {Object.entries(note.backlinkList).map(([blockId, blockText]) => (
+                <HashLink
+                  key={blockId}
+                  className="backlink"
+                  to={`/app/notes/${targetId}#${blockId}`}
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      blockText /* this content is already sanitized by the server */,
+                  }}
+                ></HashLink>
+              ))}
             </div>
-          ),
-        )}
+          </div>
+        ))}
       </NodeViewWrapper>
     )
   );

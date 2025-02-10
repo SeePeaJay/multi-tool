@@ -23,7 +23,15 @@ const ContentEditor = ({
   // debounce the content change handler
   const debounceContentUpdate = useCallback(
     debounce(async (noteIdToUpdate: string, updatedContent: string) => {
-      const sanetizedContent = await authFetch(
+      try {
+        await db.notes.update(noteIdToUpdate, {
+          content: updatedContent,
+        });
+      } catch (error) {
+        console.error("Failed to save content:", error);
+      }
+
+      await authFetch(
         `/api/notes/${noteIdToUpdate}`,
         {
           credentials: "include",
@@ -34,15 +42,7 @@ const ContentEditor = ({
           body: JSON.stringify({ updatedContent }),
         }, // include cookies with request; required for cookie session to function
       );
-
-      try {
-        await db.notes.update(noteIdToUpdate, {
-          content: sanetizedContent,
-        });
-      } catch (error) {
-        console.error("Failed to save content:", error);
-      }
-    }, 1000),
+    }, 2000),
     [],
   );
 
@@ -79,11 +79,12 @@ const ContentEditor = ({
   useEffect(() => {
     async function updateContent() {
       if (editorRef.current && noteId) {
-        // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a
+        // setTimeout is necessary to avoid the error message: "Warning: flushSync was called from inside a
         // lifecycle method. ..."
         setTimeout(() => {
           const currentEditorContent = editorRef.current!.getHTML();
 
+          // update current editor whose content isn't in sync with storage
           if (note?.content !== currentEditorContent) {
             editorRef.current!.commands.setContent(note?.content || "");
           }

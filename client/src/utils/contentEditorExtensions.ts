@@ -58,7 +58,11 @@ export const createContentEditorExtensions = (
   GlobalDragHandle.configure({
     dragHandleWidth: 20,
     scrollTreshold: 100,
-    excludedTags: ["p.frontmatter", "div.node-backlinks"],
+    excludedTags: [
+      "p.frontmatter",
+      "div.node-backlinks", // the selector for container of backlinks node view; the wrapper div won't work
+      "div:has(> div.pointer-events-none)", // same idea as above; prevent dragging the backlink until it is ready
+    ],
     customNodes: ["backlink"],
   }),
   StarterKit.configure({

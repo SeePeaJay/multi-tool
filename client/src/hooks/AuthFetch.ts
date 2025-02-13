@@ -48,8 +48,13 @@ export const useAuthFetch = () => {
         return await response.text();
       }
     } catch (error) {
-      // for the time being, immediately exit upon any (server) error
+      // if error is caused by a page refresh which cancels the network request (this type of error isn't thrown from above code), exit early
+      if (error instanceof TypeError && error.message === "NetworkError when attempting to fetch resource.") {
+        console.warn("An ongoing network request was canceled.");
+        return;
+      }
 
+      // otherwise, immediately exit upon any (server) error for the time being
       const errorMessage =
         error instanceof Error ? error.message : "An unknown error occurred";
 

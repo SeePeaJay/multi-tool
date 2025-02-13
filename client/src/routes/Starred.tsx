@@ -42,7 +42,8 @@ function Starred() {
 
       let starred = await db.table("notes").get({ title: "Starred" });
 
-      if (!starred) {
+      // fetch data if Starred doesn't exist, or its content is empty (due to premature refresh)
+      if (!starred?.content) {
         setIsLoading(true);
 
         // fetch then store list of notes for later usage

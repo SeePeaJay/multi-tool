@@ -17,8 +17,6 @@ function Starred() {
   const [noteId, setNoteId] = useState("");
   const [initialTitleEditorContent, setInitialTitleEditorContent] =
     useState("");
-  const [initialContentEditorContent, setInitialContentEditorContent] =
-    useState("");
 
   const fetchAccessTokenAndResources = async () => {
     try {
@@ -73,7 +71,6 @@ function Starred() {
 
       // make sure editor content is set BEFORE `noteId` and `isLoading`; see Editor's isLoading check and TitleEditor's `previousTitleRef` for why
       setInitialTitleEditorContent(starred.title);
-      setInitialContentEditorContent(starred.content);
       setNoteId(starred.id);
       setIsLoading(false);
     } catch (error) {
@@ -92,7 +89,6 @@ function Starred() {
           <Editor
             noteId={noteId}
             initialTitleEditorContent={initialTitleEditorContent}
-            initialContentEditorContent={initialContentEditorContent}
           />
         </div>
       ) : (

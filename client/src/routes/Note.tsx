@@ -14,8 +14,6 @@ function Note() {
   const [noteId, setNoteId] = useState(""); // can't pass noteIdParam directly; see return statement comments for why
   const [initialTitleEditorContent, setInitialTitleEditorContent] =
     useState("");
-  const [initialContentEditorContent, setInitialContentEditorContent] =
-    useState("");
 
   const fetchNote = async () => {
     if (!noteIdParam) {
@@ -40,7 +38,6 @@ function Note() {
 
       // make sure editor content is set BEFORE `noteId` and `isLoading`; see Editor's isLoading check and TitleEditor's `previousTitleRef` for why
       setInitialTitleEditorContent(cachedNote.title);
-      setInitialContentEditorContent(cachedNote.content);
       setNoteId(noteIdParam);
       setIsLoading(false);
     } catch (error) {
@@ -59,7 +56,6 @@ function Note() {
       <Editor
         noteId={noteId}
         initialTitleEditorContent={initialTitleEditorContent}
-        initialContentEditorContent={initialContentEditorContent}
       />
     </div>
   );

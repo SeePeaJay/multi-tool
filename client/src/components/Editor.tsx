@@ -7,13 +7,11 @@ import "./Editor.css";
 interface EditorProps {
   noteId: string;
   initialTitleEditorContent: string;
-  initialContentEditorContent: string;
 }
 
 const Editor = ({
   noteId,
   initialTitleEditorContent,
-  initialContentEditorContent,
 }: EditorProps) => {
   const { isLoading } = useLoading();
 
@@ -27,10 +25,7 @@ const Editor = ({
             noteId={noteId}
             initialEditorContent={initialTitleEditorContent} // as for why the initial contents are necessary, check comment on each editor's `content` attr
           />
-          <ContentEditor
-            noteId={noteId}
-            initialEditorContent={initialContentEditorContent}
-          />
+          <ContentEditor />
         </>
       )}
     </>

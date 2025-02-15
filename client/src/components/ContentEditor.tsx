@@ -1,30 +1,39 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useRef, useCallback } from "react";
 import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
+import { useParams } from "react-router-dom";
 import debounce from "lodash.debounce";
 import { db } from "../db";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import { createContentEditorExtensions } from "../utils/contentEditorExtensions";
 
-interface ContentEditorProps {
-  noteId: string;
-  initialEditorContent: string;
-}
-
-const ContentEditor = ({
-  noteId,
-  initialEditorContent,
-}: ContentEditorProps) => {
+const ContentEditor = () => {
   const authFetch = useAuthFetch();
+  const { noteId: noteIdParam } = useParams();
   const editorRef = useRef<TiptapEditor | null>(null);
 
-  const note = useLiveQuery(() => db.notes.get(noteId), [noteId]);
+  const noteContent = useLiveQuery(async () => {
+    if (noteIdParam) {
+      const note = await db.notes.get(noteIdParam);
+      return note?.content;
+    }
+
+    const starred = await db.table("notes").get({ title: "Starred" });
+    return starred?.content;
+  }, [noteIdParam]);
 
   // debounce the content change handler
   const debounceContentUpdate = useCallback(
-    debounce(async (noteIdToUpdate: string, updatedContent: string) => {
+    debounce(async (noteIdParam: string | undefined, updatedContent: string) => {
+      let noteIdToUpdate = noteIdParam;
+
+      if (!noteIdToUpdate) {
+        const starred = await db.table("notes").get({ title: "Starred" });
+        noteIdToUpdate = starred.id;
+      }
+
       try {
-        await db.notes.update(noteIdToUpdate, {
+        await db.notes.update(noteIdToUpdate!, {
           content: updatedContent,
         });
       } catch (error) {
@@ -74,39 +83,38 @@ const ContentEditor = ({
   //   console.log(targetNoteIds);
   // }, []);
 
-  // need this to dynamically update editor content whenever there is a new `noteId`
-  // or other tabs have updated note content but current tab editor isn't up to date
+  // need this when switched to a new note or other tabs have updated note content but current tab editor isn't up to date
   useEffect(() => {
-    async function updateContent() {
-      if (editorRef.current && noteId) {
+    async function updateEditorIfOutOfSync() {
+      if (editorRef.current && noteContent) {
         // setTimeout is necessary to avoid the error message: "Warning: flushSync was called from inside a
         // lifecycle method. ..."
         setTimeout(() => {
           const currentEditorContent = editorRef.current!.getHTML();
 
-          // update current editor whose content isn't in sync with storage
-          if (note?.content !== currentEditorContent) {
-            editorRef.current!.commands.setContent(note?.content || "");
+          if (currentEditorContent !== noteContent) {
+            editorRef.current!.commands.clearContent(); // need this for next line to function consistently
+            editorRef.current!.commands.setContent(noteContent);
           }
         });
       }
     }
 
-    updateContent();
-  }, [noteId, note?.content]);
+    updateEditorIfOutOfSync();
+  }, [noteContent]);
 
   return (
     <EditorProvider
-      key={noteId}
+      // key={note?.id || "key"}
       extensions={createContentEditorExtensions(authFetch)}
-      content={initialEditorContent} // this is still needed because `updateTitle` won't execute properly if you auth then switch tab
+      content=""
       onCreate={({ editor }) => {
         editorRef.current = editor;
       }}
       onUpdate={({ editor }) => {
         // diff(editor.getHTML());
 
-        debounceContentUpdate(noteId, editor.getHTML()); // passing in `noteId` ties the update to that `noteId` even if user switches to a different page before the actual update is made
+        debounceContentUpdate(noteIdParam, editor.getHTML()); // passing in `noteId` ties the update to that `noteId` even if user switches to a different page before the actual update is made
       }}
     ></EditorProvider>
   );

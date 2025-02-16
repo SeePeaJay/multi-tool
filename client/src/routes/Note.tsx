@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../db";
 import { useAuthFetch } from "../hooks/AuthFetch";
@@ -10,10 +10,6 @@ function Note() {
   const authFetch = useAuthFetch();
   const { setIsLoading } = useLoading();
   const { noteId: noteIdParam } = useParams();
-
-  const [noteId, setNoteId] = useState(""); // can't pass noteIdParam directly; see return statement comments for why
-  const [initialTitleEditorContent, setInitialTitleEditorContent] =
-    useState("");
 
   const fetchNote = async () => {
     if (!noteIdParam) {
@@ -36,9 +32,6 @@ function Note() {
         cachedNote = await db.table("notes").get(noteIdParam);
       }
 
-      // make sure editor content is set BEFORE `noteId` and `isLoading`; see Editor's isLoading check and TitleEditor's `previousTitleRef` for why
-      setInitialTitleEditorContent(cachedNote.title);
-      setNoteId(noteIdParam);
       setIsLoading(false);
     } catch (error) {
       console.error(error);
@@ -53,10 +46,7 @@ function Note() {
 
   return (
     <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
-      <Editor
-        noteId={noteId}
-        initialTitleEditorContent={initialTitleEditorContent}
-      />
+      <Editor />
     </div>
   );
 }

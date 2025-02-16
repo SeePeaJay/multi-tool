@@ -4,15 +4,7 @@ import TitleEditor from "./TitleEditor";
 import ContentEditor from "./ContentEditor";
 import "./Editor.css";
 
-interface EditorProps {
-  noteId: string;
-  initialTitleEditorContent: string;
-}
-
-const Editor = ({
-  noteId,
-  initialTitleEditorContent,
-}: EditorProps) => {
+const Editor = () => {
   const { isLoading } = useLoading();
 
   return (
@@ -21,10 +13,7 @@ const Editor = ({
         <SkeletonEditor />
       ) : (
         <>
-          <TitleEditor
-            noteId={noteId}
-            initialEditorContent={initialTitleEditorContent} // as for why the initial contents are necessary, check comment on each editor's `content` attr
-          />
+          <TitleEditor />
           <ContentEditor />
         </>
       )}

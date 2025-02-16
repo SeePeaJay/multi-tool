@@ -1,51 +1,45 @@
-import { useEffect, useRef } from "react";
 import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
 import Document from "@tiptap/extension-document";
 import Placeholder from "@tiptap/extension-placeholder";
 import Text from "@tiptap/extension-text";
+import { useLiveQuery } from "dexie-react-hooks";
+import { useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
 import { db } from "../db";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import Title from "../utils/title";
 
-interface TitleEditorProps {
-  noteId: string;
-  initialEditorContent: string;
-}
-
-const TitleEditor = ({ noteId, initialEditorContent }: TitleEditorProps) => {
+const TitleEditor = () => {
   const authFetch = useAuthFetch();
-
+  const { noteId: noteIdParam } = useParams();
   const editorRef = useRef<TiptapEditor | null>(null);
   const previousTitleRef = useRef(""); // a copy of the last set title value, used to reset when rename fails
 
-  const extensions = [
-    Document.extend({
-      content: "title",
-      addKeyboardShortcuts() {
-        return {
-          Enter: () => {
-            this.editor.commands.blur();
-            return true;
-          },
-        };
-      },
-    }),
-    Title,
-    Text,
-    Placeholder.configure({
-      placeholder: "Add a title...",
-    }),
-  ];
+  const noteTitleToDisplay = useLiveQuery(async () => {
+    if (noteIdParam) {
+      const note = await db.notes.get(noteIdParam);
+      return note?.title;
+    }
 
-  const handleBlur = async () => {
+    return "Starred";
+  }, [noteIdParam]);
+
+  const renameNote = async () => {
     const newTitle = editorRef.current!.getText();
     const newTitleAlreadyExists = await db.notes.get({ title: newTitle });
 
     if (newTitle && !newTitleAlreadyExists) {
       try {
-        db.notes.update(noteId, { title: newTitle });
+        let noteIdToUpdate = noteIdParam;
 
-        await authFetch(`/api/rename/${noteId}`, {
+        if (!noteIdToUpdate) {
+          const starred = await db.table("notes").get({ title: "Starred" });
+          noteIdToUpdate = starred.id;
+        }
+
+        db.notes.update(noteIdToUpdate!, { title: newTitle });
+
+        await authFetch(`/api/rename/${noteIdToUpdate}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -67,39 +61,57 @@ const TitleEditor = ({ noteId, initialEditorContent }: TitleEditorProps) => {
     }
   };
 
-  // need this to dynamically update editor content whenever there is a new `noteId`
-  // editor provider's `content` only works the first time a non-empty string is provided
+  // dynamically update editor content when the query changes due to reasons outside of renaming in the current editor
+  // e.g., loading a different note, or other tabs have renamed current note but current editor hasn't been updated yet
   useEffect(() => {
-    async function updateTitle() {
-      if (editorRef.current && noteId) {
-        const note = await db.notes.get(noteId);
-
+    async function updateEditorDisplayIfOutdated() {
+      if (editorRef.current && noteTitleToDisplay) {
         // setTimeout is necessary to avoid the following message: "Warning: flushSync was called from inside a
         // lifecycle method. ..."
         setTimeout(() => {
-          editorRef.current!.commands.setContent(
-            `<h1 class="title">${note?.title || ""}</h1>`,
-          );
+          const currentTitleFromEditor = editorRef.current!.getText();
+
+          if (currentTitleFromEditor !== noteTitleToDisplay) {
+            editorRef.current!.commands.clearContent(); // need this for next line to function consistently
+            editorRef.current!.commands.setContent(
+              `<h1 class="title">${noteTitleToDisplay}</h1>`,
+            );
+            previousTitleRef.current = noteTitleToDisplay;
+          }
         });
       }
     }
 
-    previousTitleRef.current = initialEditorContent;
-    // manually update `previousTitleRef` whenever there is new batch of content
-    // this line is necessary because otherwise, if users refresh the page, `isLoading` won't toggle and `TitleEditor` won't re-render, meaning `previousTitleRef` would've been stuck with an empty title
-
-    updateTitle();
-  }, [noteId]);
+    updateEditorDisplayIfOutdated();
+  }, [noteTitleToDisplay]);
 
   return (
     <EditorProvider
-      key={noteId}
-      extensions={extensions}
-      content={`<h1 class="title">${initialEditorContent}</h1>`} // this is still needed because `updateTitle` won't execute properly if you auth then switch tab
+      // key={noteId}
+      extensions={[
+        Document.extend({
+          content: "title",
+          addKeyboardShortcuts() {
+            return {
+              Enter: () => {
+                this.editor.commands.blur();
+                return true;
+              },
+            };
+          },
+        }),
+        Title,
+        Text,
+        Placeholder.configure({
+          placeholder: "Add a title...",
+        }),
+      ]}
+      editable={noteTitleToDisplay !== "Starred"}
+      content=""
       onCreate={({ editor }) => {
         editorRef.current = editor;
       }}
-      onBlur={handleBlur}
+      onBlur={renameNote}
     ></EditorProvider>
   );
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { db } from "../db";
 import { useAuth } from "../contexts/AuthContext";
@@ -13,10 +13,6 @@ function Starred() {
   const { isAuthenticated, setIsAuthenticated } = useAuth();
   const authFetch = useAuthFetch();
   const { setIsLoading } = useLoading();
-
-  const [noteId, setNoteId] = useState("");
-  const [initialTitleEditorContent, setInitialTitleEditorContent] =
-    useState("");
 
   const fetchAccessTokenAndResources = async () => {
     try {
@@ -69,9 +65,6 @@ function Starred() {
         starred = await db.table("notes").get({ title: "Starred" });
       }
 
-      // make sure editor content is set BEFORE `noteId` and `isLoading`; see Editor's isLoading check and TitleEditor's `previousTitleRef` for why
-      setInitialTitleEditorContent(starred.title);
-      setNoteId(starred.id);
       setIsLoading(false);
     } catch (error) {
       console.error(error);
@@ -86,10 +79,7 @@ function Starred() {
     <>
       {isAuthenticated ? (
         <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
-          <Editor
-            noteId={noteId}
-            initialTitleEditorContent={initialTitleEditorContent}
-          />
+          <Editor />
         </div>
       ) : (
         <InitialLoadingScreen />

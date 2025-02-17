@@ -1,3 +1,4 @@
+import { generateHTML, generateJSON } from "@tiptap/core";
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { db } from "../db";
@@ -6,6 +7,7 @@ import { useLoading } from "../contexts/LoadingContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import InitialLoadingScreen from "../components/InitialLoadingScreen";
 import Editor from "../components/Editor";
+import { createContentEditorExtensions } from "../utils/contentEditorExtensions";
 
 function Starred() {
   const location = useLocation();
@@ -13,6 +15,8 @@ function Starred() {
   const { isAuthenticated, setIsAuthenticated } = useAuth();
   const authFetch = useAuthFetch();
   const { setIsLoading } = useLoading();
+
+  const extensions = createContentEditorExtensions(authFetch);
 
   const fetchAccessTokenAndResources = async () => {
     try {
@@ -56,13 +60,18 @@ function Starred() {
         );
         starred = await db.table("notes").get({ title: "Starred" });
 
-        // fetch Starred then set it
+        // fetch Starred
         const starredContent = await authFetch(
           `/api/notes/${starred.id}`,
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
-        await db.notes.update(starred.id, { content: starredContent });
-        starred = await db.table("notes").get({ title: "Starred" });
+
+        // restore empty attributes, then set
+        const restoredStarredContent = generateHTML(
+          generateJSON(starredContent, extensions),
+          extensions,
+        );
+        await db.notes.update(starred.id, { content: restoredStarredContent });
       }
 
       setIsLoading(false);

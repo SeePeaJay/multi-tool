@@ -1,15 +1,19 @@
+import { generateHTML, generateJSON } from "@tiptap/core";
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../db";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import Editor from "../components/Editor";
 import { useLoading } from "../contexts/LoadingContext";
+import { createContentEditorExtensions } from "../utils/contentEditorExtensions";
 
 function Note() {
   const navigate = useNavigate();
   const authFetch = useAuthFetch();
   const { setIsLoading } = useLoading();
   const { noteId: noteIdParam } = useParams();
+
+  const extensions = createContentEditorExtensions(authFetch);
 
   const fetchNote = async () => {
     if (!noteIdParam) {
@@ -18,7 +22,7 @@ function Note() {
     }
 
     try {
-      let cachedNote = await db.table("notes").get(noteIdParam);
+      const cachedNote = await db.table("notes").get(noteIdParam);
 
       // fetch note then set it
       if (!cachedNote?.content) {
@@ -28,8 +32,14 @@ function Note() {
           credentials: "include",
         });
 
-        await db.notes.update(noteIdParam, { content: noteContent });
-        cachedNote = await db.table("notes").get(noteIdParam);
+        // noteContent is sanitized and may remove empty attributes
+        // need Tiptap to restore them, which then allows proper comparison in ContentEditor
+        const restoredNoteContent = generateHTML(
+          generateJSON(noteContent, extensions),
+          extensions,
+        );
+
+        await db.notes.update(noteIdParam, { content: restoredNoteContent });
       }
 
       setIsLoading(false);

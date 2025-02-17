@@ -118,7 +118,7 @@ const Backlink = Node.create({
         "data-target-note-id": targetNoteId,
         "data-target-block-id": targetBlockId,
       },
-      targetBlockId,
+      `$ ${targetNoteId}${targetBlockId ? `::${targetBlockId}` : ""}`,
     ];
   },
 

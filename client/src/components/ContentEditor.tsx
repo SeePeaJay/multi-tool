@@ -11,8 +11,9 @@ const ContentEditor = () => {
   const authFetch = useAuthFetch();
   const { noteId: noteIdParam } = useParams();
   const editorRef = useRef<TiptapEditor | null>(null);
+  const previousEditorContentRef = useRef("");
 
-  const noteContent = useLiveQuery(async () => {
+  const noteContentToDisplay = useLiveQuery(async () => {
     if (noteIdParam) {
       const note = await db.notes.get(noteIdParam);
       return note?.content;
@@ -24,34 +25,37 @@ const ContentEditor = () => {
 
   // debounce the content change handler
   const debounceContentUpdate = useCallback(
-    debounce(async (noteIdParam: string | undefined, updatedContent: string) => {
-      let noteIdToUpdate = noteIdParam;
+    debounce(
+      async (noteIdParam: string | undefined, updatedContent: string) => {
+        let noteIdToUpdate = noteIdParam;
 
-      if (!noteIdToUpdate) {
-        const starred = await db.table("notes").get({ title: "Starred" });
-        noteIdToUpdate = starred.id;
-      }
+        if (!noteIdToUpdate) {
+          const starred = await db.table("notes").get({ title: "Starred" });
+          noteIdToUpdate = starred.id;
+        }
 
-      try {
-        await db.notes.update(noteIdToUpdate!, {
-          content: updatedContent,
-        });
-      } catch (error) {
-        console.error("Failed to save content:", error);
-      }
+        try {
+          await db.notes.update(noteIdToUpdate!, {
+            content: updatedContent,
+          });
+        } catch (error) {
+          console.error("Failed to save content:", error);
+        }
 
-      await authFetch(
-        `/api/notes/${noteIdToUpdate}`,
-        {
-          credentials: "include",
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json", // specify JSON content type for below
-          },
-          body: JSON.stringify({ updatedContent }),
-        }, // include cookies with request; required for cookie session to function
-      );
-    }, 2000),
+        await authFetch(
+          `/api/notes/${noteIdToUpdate}`,
+          {
+            credentials: "include",
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json", // specify JSON content type for below
+            },
+            body: JSON.stringify({ updatedContent }),
+          }, // include cookies with request; required for cookie session to function
+        );
+      },
+      2000,
+    ),
     [],
   );
 
@@ -85,23 +89,24 @@ const ContentEditor = () => {
 
   // need this when switched to a new note or other tabs have updated note content but current tab editor isn't up to date
   useEffect(() => {
-    async function updateEditorIfOutOfSync() {
-      if (editorRef.current && noteContent) {
+    async function updateEditorDisplayIfOutdated() {
+      if (editorRef.current && noteContentToDisplay) {
         // setTimeout is necessary to avoid the error message: "Warning: flushSync was called from inside a
         // lifecycle method. ..."
         setTimeout(() => {
           const currentEditorContent = editorRef.current!.getHTML();
 
-          if (currentEditorContent !== noteContent) {
+          if (currentEditorContent !== noteContentToDisplay) {
             editorRef.current!.commands.clearContent(); // need this for next line to function consistently
-            editorRef.current!.commands.setContent(noteContent);
+            editorRef.current!.commands.setContent(noteContentToDisplay);
+            previousEditorContentRef.current = noteContentToDisplay;
           }
         });
       }
     }
 
-    updateEditorIfOutOfSync();
-  }, [noteContent]);
+    updateEditorDisplayIfOutdated();
+  }, [noteContentToDisplay]);
 
   return (
     <EditorProvider
@@ -112,9 +117,17 @@ const ContentEditor = () => {
         editorRef.current = editor;
       }}
       onUpdate={({ editor }) => {
+        // only debounce content update if editor update involves genuinely visible changes
+
         // diff(editor.getHTML());
 
-        debounceContentUpdate(noteIdParam, editor.getHTML()); // passing in `noteId` ties the update to that `noteId` even if user switches to a different page before the actual update is made
+        const currentEditorContent = editor.getHTML();
+
+        if (currentEditorContent !== previousEditorContentRef.current) {
+          previousEditorContentRef.current = currentEditorContent;
+
+          debounceContentUpdate(noteIdParam, currentEditorContent); // passing in `noteId` ties the update to that `noteId` even if user switches to a different page before the actual update is made
+        }
       }}
     ></EditorProvider>
   );

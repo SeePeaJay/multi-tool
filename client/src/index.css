@@ -18,11 +18,11 @@
 }
 
 @layer components {
-  .backlinkList {
-    @apply text-xl text-blue-600 font-semibold;
+  .backlinkTitle {
+    @apply text-blue-600 font-semibold;
   }
 
-  .backlink {
+  .blocklink {
     @apply block bg-blue-50 rounded-lg p-2;
   }
 }

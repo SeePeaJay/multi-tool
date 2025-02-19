@@ -56,11 +56,11 @@ const BacklinkNodeView: React.FC<NodeViewProps> = ({
     async () => {
       const note = await db.notes.get(targetNoteId);
 
-      if (note) {
-        return note.title;
+      if (!note) {
+        return `Cannot find note with id "${targetNoteId}`;
       }
 
-      return `Cannot find note with id "${targetNoteId}`;
+      return note.title;
     },
     [editorUpdateCounter],
     "",
@@ -70,17 +70,23 @@ const BacklinkNodeView: React.FC<NodeViewProps> = ({
     async () => {
       const note = await db.notes.get(targetNoteId);
 
-      if (note && targetBlockId) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(note.content, "text/html");
-        const targetBlock = doc.getElementById(targetBlockId);
-
-        if (targetBlock) {
-          return targetBlock.outerHTML;
-        }
+      if (!note) {
+        return `Cannot find note with id "${targetNoteId}`;
       }
 
-      return ``;
+      if (!note.content) {
+        return "";
+      }
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(note.content, "text/html");
+      const targetBlock = doc.getElementById(targetBlockId);
+
+      if (!targetBlock) {
+        return `Cannot find block with id "${targetBlockId}`;
+      }
+
+      return targetBlock.outerHTML;
     },
     [editorUpdateCounter],
     "",
@@ -100,19 +106,21 @@ const BacklinkNodeView: React.FC<NodeViewProps> = ({
       data-type="backlink"
       className={isLoaded ? "" : "pointer-events-none"} // prevent clicking the backlink until it is ready
     >
-      {!targetBlockId ? (
-        <NavLink className="backlink" to={`/app/notes/${targetNoteId}`}>
-          {targetNoteTitle}
-        </NavLink>
+      <NavLink className="backlinkTitle" to={`/app/notes/${targetNoteId}`}>
+        {targetNoteTitle}
+      </NavLink>
+      {targetBlockId ? (
+        <HashLink
+          className="blocklink"
+          to={`/app/notes/${targetNoteId}#${targetBlockId}`}
+          dangerouslySetInnerHTML={{
+            __html:
+              targetBlockText ||
+              '<div class="space-y-2"><div class="h-4 bg-gray-300 rounded w-full animate-pulse"></div><div class="h-4 bg-gray-300 rounded w-3/4 animate-pulse"></div></div>',
+          }}
+        ></HashLink>
       ) : (
-        <>
-          <h4>{targetNoteTitle}</h4>
-          <HashLink
-            className="backlink"
-            to={`/app/notes/${targetNoteId}#${targetBlockId}`}
-            dangerouslySetInnerHTML={{ __html: targetBlockText }}
-          ></HashLink>
-        </>
+        <></>
       )}
     </NodeViewWrapper>
   );

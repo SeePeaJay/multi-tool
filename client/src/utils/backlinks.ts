@@ -2,7 +2,7 @@
  * This file defines custom backlink and backlinks section nodes.
  */
 
-import { Node } from "@tiptap/core";
+import { Extension, Node } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import BacklinksNodeView from "../components/BacklinksNodeView";
 import BacklinkNodeView from "../components/BacklinkNodeView";
@@ -30,6 +30,10 @@ const Backlinks = Node.create({
   addNodeView() {
     return ReactNodeViewRenderer(BacklinksNodeView);
   },
+});
+
+const PreventEarlyBacklinkDeletion = Extension.create({
+  name: "preventEarlyBacklinkDeletion",
 
   // block transactions that delete backlinks that are not ready
   // source: https://github.com/ueberdosis/tiptap/issues/181#issuecomment-1833401187
@@ -127,4 +131,4 @@ const Backlink = Node.create({
   },
 });
 
-export { Backlinks, Backlink };
+export { Backlink, Backlinks, PreventEarlyBacklinkDeletion };

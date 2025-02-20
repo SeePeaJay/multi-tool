@@ -7,7 +7,7 @@ import StarterKit from "@tiptap/starter-kit";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import { createBaseNoteSuggestionConfig } from "./baseNoteSuggestionConfig";
 import EnsureUniqueIds from "./ensureUniqueIds";
-import { Backlink, Backlinks, PreventEarlyBacklinkDeletion } from "./backlinks";
+import { Backlink, PreventEarlyBacklinkDeletion } from "./backlinks";
 import Frontmatter from "./frontmatter";
 import Notelink from "./notelink";
 import Tag from "./tag";
@@ -60,8 +60,7 @@ export const createContentEditorExtensions = (
     scrollTreshold: 100,
     excludedTags: [
       "p.frontmatter",
-      "div.node-backlinks", // the selector for container of backlinks node view; the wrapper div won't work
-      "div:has(> div.pointer-events-none)", // same idea as above; prevent dragging the backlink until it is ready
+      "div:has(> div.pointer-events-none)", // the selector for container of backlink node view; prevent dragging the backlink until it is ready
     ],
     customNodes: ["backlink"],
   }),
@@ -89,7 +88,6 @@ export const createContentEditorExtensions = (
     suggestion: createBaseNoteSuggestionConfig(),
   }),
   Backlink,
-  Backlinks,
   PreventEarlyBacklinkDeletion,
   EnsureUniqueIds,
   CustomPlaceholder,

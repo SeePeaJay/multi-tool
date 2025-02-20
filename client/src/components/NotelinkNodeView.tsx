@@ -22,7 +22,7 @@ const NotelinkNodeView: React.FC<NodeViewProps> = ({
           await db.notes.put({
             id: targetNoteId,
             title: initialTargetTitle,
-            content: `<p class="frontmatter"></p><p></p><div class="backlinks"></div>`,
+            content: `<p class="frontmatter"></p><p></p>`,
             hasFetchedBacklinks: true,
           });
 

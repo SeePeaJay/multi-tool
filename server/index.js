@@ -138,7 +138,7 @@ app.get("/api/auth", async (req, res) => {
         },
         media: {
           mimeType: "text/html",
-          body: `<p class="frontmatter"></p><p></p><div class="backlinks"></div>`,
+          body: `<p class="frontmatter"></p><p></p>`,
         },
         useContentAsIndexableText: true,
       });
@@ -305,7 +305,7 @@ app.post("/api/create/:noteId", authCheck, async (req, res) => {
       },
       media: {
         mimeType: "text/html",
-        body: `<p class="frontmatter"></p><p></p><div class="backlinks"></div>`,
+        body: `<p class="frontmatter"></p><p></p>`,
       },
     });
 

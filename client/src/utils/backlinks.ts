@@ -1,36 +1,11 @@
 /*
- * This file defines custom backlink and backlinks section nodes.
+ * This file defines a custom backlink node.
  */
 
 import { Extension, Node } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
-import BacklinksNodeView from "../components/BacklinksNodeView";
 import BacklinkNodeView from "../components/BacklinkNodeView";
 import { Plugin } from "@tiptap/pm/state";
-
-const Backlinks = Node.create({
-  name: "backlinks",
-
-  priority: 101,
-
-  group: "block",
-
-  parseHTML() {
-    return [
-      {
-        tag: "div.backlinks",
-      },
-    ];
-  },
-
-  renderHTML() {
-    return ["div", { class: "backlinks" }];
-  },
-
-  addNodeView() {
-    return ReactNodeViewRenderer(BacklinksNodeView);
-  },
-});
 
 const PreventEarlyBacklinkDeletion = Extension.create({
   name: "preventEarlyBacklinkDeletion",
@@ -131,4 +106,4 @@ const Backlink = Node.create({
   },
 });
 
-export { Backlink, Backlinks, PreventEarlyBacklinkDeletion };
+export { Backlink, PreventEarlyBacklinkDeletion };

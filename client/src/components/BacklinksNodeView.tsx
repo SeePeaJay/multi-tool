@@ -10,18 +10,9 @@ const BacklinksNodeView: React.FC<NodeViewProps> = ({ editor }) => {
   const authFetch = useAuthFetch();
   const { noteId: noteIdParam } = useParams();
 
-  const getBacklinksOwnerId = async () => {
-    if (noteIdParam) {
-      return noteIdParam; // you are in the Note route, which should have an ID at this point
-    }
-
-    const starred = await db.table("notes").get({ title: "Starred" });
-    return starred?.id || null; // null bc initial load when "Starred" hasn't been fetched yet
-  };
-
   const backlinks = useLiveQuery(async () => {
     const output: string[] = [];
-    const backlinksOwnerId = await getBacklinksOwnerId();
+    const backlinksOwnerId = noteIdParam || (await db.table("notes").get({ title: "Starred" }))?.id;
     const hasFetchedBacklinks = (await db.notes.get(backlinksOwnerId))
       ?.hasFetchedBacklinks;
 
@@ -59,7 +50,7 @@ const BacklinksNodeView: React.FC<NodeViewProps> = ({ editor }) => {
     });
 
     return output;
-  });
+  }, [noteIdParam]);
 
   // insert backlink nodes for each note/block that tags the current note
   // also remove them if their target do not tag the current note
@@ -141,7 +132,7 @@ const BacklinksNodeView: React.FC<NodeViewProps> = ({ editor }) => {
 
   useEffect(() => {
     const fetchBacklinks = async () => {
-      const backlinksOwnerId = await getBacklinksOwnerId();
+      const backlinksOwnerId = noteIdParam || (await db.table("notes").get({ title: "Starred" }))?.id;
 
       // if "Starred" hasn't been fetched yet, immediately exit?
       if (!backlinksOwnerId) {

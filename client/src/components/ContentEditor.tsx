@@ -14,10 +14,13 @@ import {
   updateEditorBacklinksIfOutdated,
   fetchBacklinks,
   pushEditorUpdate,
-  syncEditorWithCurrentNoteContentIfOutdated,
 } from "../utils/contentEditorHelpers";
 
-const ContentEditor = () => {
+interface ContentEditorProps {
+  initialNoteContent: string;
+}
+
+const ContentEditor = ({ initialNoteContent }: ContentEditorProps) => {
   const authFetch = useAuthFetch();
   const { noteId: noteIdParam } = useParams();
   const editorRef = useRef<TiptapEditor | null>(null);
@@ -107,21 +110,34 @@ const ContentEditor = () => {
   useEffect(() => {
     setEditorIsUpToDate(false);
     setBacklinksAreUpToDate(false);
+
+    // console.log(currentNoteContent);
+
+    // if (!editorRef.current || currentNoteContent === undefined) {
+    //   return;
+    // }
+
+    // syncEditorWithCurrentNoteContentIfOutdated({
+    //   currentNoteContent,
+    //   editorRef,
+    //   previousEditorContentRef,
+    //   setEditorIsUpToDate,
+    // });
   }, [noteIdParam]);
 
   // need this when switched to a new note or other tabs have updated note content but current tab editor isn't up to date
-  useEffect(() => {
-    if (!editorRef.current || currentNoteContent === undefined) {
-      return;
-    }
+  // useEffect(() => {
+  //   if (!editorRef.current || currentNoteContent === undefined) {
+  //     return;
+  //   }
 
-    syncEditorWithCurrentNoteContentIfOutdated({
-      currentNoteContent,
-      editorRef,
-      previousEditorContentRef,
-      setEditorIsUpToDate,
-    });
-  }, [currentNoteContent]);
+  //   syncEditorWithCurrentNoteContentIfOutdated({
+  //     currentNoteContent,
+  //     editorRef,
+  //     previousEditorContentRef,
+  //     setEditorIsUpToDate,
+  //   });
+  // }, [currentNoteContent]);
 
   useEffect(
     () => {
@@ -164,6 +180,19 @@ const ContentEditor = () => {
       baseUrl: "ws://127.0.0.1:1234", // Your Cloud Dashboard AppID or `baseURL` for on-premises
       token: "notoken", // Your JWT token
       document: doc,
+      // onSynced() {
+      //   if (
+      //     !doc.getMap("config").get("initialContentLoaded") &&
+      //     editorRef.current
+      //   ) {
+      //     doc.getMap("config").set("initialContentLoaded", true);
+
+      //     editorRef.current.commands.setContent(`
+      //     <p>This is a radically reduced version of Tiptap. It has support for a document, with paragraphs and text. That’s it. It’s probably too much for real minimalists though.</p>
+      //     <p>The paragraph extension is not really required, but you need at least one node. Sure, that node can be something different.</p>
+      //     `);
+      //   }
+      // },
     });
   }, []);
 
@@ -171,7 +200,7 @@ const ContentEditor = () => {
     <EditorProvider
       // key={note?.id || "key"}
       extensions={createContentEditorExtensions(authFetch)}
-      content=""
+      content={initialNoteContent}
       onCreate={({ editor }) => {
         editorRef.current = editor;
       }}

@@ -1,5 +1,5 @@
 import { generateHTML, generateJSON } from "@tiptap/core";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { db } from "../db";
 import { useAuth } from "../contexts/AuthContext";
@@ -15,6 +15,7 @@ function Starred() {
   const { isAuthenticated, setIsAuthenticated } = useAuth();
   const authFetch = useAuthFetch();
   const { setIsLoading } = useLoading();
+  const [initialNoteContent, setInitialNoteContent] = useState("");
 
   const extensions = createContentEditorExtensions(authFetch);
 
@@ -72,8 +73,10 @@ function Starred() {
           extensions,
         );
         await db.notes.update(starred.id, { content: restoredStarredContent });
+        starred = await db.table("notes").get({ title: "Starred" });
       }
 
+      setInitialNoteContent(starred.content);
       setIsLoading(false);
     } catch (error) {
       console.error(error);
@@ -88,7 +91,7 @@ function Starred() {
     <>
       {isAuthenticated ? (
         <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
-          <Editor />
+          <Editor initialNoteContent={initialNoteContent}/>
         </div>
       ) : (
         <InitialLoadingScreen />

@@ -1,5 +1,6 @@
 require("dotenv").config();
 
+const { Hocuspocus } = require("@hocuspocus/server");
 const express = require("express");
 const cors = require("cors");
 const cookieSession = require("cookie-session");
@@ -8,6 +9,11 @@ const { google } = require("googleapis");
 const { nanoid } = require("nanoid");
 const sanitizeHtml = require("sanitize-html");
 const stream = require("stream");
+
+const server = new Hocuspocus({
+  port: 1234,
+});
+server.listen();
 
 const app = express();
 const port = 3000;

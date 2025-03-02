@@ -62,18 +62,18 @@ function Starred() {
         starred = await db.table("notes").get({ title: "Starred" });
 
         // fetch Starred
-        const starredContent = await authFetch(
-          `/api/notes/${starred.id}`,
-          { credentials: "include" }, // include cookies with request; required for cookie session to function
-        );
+        // const starredContent = await authFetch(
+        //   `/api/notes/${starred.id}`,
+        //   { credentials: "include" }, // include cookies with request; required for cookie session to function
+        // );
 
         // restore empty attributes, then set
-        const restoredStarredContent = generateHTML(
-          generateJSON(starredContent, extensions),
-          extensions,
-        );
-        await db.notes.update(starred.id, { content: restoredStarredContent });
-        starred = await db.table("notes").get({ title: "Starred" });
+        // const restoredStarredContent = generateHTML(
+        //   generateJSON(starredContent, extensions),
+        //   extensions,
+        // );
+        // await db.notes.update(starred.id, { content: restoredStarredContent });
+        // starred = await db.table("notes").get({ title: "Starred" });
       }
 
       setInitialNoteContent(starred.content);

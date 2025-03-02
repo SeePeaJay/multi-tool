@@ -34,13 +34,13 @@ const ContentEditor = ({ initialNoteContent }: ContentEditorProps) => {
     );
   }, [noteIdParam]);
 
-  const currentNoteContent = useLiveQuery(async () => {
-    if (!currentNoteId) {
-      return;
-    }
+  // const currentNoteContent = useLiveQuery(async () => {
+  //   if (!currentNoteId) {
+  //     return;
+  //   }
 
-    return (await db.notes.get(currentNoteId))?.content;
-  }, [currentNoteId]);
+  //   return (await db.notes.get(currentNoteId))?.content;
+  // }, [currentNoteId]);
 
   const currentNoteHasFetchedBacklinks = useLiveQuery(async () => {
     if (!currentNoteId) {
@@ -175,24 +175,21 @@ const ContentEditor = ({ initialNoteContent }: ContentEditorProps) => {
 
   // connect to collaboration server
   useEffect(() => {
-    const provider = new TiptapCollabProvider({
+    new TiptapCollabProvider({
       name: "document.name", // Unique document identifier for syncing. This is your document name.
       baseUrl: "ws://127.0.0.1:1234", // Your Cloud Dashboard AppID or `baseURL` for on-premises
       token: "notoken", // Your JWT token
       document: doc,
-      // onSynced() {
-      //   if (
-      //     !doc.getMap("config").get("initialContentLoaded") &&
-      //     editorRef.current
-      //   ) {
-      //     doc.getMap("config").set("initialContentLoaded", true);
+      onSynced() {
+        if (
+          !doc.getMap("config").get("initialContentLoaded") &&
+          editorRef.current
+        ) {
+          doc.getMap("config").set("initialContentLoaded", true);
 
-      //     editorRef.current.commands.setContent(`
-      //     <p>This is a radically reduced version of Tiptap. It has support for a document, with paragraphs and text. That’s it. It’s probably too much for real minimalists though.</p>
-      //     <p>The paragraph extension is not really required, but you need at least one node. Sure, that node can be something different.</p>
-      //     `);
-      //   }
-      // },
+          editorRef.current.commands.setContent(`<p>Sanity check.</p>`);
+        }
+      },
     });
   }, []);
 
@@ -200,7 +197,7 @@ const ContentEditor = ({ initialNoteContent }: ContentEditorProps) => {
     <EditorProvider
       // key={note?.id || "key"}
       extensions={createContentEditorExtensions(authFetch)}
-      content={initialNoteContent}
+      // content={initialNoteContent}
       onCreate={({ editor }) => {
         editorRef.current = editor;
       }}

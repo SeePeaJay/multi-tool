@@ -13,7 +13,7 @@ const Editor = ({ initialNoteContent }: EditorProps) => {
 
   return (
     <>
-      {isLoading ? ( // this isLoading check ensures the editors are only rendered after all the props are ready
+      {isLoading && !initialNoteContent ? ( // this isLoading check ensures the editors are only rendered after all the props are ready
         <SkeletonEditor />
       ) : (
         <>

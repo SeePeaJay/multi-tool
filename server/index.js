@@ -1,6 +1,13 @@
 require("dotenv").config();
 
 const { Hocuspocus } = require("@hocuspocus/server");
+const { TiptapTransformer } = require("@hocuspocus/transformer");
+const { generateJSON } = require('@tiptap/html');
+
+const { Document } = require('@tiptap/extension-document');
+const { Paragraph } = require('@tiptap/extension-paragraph');
+const { Text } = require('@tiptap/extension-text');
+
 const express = require("express");
 const cors = require("cors");
 const cookieSession = require("cookie-session");
@@ -12,6 +19,23 @@ const stream = require("stream");
 
 const server = new Hocuspocus({
   port: 1234,
+  async onLoadDocument(data) {
+    console.log(data);
+
+    const editorExtensions = [Document, Paragraph, Text];
+
+    const json = generateJSON(`<p>On the server, or the browser</p><p></p>`, editorExtensions);
+
+    const ydoc = TiptapTransformer.toYdoc(
+      json,
+      // the `field` you’re using in Tiptap. If you don’t know what that is, use 'default'.
+      "default",
+      // The Tiptap extensions you’re using. Those are important to create a valid schema.
+      editorExtensions,
+    );
+
+    return ydoc;
+  },
 });
 server.listen();
 
@@ -166,40 +190,40 @@ app.get("/api/auth", async (req, res) => {
   }
 });
 
-app.get("/api/notes/:noteId", authCheck, async (req, res) => {
-  try {
-    oAuth2Client.setCredentials({
-      access_token: req.session.accessToken,
-    });
+// app.get("/api/notes/:noteId", authCheck, async (req, res) => {
+//   try {
+//     oAuth2Client.setCredentials({
+//       access_token: req.session.accessToken,
+//     });
 
-    const idObject = await getIdObject(req.session.idOfIdfile);
+//     const idObject = await getIdObject(req.session.idOfIdfile);
 
-    const noteTitle = idObject[req.params.noteId];
+//     const noteTitle = idObject[req.params.noteId];
 
-    const searchFileResponse = await drive.files.list({
-      q: `name = '${noteTitle}.html' and trashed = false`,
-      fields: "files(id, name)",
-    });
+//     const searchFileResponse = await drive.files.list({
+//       q: `name = '${noteTitle}.html' and trashed = false`,
+//       fields: "files(id, name)",
+//     });
 
-    const fileResponse = await drive.files.get(
-      {
-        fileId: searchFileResponse.data.files[0].id,
-        alt: "media",
-      },
-      { responseType: "text" },
-    );
+//     const fileResponse = await drive.files.get(
+//       {
+//         fileId: searchFileResponse.data.files[0].id,
+//         alt: "media",
+//       },
+//       { responseType: "text" },
+//     );
 
-    res.status(200).send(fileResponse.data);
-  } catch (error) {
-    console.error(error);
+//     res.status(200).send(fileResponse.data);
+//   } catch (error) {
+//     console.error(error);
 
-    res
-      .status(500)
-      .send(
-        `An error occurred while trying to obtain note with id ${req.params.noteId}`,
-      );
-  }
-});
+//     res
+//       .status(500)
+//       .send(
+//         `An error occurred while trying to obtain note with id ${req.params.noteId}`,
+//       );
+//   }
+// });
 
 app.post("/api/search", authCheck, async (req, res) => {
   try {

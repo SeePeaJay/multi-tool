@@ -68,32 +68,33 @@ export const createContentEditorExtensions = (
     ],
     customNodes: ["backlink"],
   }),
-  StarterKit.configure({
-    document: false,
-    heading: false,
-    paragraph: false,
-    codeBlock: false,
-    bulletList: false, // disabled due to nested structure, making it difficult to integrate with block id
-    orderedList: false, // same as above
-    listItem: false, // same as above
-    blockquote: false, // same as above
-    horizontalRule: false, // disabled because it doesn't work with current drag handle
-  }),
-  CustomDocument,
-  Frontmatter,
-  CustomHeading,
-  CustomParagraph,
-  CustomCodeBlock,
-  Notelink.configure({
-    authFetch,
-    suggestion: createBaseNoteSuggestionConfig(authFetch),
-  }),
-  Tag.configure({
-    suggestion: createBaseNoteSuggestionConfig(),
-  }),
-  Backlink,
-  PreventEarlyBacklinkDeletion,
-  EnsureUniqueIds,
+  StarterKit,
+  // .configure({
+  //   document: false,
+  //   heading: false,
+  //   paragraph: false,
+  //   codeBlock: false,
+  //   bulletList: false, // disabled due to nested structure, making it difficult to integrate with block id
+  //   orderedList: false, // same as above
+  //   listItem: false, // same as above
+  //   blockquote: false, // same as above
+  //   horizontalRule: false, // disabled because it doesn't work with current drag handle
+  // }),
+  // CustomDocument,
+  // Frontmatter,
+  // CustomHeading,
+  // CustomParagraph,
+  // CustomCodeBlock,
+  // Notelink.configure({
+  //   authFetch,
+  //   suggestion: createBaseNoteSuggestionConfig(authFetch),
+  // }),
+  // Tag.configure({
+  //   suggestion: createBaseNoteSuggestionConfig(),
+  // }),
+  // Backlink,
+  // PreventEarlyBacklinkDeletion,
+  // EnsureUniqueIds,
   CustomPlaceholder,
   Collaboration.configure({
     document: doc,

@@ -3,11 +3,6 @@ require("dotenv").config();
 const { Hocuspocus } = require("@hocuspocus/server");
 const { TiptapTransformer } = require("@hocuspocus/transformer");
 const { generateJSON } = require('@tiptap/html');
-
-const { Document } = require('@tiptap/extension-document');
-const { Paragraph } = require('@tiptap/extension-paragraph');
-const { Text } = require('@tiptap/extension-text');
-
 const express = require("express");
 const cors = require("cors");
 const cookieSession = require("cookie-session");
@@ -16,15 +11,16 @@ const { google } = require("googleapis");
 const { nanoid } = require("nanoid");
 const sanitizeHtml = require("sanitize-html");
 const stream = require("stream");
+const createContentEditorExtensions = require("./contentEditorExtensions");
 
 const server = new Hocuspocus({
   port: 1234,
   async onLoadDocument(data) {
     console.log(data);
 
-    const editorExtensions = [Document, Paragraph, Text];
+    const editorExtensions = createContentEditorExtensions();
 
-    const json = generateJSON(`<p>On the server, or the browser</p><p></p>`, editorExtensions);
+    const json = generateJSON(`<p class="frontmatter">Frontmatter</p><p>Paragraph</p>`, editorExtensions);
 
     const ydoc = TiptapTransformer.toYdoc(
       json,

@@ -6,6 +6,7 @@ import { mergeAttributes, Node } from "@tiptap/core";
 import { PluginKey } from "@tiptap/pm/state";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
+import { nanoid } from "nanoid";
 import NotelinkNodeView from "../components/NotelinkNodeView";
 
 export interface TagNodeAttrs {
@@ -14,7 +15,7 @@ export interface TagNodeAttrs {
    */
   targetNoteId: string;
 
-  initialTargetTitle?: string; 
+  initialTargetTitle?: string;
 }
 
 // define a type for addOptions below
@@ -73,7 +74,10 @@ const Tag = Node.create<TagOptions>({
             .insertContentAt(range, [
               {
                 type: this.name,
-                attrs: props,
+                attrs: {
+                  id: nanoid(6),
+                  ...props,
+                },
               },
               {
                 type: "text",
@@ -106,6 +110,11 @@ const Tag = Node.create<TagOptions>({
 
   addAttributes() {
     return {
+      id: {
+        default: "",
+        parseHTML: (element) => element.getAttribute("id"),
+        renderHTML: (attributes) => ({ id: attributes.id }),
+      },
       type: {
         default: this.name,
         parseHTML: () => this.name,

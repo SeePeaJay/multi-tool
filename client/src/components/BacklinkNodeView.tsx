@@ -80,13 +80,25 @@ const BacklinkNodeView: React.FC<NodeViewProps> = ({
 
       const parser = new DOMParser();
       const doc = parser.parseFromString(note.content, "text/html");
-      const targetBlock = doc.getElementById(targetBlockId);
+      const targetTag = doc.getElementById(targetBlockId);
 
-      if (!targetBlock) {
-        return `Cannot find block with id "${targetBlockId}`;
+      if (!targetTag) {
+        return `Cannot find tag with id "${targetBlockId}`;
       }
 
-      return targetBlock.outerHTML;
+      // remove id to make anchor jumping more consistent
+      targetTag.removeAttribute("id");
+
+      // find the block
+      let rootElement: HTMLElement | null = targetTag;
+      while (
+        rootElement &&
+        !["p", "h1", "h2", "h3"].includes(rootElement.tagName.toLowerCase())
+      ) {
+        rootElement = rootElement.parentElement;
+      }
+
+      return rootElement?.outerHTML || "Cannot find block containing the tag";
     },
     [editorUpdateCounter],
     "",

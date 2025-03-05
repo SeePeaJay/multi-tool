@@ -65,11 +65,12 @@ const Backlink = Node.create({
       targetNoteId: {
         default: "",
       },
+      // technically, the id of the tag contained by the target block
       targetBlockId: {
         default: "",
       },
+      // whether we've already tried to fetch the target of this backlink
       isLoaded: {
-        // whether we've already tried to fetch the target of this backlink
         default: false,
       },
     };

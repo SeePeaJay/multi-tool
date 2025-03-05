@@ -76,10 +76,12 @@ const ContentEditor = () => {
         (span) => span.parentElement!,
       );
 
-      parentElements.forEach((element) => {
+      parentElements.forEach((element, index) => {
         output.push(
           `${note.id}::${
-            element.classList.contains("frontmatter") ? "" : element.id
+            element.classList.contains("frontmatter")
+              ? ""
+              : targetSpans[index].id
           }`,
         );
       });

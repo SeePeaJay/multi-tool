@@ -6,7 +6,6 @@ import Placeholder from "@tiptap/extension-placeholder";
 import StarterKit from "@tiptap/starter-kit";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import { createBaseNoteSuggestionConfig } from "./baseNoteSuggestionConfig";
-import EnsureUniqueIds from "./ensureUniqueIds";
 import { Backlink, PreventEarlyBacklinkDeletion } from "./backlinks";
 import Frontmatter from "./frontmatter";
 import Notelink from "./notelink";
@@ -89,6 +88,5 @@ export const createContentEditorExtensions = (
   }),
   Backlink,
   PreventEarlyBacklinkDeletion,
-  EnsureUniqueIds,
   CustomPlaceholder,
 ];

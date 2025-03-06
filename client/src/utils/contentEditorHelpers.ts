@@ -68,8 +68,9 @@ async function syncEditorWithCurrentNoteContentIfOutdated({
       editorRef.current!.commands.clearContent(); // need this for next line to function consistently
       editorRef.current!.commands.setContent(currentNoteContent);
       previousEditorContentRef.current = currentNoteContent;
-      setEditorIsUpToDate(true);
     }
+
+    setEditorIsUpToDate(true); // make sure this is still set to true when loading/refreshing a blank note
   });
 }
 

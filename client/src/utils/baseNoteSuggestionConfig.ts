@@ -3,6 +3,7 @@
  */
 
 import { ReactRenderer } from "@tiptap/react";
+import { nanoid } from "nanoid";
 import tippy, { Instance as TippyInstance } from "tippy.js";
 import { db } from "../db";
 import NoteSuggestionMenu, {
@@ -53,15 +54,23 @@ async function getBlockSuggestionItems(
   return Promise.resolve(
     storedBlocks
       .map((block, index) => {
-        const blockId =
-          parser.parseFromString(block, "text/html").body.firstElementChild
-            ?.id || null;
+        let blockId = parser
+          .parseFromString(block, "text/html")
+          .querySelector("span.block-id")
+          ?.getAttribute("id");
+        let blockIdIsNew = false;
+
+        if (!blockId) {
+          blockId = nanoid(6);
+          blockIdIsNew = true;
+        }
 
         return {
           suggestionId: index.toString(),
           suggestionLabel: block,
           targetNoteId: cachedNote.id,
           targetBlockId: blockId,
+          ...(blockIdIsNew && { blockIndexForNewBlockId: index }),
         };
       })
       .filter((item) =>

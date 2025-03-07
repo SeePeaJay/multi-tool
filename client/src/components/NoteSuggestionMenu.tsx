@@ -14,6 +14,7 @@ export type NoteSuggestion = {
   targetNoteId: string | null;
   targetBlockId: string | null;
   titleToCreate?: string;
+  blockIndexForNewBlockId?: number;
 };
 
 export type NoteSuggestionMenuRef = {
@@ -49,6 +50,7 @@ const NoteSuggestionMenu = forwardRef<
       notelinkAttrsFromSelection = {
         targetNoteId: selectedSuggestion.targetNoteId,
         targetBlockId: selectedSuggestion.targetBlockId,
+        blockIndexForNewBlockId: selectedSuggestion.blockIndexForNewBlockId,
       };
     } else {
       notelinkAttrsFromSelection = {

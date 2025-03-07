@@ -11,7 +11,12 @@ const NotelinkNodeView: React.FC<NodeViewProps> = ({
 }) => {
   const authFetch = useAuthFetch();
   const suggestionChar = node.attrs.type === "notelink" ? "[[" : "#";
-  const { targetNoteId, targetBlockId, initialTargetTitle } = node.attrs;
+  const {
+    targetNoteId,
+    targetBlockId,
+    initialTargetTitle,
+    blockIndexForNewBlockId,
+  } = node.attrs;
   const note = useLiveQuery(() => db.notes.get(targetNoteId), [targetNoteId]);
 
   useEffect(() => {
@@ -48,6 +53,57 @@ const NotelinkNodeView: React.FC<NodeViewProps> = ({
     };
 
     createNoteIfNew();
+  }, []);
+
+  useEffect(() => {
+    const insertBlockIdIfNeeded = async () => {
+      try {
+        if (blockIndexForNewBlockId !== undefined) {
+          const targetNoteContent = (await db.notes.get(targetNoteId))?.content;
+          const parser = new DOMParser();
+          const document = parser.parseFromString(
+            targetNoteContent || "",
+            "text/html",
+          );
+          const targetBlock = Array.from(document.body.children)[
+            blockIndexForNewBlockId
+          ];
+
+          const blockIdElement = document.createElement("span");
+          blockIdElement.className = "block-id";
+          blockIdElement.id = targetBlockId;
+          blockIdElement.textContent = `::${targetBlockId}`;
+
+          targetBlock.appendChild(document.createTextNode(" "));
+          targetBlock.appendChild(blockIdElement);
+
+          await db.notes.update(targetNoteId, {
+            content: document.body.innerHTML,
+          });
+
+          await authFetch(
+            `/api/notes/${targetNoteId}`,
+            {
+              credentials: "include",
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json", // specify JSON content type for below
+              },
+              body: JSON.stringify({ updatedContent: document.body.innerHTML }),
+            }, // include cookies with request; required for cookie session to function
+          );
+
+          // immediately remove blockIndexForNewBlockId after using it
+          updateAttributes({
+            blockIndexForNewBlockId: undefined,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching note title:", error);
+      }
+    };
+
+    insertBlockIdIfNeeded();
   }, []);
 
   return (

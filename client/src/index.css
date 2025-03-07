@@ -4,7 +4,7 @@
 
 @layer base {
   h1 {
-    @apply text-4xl font-bold my-4;
+    @apply my-4 text-4xl font-bold;
   }
   h2 {
     @apply text-2xl font-semibold;
@@ -13,16 +13,20 @@
     @apply text-xl font-semibold;
   }
   pre {
-    @apply bg-slate-50 font-mono p-5 rounded-md overflow-x-auto
+    @apply overflow-x-auto rounded-md bg-slate-50 p-5 font-mono;
   }
 }
 
 @layer components {
   .backlinkTitle {
-    @apply text-blue-600 font-semibold;
+    @apply font-semibold text-blue-600;
   }
 
   .blocklink {
-    @apply block bg-blue-50 rounded-lg p-2;
+    @apply block rounded-lg bg-blue-50 p-2;
+  }
+
+  .block-id {
+    @apply align-sub text-xs text-gray-200;
   }
 }

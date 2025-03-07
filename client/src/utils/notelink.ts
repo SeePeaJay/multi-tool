@@ -16,7 +16,9 @@ export interface NotelinkNodeAttrs {
 
   targetBlockId?: string | null;
 
-  initialTargetTitle?: string; 
+  initialTargetTitle?: string;
+
+  blockIndexForNewBlockId?: number;
 }
 
 // define a type for addOptions below
@@ -140,6 +142,9 @@ const Notelink = Node.create<NotelinkOptions>({
       },
       initialTargetTitle: {
         default: "",
+      },
+      blockIndexForNewBlockId: {
+        default: undefined,
       },
     };
   },

@@ -1,5 +1,6 @@
 require("dotenv").config();
 
+const { Hocuspocus } = require("@hocuspocus/server");
 const express = require("express");
 const cors = require("cors");
 const cookieSession = require("cookie-session");
@@ -8,6 +9,11 @@ const { google } = require("googleapis");
 const { nanoid } = require("nanoid");
 const sanitizeHtml = require("sanitize-html");
 const stream = require("stream");
+
+const server = new Hocuspocus({
+  port: 1234,
+});
+server.listen();
 
 const app = express();
 const port = 3000;
@@ -20,7 +26,7 @@ const drive = google.drive({ version: "v3", auth: oAuth2Client });
 
 async function authCheck(req, res, next) {
   if (req.session && req.session.accessToken) {
-    req.session.sessionExpiry = Date.now() + 1 * 1 * 60 * 1000;
+    req.session.sessionExpiry = Date.now() + 1 * 10 * 60 * 1000;
     const sessionExpirationDate = new Date(req.session.sessionExpiry);
     res.cookie("expiration", sessionExpirationDate.toISOString(), {
       httpOnly: false,
@@ -82,7 +88,7 @@ app.use(
   cookieSession({
     name: "session",
     keys: ["secret"],
-    maxAge: 1 * 1 * 60 * 1000,
+    maxAge: 1 * 10 * 60 * 1000,
   }),
 );
 

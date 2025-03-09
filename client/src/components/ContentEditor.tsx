@@ -1,11 +1,15 @@
+import { TiptapCollabProvider } from "@hocuspocus/provider";
+import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
 import { useParams } from "react-router-dom";
 import debounce from "lodash.debounce";
 import { db } from "../db";
 import { useAuthFetch } from "../hooks/AuthFetch";
-import { createContentEditorExtensions } from "../utils/contentEditorExtensions";
+import {
+  createContentEditorExtensions,
+  doc,
+} from "../utils/contentEditorExtensions";
 import {
   updateEditorBacklinksIfOutdated,
   fetchBacklinks,
@@ -154,6 +158,16 @@ const ContentEditor = () => {
       editorRef,
     });
   }, [editorIsUpToDate, backlinksAreUpToDate]);
+
+  // connect to collaboration server
+  useEffect(() => {
+    new TiptapCollabProvider({
+      name: "document.name", // Unique document identifier for syncing. This is your document name.
+      baseUrl: "ws://127.0.0.1:1234", // Your Cloud Dashboard AppID or `baseURL` for on-premises
+      token: "notoken", // Your JWT token
+      document: doc,
+    });
+  }, []);
 
   return (
     <EditorProvider

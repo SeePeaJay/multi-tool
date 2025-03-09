@@ -1,10 +1,12 @@
 import CodeBlock from "@tiptap/extension-code-block";
 import Document from "@tiptap/extension-document";
+import Collaboration from '@tiptap/extension-collaboration';
 import Heading from "@tiptap/extension-heading";
 import Paragraph from "@tiptap/extension-paragraph";
 import Placeholder from "@tiptap/extension-placeholder";
 import StarterKit from "@tiptap/starter-kit";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
+import * as Y from 'yjs';
 import { createBaseNoteSuggestionConfig } from "./baseNoteSuggestionConfig";
 import { Backlink, PreventEarlyBacklinkDeletion } from "./backlinks";
 import BlockId from "./blockId";
@@ -52,6 +54,8 @@ const CustomPlaceholder = Placeholder.configure({
   showOnlyCurrent: false,
 });
 
+export const doc = new Y.Doc() // init Y.Doc for shared editing
+
 export const createContentEditorExtensions = (
   authFetch: (url: string, options?: RequestInit) => Promise<string>,
 ) => [
@@ -91,4 +95,7 @@ export const createContentEditorExtensions = (
   PreventEarlyBacklinkDeletion,
   BlockId,
   CustomPlaceholder,
+  Collaboration.configure({
+    document: doc,
+  }),
 ];

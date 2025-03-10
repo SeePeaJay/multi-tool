@@ -7,7 +7,7 @@ import { useLoading } from "../contexts/LoadingContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import InitialLoadingScreen from "../components/InitialLoadingScreen";
 import Editor from "../components/Editor";
-import { createContentEditorExtensions } from "../utils/contentEditorExtensions";
+// import { createContentEditorExtensions } from "../utils/contentEditorExtensions";
 
 function Starred() {
   const location = useLocation();
@@ -16,7 +16,7 @@ function Starred() {
   const authFetch = useAuthFetch();
   const { setIsLoading } = useLoading();
 
-  const extensions = createContentEditorExtensions(authFetch);
+  // const extensions = createContentEditorExtensions(authFetch);
 
   const fetchAccessTokenAndResources = async () => {
     try {
@@ -61,17 +61,17 @@ function Starred() {
         starred = await db.table("notes").get({ title: "Starred" });
 
         // fetch Starred
-        const starredContent = await authFetch(
-          `/api/notes/${starred.id}`,
-          { credentials: "include" }, // include cookies with request; required for cookie session to function
-        );
+        // const starredContent = await authFetch(
+        //   `/api/notes/${starred.id}`,
+        //   { credentials: "include" }, // include cookies with request; required for cookie session to function
+        // );
 
         // restore empty attributes, then set
-        const restoredStarredContent = generateHTML(
-          generateJSON(starredContent, extensions),
-          extensions,
-        );
-        await db.notes.update(starred.id, { content: restoredStarredContent });
+        // const restoredStarredContent = generateHTML(
+        //   generateJSON(starredContent, extensions),
+        //   extensions,
+        // );
+        // await db.notes.update(starred.id, { content: restoredStarredContent });
       }
 
       setIsLoading(false);

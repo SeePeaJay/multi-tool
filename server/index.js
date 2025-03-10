@@ -1,6 +1,8 @@
 require("dotenv").config();
 
 const { Hocuspocus } = require("@hocuspocus/server");
+const { TiptapTransformer } = require("@hocuspocus/transformer");
+const { generateJSON } = require('@tiptap/html');
 const express = require("express");
 const cors = require("cors");
 const cookieSession = require("cookie-session");
@@ -9,9 +11,25 @@ const { google } = require("googleapis");
 const { nanoid } = require("nanoid");
 const sanitizeHtml = require("sanitize-html");
 const stream = require("stream");
+const createContentEditorExtensions = require("./contentEditorExtensions");
 
 const server = new Hocuspocus({
   port: 1234,
+  async onLoadDocument(data) {
+    // console.log(data);
+ 
+    const editorExtensions = createContentEditorExtensions();
+    const json = generateJSON(`<p class="frontmatter">On the server, or the browser</p><p></p>`, editorExtensions);
+    const ydoc = TiptapTransformer.toYdoc(
+      json,
+      // the `field` you’re using in Tiptap. If you don’t know what that is, use 'default'.
+      "default",
+      // The Tiptap extensions you’re using. Those are important to create a valid schema.
+      editorExtensions,
+    );
+ 
+    return ydoc;
+  },
 });
 server.listen();
 

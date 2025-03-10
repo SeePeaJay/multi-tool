@@ -14,7 +14,7 @@ import {
   updateEditorBacklinksIfOutdated,
   fetchBacklinks,
   pushEditorUpdate,
-  syncEditorWithCurrentNoteContentIfOutdated,
+  // syncEditorWithCurrentNoteContentIfOutdated,
 } from "../utils/contentEditorHelpers";
 
 const ContentEditor = () => {
@@ -31,13 +31,13 @@ const ContentEditor = () => {
     );
   }, [noteIdParam]);
 
-  const currentNoteContent = useLiveQuery(async () => {
-    if (!currentNoteId) {
-      return;
-    }
+  // const currentNoteContent = useLiveQuery(async () => {
+  //   if (!currentNoteId) {
+  //     return;
+  //   }
 
-    return (await db.notes.get(currentNoteId))?.content;
-  }, [currentNoteId]);
+  //   return (await db.notes.get(currentNoteId))?.content;
+  // }, [currentNoteId]);
 
   const currentNoteHasFetchedBacklinks = useLiveQuery(async () => {
     if (!currentNoteId) {
@@ -112,18 +112,18 @@ const ContentEditor = () => {
   }, [noteIdParam]);
 
   // need this when switched to a new note or other tabs have updated note content but current tab editor isn't up to date
-  useEffect(() => {
-    if (!editorRef.current || currentNoteContent === undefined) {
-      return;
-    }
+  // useEffect(() => {
+  //   if (!editorRef.current || currentNoteContent === undefined) {
+  //     return;
+  //   }
 
-    syncEditorWithCurrentNoteContentIfOutdated({
-      currentNoteContent,
-      editorRef,
-      previousEditorContentRef,
-      setEditorIsUpToDate,
-    });
-  }, [currentNoteContent]);
+  //   syncEditorWithCurrentNoteContentIfOutdated({
+  //     currentNoteContent,
+  //     editorRef,
+  //     previousEditorContentRef,
+  //     setEditorIsUpToDate,
+  //   });
+  // }, [currentNoteContent]);
 
   useEffect(
     () => {
@@ -166,6 +166,12 @@ const ContentEditor = () => {
       baseUrl: "ws://127.0.0.1:1234", // Your Cloud Dashboard AppID or `baseURL` for on-premises
       token: "notoken", // Your JWT token
       document: doc,
+      // The onSynced callback ensures initial content is set only once using editor.setContent(), preventing repetitive content loading on editor syncs.
+      onSynced() {
+        if (!doc.getMap("config").get("initialContentLoaded")) {
+          doc.getMap("config").set("initialContentLoaded", true);
+        }
+      },
     });
   }, []);
 
@@ -173,7 +179,7 @@ const ContentEditor = () => {
     <EditorProvider
       // key={note?.id || "key"}
       extensions={createContentEditorExtensions(authFetch)}
-      content=""
+      // content=""
       onCreate={({ editor }) => {
         editorRef.current = editor;
       }}

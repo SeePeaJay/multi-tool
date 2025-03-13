@@ -7,7 +7,26 @@ const { OAuth2Client } = require("google-auth-library");
 const { google } = require("googleapis");
 const { nanoid } = require("nanoid");
 const sanitizeHtml = require("sanitize-html");
-const stream = require("stream");
+const sqlite3 = require("sqlite3").verbose();
+
+const db = new sqlite3.Database("./notes.db");
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS notes (
+      id TEXT PRIMARY KEY,
+      userId TEXT NOT NULL,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      UNIQUE (userId, title)
+    )
+  `);
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      username TEXT NOT NULL UNIQUE
+    )
+  `);
+});
 
 const app = express();
 const port = 3000;
@@ -16,65 +35,22 @@ const oAuth2Client = new OAuth2Client(
   process.env.CLIENT_SECRET,
   "postmessage",
 );
-const drive = google.drive({ version: "v3", auth: oAuth2Client });
 
 async function authCheck(req, res, next) {
-  if (req.session && req.session.accessToken) {
+  if (req.session) {
     req.session.sessionExpiry = Date.now() + 1 * 1 * 60 * 1000;
+
     const sessionExpirationDate = new Date(req.session.sessionExpiry);
     res.cookie("expiration", sessionExpirationDate.toISOString(), {
       httpOnly: false,
       expires: sessionExpirationDate,
     });
 
-    oAuth2Client.setCredentials({
-      access_token: req.session.accessToken,
-      refresh_token: req.session.refreshToken,
-      expiry_date: req.session.accessTokenExpiryDate,
-    });
-    if (oAuth2Client.isTokenExpiring()) {
-      const {
-        credentials: { access_token, expiry_date },
-      } = await oAuth2Client.refreshAccessToken();
-
-      req.session.accessToken = access_token;
-      req.session.accessTokenExpiryDate = expiry_date;
-    }
-
     next();
   } else {
     res.status(401).send("Session expired, please log in again");
   }
 }
-
-const getIdObject = async (idOfIdfile) => {
-  const idFileResponse = await drive.files.get(
-    {
-      fileId: idOfIdfile,
-      alt: "media",
-    },
-    { responseType: "text" },
-  );
-  const idFileContent = idFileResponse.data;
-
-  return JSON.parse(idFileContent);
-};
-
-const updateFile = async (fileId, fileContent, isFileJson) => {
-  const bufferStream = new stream.PassThrough();
-  const mimeType = isFileJson ? "application/json" : "text/html";
-  const useContentAsIndexableText = !isFileJson;
-
-  bufferStream.end(fileContent);
-  await drive.files.update({
-    fileId: fileId,
-    media: {
-      mimeType,
-      body: bufferStream,
-    },
-    useContentAsIndexableText,
-  });
-};
 
 app.use(express.json()); // make `req.body` available
 app.use(cors());
@@ -96,64 +72,58 @@ app.get("/api/auth", async (req, res) => {
     const { tokens } = await oAuth2Client.getToken(code); // exchange code for tokens
     oAuth2Client.setCredentials(tokens);
 
-    const searchFolderResponse = await drive.files.list({
-      q: "name = 'multi-tool' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
-      fields: "files(id, name)",
+    const oauth2 = google.oauth2({
+      auth: oAuth2Client,
+      version: "v2",
     });
-    const searchIdFileResponse = await drive.files.list({
-      q: "name = 'ids.json' and trashed = false",
-      fields: "files(id, name)",
-    });
+    const userInfo = await oauth2.userinfo.get();
 
-    let folderId;
-    let idOfIdfile;
+    db.get(
+      "SELECT id FROM users WHERE username = ?",
+      [userInfo.data.email],
+      (err, row) => {
+        if (err) {
+          console.error(err);
+          res.status(500).send("Error checking user existence");
+          return;
+        }
 
-    if (searchFolderResponse.data.files.length === 0) {
-      const folderCreateResponse = await drive.files.create({
-        resource: {
-          name: "multi-tool",
-          mimeType: "application/vnd.google-apps.folder",
-        },
-        fields: "id",
-      });
-      folderId = folderCreateResponse.data.id;
+        const userId = row?.id || nanoid(6);
 
-      const idFileCreateResponse = await drive.files.create({
-        resource: {
-          name: "ids.json",
-          parents: [folderId],
-        },
-        media: {
-          mimeType: "application/json",
-          body: `{"${nanoid(6)}": "Starred"}`,
-        },
-        fields: "id",
-      });
-      idOfIdfile = idFileCreateResponse.data.id;
+        if (!row) {
+          db.run(
+            "INSERT INTO users (id, username) VALUES (?, ?)",
+            [userId, userInfo.data.email],
+            (err) => {
+              if (err) {
+                console.error(err);
+                res.status(500).send("Error inserting user");
+                return;
+              }
+            },
+          );
+          db.run(
+            "INSERT INTO notes (id, userId, title, content) VALUES (?, ?, ?, ?)",
+            [
+              nanoid(6),
+              userId,
+              "Starred",
+              `<p class="frontmatter"></p><p></p>`,
+            ],
+            (err) => {
+              if (err) {
+                console.error(err);
+                res.status(500).send("Error inserting Starred");
+                return;
+              }
+            },
+          );
+        }
 
-      await drive.files.create({
-        resource: {
-          name: "Starred.html",
-          parents: [folderId],
-        },
-        media: {
-          mimeType: "text/html",
-          body: `<p class="frontmatter"></p><p></p>`,
-        },
-        useContentAsIndexableText: true,
-      });
-    } else {
-      folderId = searchFolderResponse.data.files[0].id;
-      idOfIdfile = searchIdFileResponse.data.files[0].id;
-    }
-
-    req.session.accessToken = tokens.access_token;
-    req.session.refreshToken = tokens.refresh_token;
-    req.session.accessTokenExpiryDate = tokens.expiry_date;
-    req.session.userId = folderId;
-    req.session.idOfIdfile = idOfIdfile;
-
-    res.status(200).send({ message: "Authenticated successfully" });
+        req.session.userId = userId;
+        res.status(200).send({ message: "Authenticated successfully" });
+      },
+    );
   } catch (error) {
     console.error(error);
     res.status(500).send("An error occurred during authentication");
@@ -161,222 +131,141 @@ app.get("/api/auth", async (req, res) => {
 });
 
 app.get("/api/notes/:noteId", authCheck, async (req, res) => {
-  try {
-    oAuth2Client.setCredentials({
-      access_token: req.session.accessToken,
-    });
+  db.get(
+    "SELECT content FROM notes WHERE id = ? AND userId = ?",
+    [req.params.noteId, req.session.userId],
+    (err, row) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Error getting note");
+        return;
+      }
 
-    const idObject = await getIdObject(req.session.idOfIdfile);
+      if (!row) {
+        res.status(404).send("Note not found");
+        return;
+      }
 
-    const noteTitle = idObject[req.params.noteId];
-
-    const searchFileResponse = await drive.files.list({
-      q: `name = '${noteTitle}.html' and trashed = false`,
-      fields: "files(id, name)",
-    });
-
-    const fileResponse = await drive.files.get(
-      {
-        fileId: searchFileResponse.data.files[0].id,
-        alt: "media",
-      },
-      { responseType: "text" },
-    );
-
-    res.status(200).send(fileResponse.data);
-  } catch (error) {
-    console.error(error);
-
-    res
-      .status(500)
-      .send(
-        `An error occurred while trying to obtain note with id ${req.params.noteId}`,
-      );
-  }
+      res.status(200).send(row.content);
+    },
+  );
 });
 
 app.post("/api/search", authCheck, async (req, res) => {
-  try {
-    oAuth2Client.setCredentials({
-      access_token: req.session.accessToken,
-    });
+  db.all(
+    "SELECT id, content FROM notes WHERE content LIKE ?",
+    [`%${req.body.query}%`],
+    (err, rows) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Error searching notes");
+        return;
+      }
 
-    const searchResponse = await drive.files.list({
-      q: `mimeType='text/html' and fullText contains '"${req.body.query}"' and trashed = false`,
-      fields: "files(id, name)",
-    });
-
-    const idObject = await getIdObject(req.session.idOfIdfile);
-    const notes = [];
-    const list = searchResponse.data.files;
-    console.log(searchResponse.data.files);
-
-    for (const fileMetadata of list) {
-      const fileId = fileMetadata.id;
-      const noteTitle = fileMetadata.name.split(".")[0];
-      const noteId = Object.keys(idObject).find(
-        (key) => idObject[key] === noteTitle,
-      );
-
-      const contentResponse = await drive.files.get(
-        {
-          fileId,
-          alt: "media",
-        },
-        { responseType: "text" },
-      );
-
-      notes.push({
-        id: noteId,
-        content: contentResponse.data,
-      });
-    }
-
-    res.status(200).send(notes);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("An error occurred while trying to search");
-  }
+      res.status(200).send(rows);
+    },
+  );
 });
 
 app.get("/api/notes", authCheck, async (req, res) => {
-  try {
-    oAuth2Client.setCredentials({
-      access_token: req.session.accessToken,
-    });
+  db.all(
+    "SELECT id, title FROM notes WHERE userId = ?",
+    [req.session.userId],
+    (err, rows) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Error getting list of notes");
+        return;
+      }
 
-    const idObject = await getIdObject(req.session.idOfIdfile);
+      const resultObject = Object.fromEntries(
+        rows.map((row) => [row.id, row.title]),
+      );
 
-    res.status(200).json(idObject);
-  } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .send("An error occurred while trying to obtain list of notes");
-  }
+      res.status(200).json(resultObject);
+    },
+  );
 });
 
 app.post("/api/notes/:noteId", authCheck, async (req, res) => {
-  try {
-    oAuth2Client.setCredentials({
-      access_token: req.session.accessToken,
-    });
+  const sanitizedContent = sanitizeHtml(req.body.updatedContent, {
+    allowedAttributes: {
+      "*": [
+        "id",
+        "class",
+        "data-type",
+        "data-target-note-id",
+        "data-target-block-id",
+      ],
+    },
+  });
 
-    const idObject = await getIdObject(req.session.idOfIdfile);
+  db.run(
+    "UPDATE notes SET content = ? WHERE id = ? AND userId = ?",
+    [sanitizedContent, req.params.noteId, req.session.userId],
+    (err) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Error updating note");
+        return;
+      }
 
-    const noteTitle = idObject[req.params.noteId];
-
-    const searchFileResponse = await drive.files.list({
-      q: `name = '${noteTitle}.html' and trashed = false`,
-      fields: "files(id, name)",
-    });
-
-    const sanitizedContent = sanitizeHtml(req.body.updatedContent, {
-      allowedAttributes: {
-        "*": ["id", "class", "data-type", "data-target-note-id", "data-target-block-id"],
-      },
-    });
-
-    await updateFile(searchFileResponse.data.files[0].id, sanitizedContent);
-
-    res.status(200).send(sanitizedContent);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("An error occurred while trying to update the note");
-  }
+      res.status(200).send(sanitizedContent);
+    },
+  );
 });
 
 app.post("/api/create/:noteId", authCheck, async (req, res) => {
-  try {
-    oAuth2Client.setCredentials({
-      access_token: req.session.accessToken,
-    });
+  db.run(
+    "INSERT INTO notes (id, userId, title, content) VALUES (?, ?, ?, ?)",
+    [
+      req.params.noteId,
+      req.session.userId,
+      req.body.title,
+      `<p class="frontmatter"></p><p></p>`,
+    ],
+    (err) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Error inserting note");
+        return;
+      }
 
-    const idObject = await getIdObject(req.session.idOfIdfile);
-
-    idObject[req.params.noteId] = req.body.title;
-
-    await updateFile(req.session.idOfIdfile, JSON.stringify(idObject), true);
-
-    await drive.files.create({
-      resource: {
-        name: `${req.body.title}.html`,
-        parents: [req.session.userId],
-      },
-      media: {
-        mimeType: "text/html",
-        body: `<p class="frontmatter"></p><p></p>`,
-      },
-    });
-
-    res.status(200).send({ message: "Note created successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("An error occurred while trying to create the note");
-  }
+      res.status(200).send({ message: "Note created successfully" });
+    },
+  );
 });
 
 app.post("/api/rename/:noteId", authCheck, async (req, res) => {
-  try {
-    oAuth2Client.setCredentials({
-      access_token: req.session.accessToken,
-    });
+  db.run(
+    "UPDATE notes SET title = ? WHERE id = ? AND userId = ?",
+    [req.body.newTitle, req.params.noteId, req.session.userId],
+    (err) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Error renaming note");
+        return;
+      }
 
-    const idObject = await getIdObject(req.session.idOfIdfile);
-
-    const oldTitle = idObject[req.params.noteId];
-    const { newTitle } = req.body;
-
-    idObject[req.params.noteId] = newTitle;
-
-    await updateFile(req.session.idOfIdfile, JSON.stringify(idObject), true);
-
-    // rename the file
-    const searchFileResponse = await drive.files.list({
-      q: `name = '${oldTitle}.html' and trashed = false`,
-      fields: "files(id, name)",
-    });
-    await drive.files.update({
-      fileId: searchFileResponse.data.files[0].id,
-      resource: {
-        name: `${newTitle}.html`,
-      },
-    });
-
-    res.status(200).send({ message: "Note renamed successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("An error occurred while trying to rename the note");
-  }
+      res.status(200).send({ message: "Note renamed successfully" });
+    },
+  );
 });
 
 app.post("/api/delete/:noteId", authCheck, async (req, res) => {
-  try {
-    oAuth2Client.setCredentials({
-      access_token: req.session.accessToken,
-    });
+  db.run(
+    "DELETE FROM notes WHERE id = ? AND userId = ?",
+    [req.params.noteId, req.session.userId],
+    (err) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Error deleting note");
+        return;
+      }
 
-    const idObject = await getIdObject(req.session.idOfIdfile);
-
-    const titleToDelete = idObject[req.params.noteId];
-
-    delete idObject[req.params.noteId];
-
-    await updateFile(req.session.idOfIdfile, JSON.stringify(idObject), true);
-
-    // delete the file
-    const searchFileResponse = await drive.files.list({
-      q: `name = '${titleToDelete}.html' and trashed = false`,
-      fields: "files(id, name)",
-    });
-    await drive.files.delete({ fileId: searchFileResponse.data.files[0].id });
-
-    res.status(200).send({ message: "Note deleted successfully" });
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).send("An error occurred while trying to delete the note");
-  }
+      res.status(200).send({ message: "Note deleted successfully" });
+    },
+  );
 });
 
 app.post("/api/logout", (req, res) => {
@@ -387,4 +276,12 @@ app.post("/api/logout", (req, res) => {
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
+});
+
+// close db connection when the app terminates to prevent resource leakage
+process.on("SIGINT", () => {
+  db.close(() => {
+    console.log("Database connection closed");
+    process.exit(0);
+  });
 });

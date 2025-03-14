@@ -9,8 +9,8 @@ import { db } from "../db";
 
 // define shape of context
 interface AuthContextType {
-  isAuthenticated: boolean;
-  setIsAuthenticated: (isAuthenticated: boolean) => void;
+  currentUser: string;
+  setCurrentUser: (currentUser: string) => void;
 }
 
 // create context object
@@ -21,19 +21,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   // initialize state with localStorage to persist auth status across refreshes
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    const storedAuthState = localStorage.getItem("isAuthenticated");
-    return storedAuthState ? JSON.parse(storedAuthState) : false;
+  const [currentUser, setCurrentUser] = useState(() => {
+    const storedAuthState = localStorage.getItem("currentUser");
+    return storedAuthState || "";
   });
 
   // keep localstorage/dexie up to date
   useEffect(() => {
     const saveAuthState = async () => {
-      if (isAuthenticated) {
-        localStorage.setItem(
-          "isAuthenticated",
-          JSON.stringify(isAuthenticated),
-        );
+      if (currentUser) {
+        localStorage.setItem("currentUser", currentUser);
       } else {
         localStorage.clear();
         await db.notes.clear();
@@ -41,12 +38,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     };
 
     saveAuthState();
-  }, [isAuthenticated]);
+  }, [currentUser]);
 
   return (
-    <AuthContext.Provider
-      value={{ isAuthenticated, setIsAuthenticated }}
-    >
+    <AuthContext.Provider value={{ currentUser, setCurrentUser }}>
       {children}
     </AuthContext.Provider>
   );

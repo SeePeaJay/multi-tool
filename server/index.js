@@ -145,7 +145,7 @@ app.get("/api/auth", async (req, res) => {
         }
 
         req.session.userId = userId;
-        res.status(200).send({ message: "Authenticated successfully" });
+        res.status(200).send({ message: "Authenticated successfully", userId });
       },
     );
   } catch (error) {

@@ -12,7 +12,7 @@ import Editor from "../components/Editor";
 function Starred() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, setIsAuthenticated } = useAuth();
+  const { currentUser, setCurrentUser } = useAuth();
   const authFetch = useAuthFetch();
   const { setIsLoading } = useLoading();
 
@@ -23,15 +23,16 @@ function Starred() {
       const { code } = location.state || {};
 
       if (code) {
-        // exchange auth code for access token
+        // exchange auth code to auth
         const response = await fetch(
           `/api/auth?code=${code}`,
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
-        console.log(response);
+        const { userId }: { userId: string } = await response.json();
+        console.log(response, userId);
 
         if (response.ok) {
-          setIsAuthenticated(true);
+          setCurrentUser(userId);
         }
 
         // redirect to clean up query string in URL
@@ -86,7 +87,7 @@ function Starred() {
 
   return (
     <>
-      {isAuthenticated ? (
+      {currentUser ? (
         <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
           <Editor />
         </div>

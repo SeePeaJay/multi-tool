@@ -4,7 +4,11 @@ import TitleEditor from "./TitleEditor";
 import ContentEditor from "./ContentEditor";
 import "./Editor.css";
 
-const Editor = () => {
+interface EditorProps {
+  noteId: string;
+}
+
+const Editor = ({ noteId }: EditorProps) => {
   const { isLoading } = useLoading();
 
   return (
@@ -14,7 +18,7 @@ const Editor = () => {
       ) : (
         <>
           <TitleEditor />
-          <ContentEditor />
+          <ContentEditor noteId={noteId} />
         </>
       )}
     </>

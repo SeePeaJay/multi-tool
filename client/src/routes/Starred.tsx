@@ -1,5 +1,4 @@
-import { generateHTML, generateJSON } from "@tiptap/core";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { db } from "../db";
 import { useAuth } from "../contexts/AuthContext";
@@ -7,71 +6,62 @@ import { useLoading } from "../contexts/LoadingContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import InitialLoadingScreen from "../components/InitialLoadingScreen";
 import Editor from "../components/Editor";
-import { createContentEditorExtensions } from "../utils/contentEditorExtensions";
 
 function Starred() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, setIsAuthenticated } = useAuth();
+  const { currentUser, setCurrentUser } = useAuth();
   const authFetch = useAuthFetch();
   const { setIsLoading } = useLoading();
 
-  const extensions = createContentEditorExtensions(authFetch);
+  const [starredId, setStarredId] = useState<string | null>(null);
 
-  const fetchAccessTokenAndResources = async () => {
+  const fetchInitialResources = async () => {
     try {
       const { code } = location.state || {};
 
       if (code) {
-        // exchange auth code for access token
+        // exchange auth code to auth
         const response = await fetch(
           `/api/auth?code=${code}`,
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
-        console.log(response);
+        const { userId }: { userId: string } = await response.json();
+        // console.log(response, userId);
 
         if (response.ok) {
-          setIsAuthenticated(true);
+          setCurrentUser(userId);
         }
 
         // redirect to clean up query string in URL
         navigate(location.pathname, { replace: true });
       }
 
-      let starred = await db.table("notes").get({ title: "Starred" });
-
-      // fetch data if Starred doesn't exist, or its content is empty (due to premature refresh)
-      if (!starred?.content) {
+      // fetch then store list of notes on initial load
+      const starred = await db.table("notes").get({ title: "Starred" });
+      if (!starred?.hasFetchedBacklinks) {
         setIsLoading(true);
 
-        // fetch then store list of notes for later usage
         const noteList = await authFetch(`/api/notes`, {
           credentials: "include",
         });
+
         await Promise.all(
           Object.keys(noteList).map((noteId: string) =>
             db.notes.put({
               id: noteId,
-              title: noteList[noteId],
-              content: "",
+              title: noteList[noteId].title,
+              content: noteList[noteId].content,
+              ydocArray: noteList[noteId].ydocArray,
               hasFetchedBacklinks: false,
             }),
           ),
         );
-        starred = await db.table("notes").get({ title: "Starred" });
+      }
 
-        // fetch Starred
-        const starredContent = await authFetch(
-          `/api/notes/${starred.id}`,
-          { credentials: "include" }, // include cookies with request; required for cookie session to function
-        );
-
-        // restore empty attributes, then set
-        const restoredStarredContent = generateHTML(
-          generateJSON(starredContent, extensions),
-          extensions,
-        );
-        await db.notes.update(starred.id, { content: restoredStarredContent });
+      // ensure starred id ref is set
+      if (!starredId) {
+        setStarredId((await db.table("notes").get({ title: "Starred" }))?.id);
       }
 
       setIsLoading(false);
@@ -81,14 +71,14 @@ function Starred() {
   };
 
   useEffect(() => {
-    fetchAccessTokenAndResources();
+    fetchInitialResources();
   }, []);
 
   return (
     <>
-      {isAuthenticated ? (
+      {currentUser && starredId ? (
         <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
-          <Editor />
+          <Editor noteId={starredId}/>
         </div>
       ) : (
         <InitialLoadingScreen />

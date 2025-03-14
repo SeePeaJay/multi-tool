@@ -6,6 +6,10 @@
 import { nanoid } from "nanoid";
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import type { SuggestionOptions, SuggestionProps } from "@tiptap/suggestion";
+import { db } from "../db";
+import { useAuth } from "../contexts/AuthContext";
+import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
+import { useDefaultYdocUpdate } from "../hooks/useDefaultYdocUpdate";
 import { NotelinkNodeAttrs } from "../utils/notelink";
 
 export type NoteSuggestion = {
@@ -31,7 +35,10 @@ const NoteSuggestionMenu = forwardRef<
   NoteSuggestionMenuRef,
   NoteSuggestionMenuProps
 >((props, ref) => {
+  const { currentUser } = useAuth();
+  const getDefaultYdocUpdate = useDefaultYdocUpdate();
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const { statelessMessengerRef } = useStatelessMessenger();
 
   const selectItem = async (index: number) => {
     if (index >= props.items.length) {
@@ -46,17 +53,39 @@ const NoteSuggestionMenu = forwardRef<
     const selectedSuggestion = props.items[index];
     let notelinkAttrsFromSelection: NotelinkNodeAttrs;
 
-    if (selectedSuggestion.targetNoteId) {
+    if (selectedSuggestion.targetNoteId && !selectedSuggestion.titleToCreate) {
       notelinkAttrsFromSelection = {
         targetNoteId: selectedSuggestion.targetNoteId,
         targetBlockId: selectedSuggestion.targetBlockId,
         blockIndexForNewBlockId: selectedSuggestion.blockIndexForNewBlockId,
       };
     } else {
+      const defaultYdocUpdate = getDefaultYdocUpdate();
+      const newNoteId = nanoid(6);
+
+      // add a new note entry to dexie
+      await db.notes.put({
+        id: newNoteId,
+        title: selectedSuggestion.titleToCreate!,
+        content: `<p class="frontmatter"></p><p></p>`,
+        ydocArray: Array.from(defaultYdocUpdate),
+        hasFetchedBacklinks: true,
+      });
+
+      // broadcast to server and other clients
+      statelessMessengerRef.current?.sendStateless(
+        JSON.stringify({
+          type: "create",
+          userId: currentUser,
+          noteId: newNoteId,
+          title: selectedSuggestion.titleToCreate,
+          ydocArray: Array.from(defaultYdocUpdate),
+        }),
+      );
+
       notelinkAttrsFromSelection = {
-        targetNoteId: nanoid(6),
+        targetNoteId: newNoteId,
         targetBlockId: null,
-        initialTargetTitle: selectedSuggestion.titleToCreate,
       };
     }
 

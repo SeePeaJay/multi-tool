@@ -5,6 +5,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "./contexts/AuthContext";
 import { LoadingProvider } from "./contexts/LoadingContext";
 import { SessionProvider } from "./contexts/SessionContext";
+import { StatelessMessengerProvider } from "./contexts/StatelessMessengerContext";
 import App from "./App";
 import "./index.css";
 
@@ -14,7 +15,9 @@ createRoot(document.getElementById("root")!).render(
       <LoadingProvider>
         <SessionProvider>
           <GoogleOAuthProvider clientId={import.meta.env.VITE_CLIENT_ID}>
-            <App />
+            <StatelessMessengerProvider>
+              <App />
+            </StatelessMessengerProvider>
           </GoogleOAuthProvider>
         </SessionProvider>
       </LoadingProvider>

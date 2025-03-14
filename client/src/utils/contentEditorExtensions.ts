@@ -74,6 +74,7 @@ export const createContentEditorExtensions = (
     listItem: false, // same as above
     blockquote: false, // same as above
     horizontalRule: false, // disabled because it doesn't work with current drag handle
+    history: false, // Disables default history to use Collaboration's history management
   }),
   CustomDocument,
   Frontmatter,

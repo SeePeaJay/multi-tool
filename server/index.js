@@ -1,5 +1,8 @@
 require("dotenv").config();
 
+const { Server } = require("@hocuspocus/server");
+const { TiptapTransformer } = require("@hocuspocus/transformer");
+const { generateHTML } = require("@tiptap/html");
 const express = require("express");
 const cors = require("cors");
 const cookieSession = require("cookie-session");
@@ -8,6 +11,8 @@ const { google } = require("googleapis");
 const { nanoid } = require("nanoid");
 const sanitizeHtml = require("sanitize-html");
 const sqlite3 = require("sqlite3").verbose();
+const Y = require("yjs");
+const createContentEditorExtensions = require("./contentEditorExtensions");
 
 const db = new sqlite3.Database("./notes.db");
 db.serialize(() => {
@@ -17,6 +22,7 @@ db.serialize(() => {
       userId TEXT NOT NULL,
       title TEXT NOT NULL,
       content TEXT NOT NULL,
+      ydocUpdate BLOB NOT NULL,
       UNIQUE (userId, title)
     )
   `);
@@ -28,6 +34,190 @@ db.serialize(() => {
   `);
 });
 
+function getDefaultYdocUpdate() {
+  const yDoc = new Y.Doc();
+  const yXmlFragment = yDoc.getXmlFragment("default");
+  const frontmatter = new Y.XmlElement("frontmatter");
+  const paragraph = new Y.XmlElement("paragraph");
+
+  yXmlFragment.push([frontmatter, paragraph]);
+
+  return Y.encodeStateAsUpdate(yDoc);
+}
+
+const server = Server.configure({
+  port: 1234,
+  async onLoadDocument(data) {
+    try {
+      const [userId, noteId] = data.documentName.split("/");
+
+      if (!noteId) {
+        return;
+      }
+
+      const ydoc = new Y.Doc();
+      const update = await new Promise((resolve, reject) => {
+        db.get(
+          "SELECT ydocUpdate FROM notes WHERE id = ? AND userId = ?",
+          [noteId, userId],
+          (err, row) => {
+            if (err) {
+              console.error(err);
+              return reject(err);
+            }
+
+            if (!row) {
+              return reject(new Error("Note not found"));
+            }
+
+            resolve(row.ydocUpdate);
+          },
+        );
+      });
+
+      Y.applyUpdate(ydoc, update);
+
+      return ydoc;
+    } catch (err) {
+      console.error("Error loading document:", err);
+      throw err;
+    }
+  },
+  async onStoreDocument(data) {
+    try {
+      const [userId, noteId] = data.documentName.split("/");
+      const editorExtensions = createContentEditorExtensions();
+      const json = TiptapTransformer.fromYdoc(
+        data.document,
+        "default", // The field used in Tiptap
+        editorExtensions, // Your editor extensions
+      );
+      const html = generateHTML(json, editorExtensions);
+      const sanitizedHtml = sanitizeHtml(html, {
+        allowedAttributes: {
+          "*": [
+            "id",
+            "class",
+            "data-type",
+            "data-target-note-id",
+            "data-target-block-id",
+          ],
+        },
+      });
+
+      await new Promise((resolve, reject) => {
+        db.run(
+          "UPDATE notes SET content = ?, ydocUpdate = ? WHERE id = ? AND userId = ?",
+          [sanitizedHtml, Y.encodeStateAsUpdate(data.document), noteId, userId],
+          (err) => {
+            if (err) {
+              console.error(err);
+              return reject(err);
+            }
+
+            resolve();
+          },
+        );
+      });
+
+      if (data.context.providerIsTemp) {
+        data.document.broadcastStateless(
+          JSON.stringify({
+            type: "destroyTempProvider",
+            description: "Update caused by a temp provider has been stored.",
+          }),
+        );
+      }
+    } catch (err) {
+      console.error("Error writing document:", err);
+      throw err;
+    }
+  },
+  async onStateless({ payload, document, connection }) {
+    console.log(`server has received a stateless message "${payload}"!`);
+
+    try {
+      const msg = JSON.parse(payload);
+      const { userId, noteId, title, ydocArray } = msg;
+
+      if (msg.type === "setTempProvider") {
+        connection.context.providerIsTemp = true;
+        return;
+      }
+
+      if (msg.type === "rename") {
+        await new Promise((resolve, reject) => {
+          db.run(
+            "UPDATE notes SET title = ? WHERE id = ? AND userId = ?",
+            [title, noteId, userId],
+            (err) => {
+              if (err) {
+                console.error("Error renaming note:", err);
+                return reject(err);
+              }
+
+              resolve();
+            },
+          );
+        });
+      } else if (msg.type === "create") {
+        await new Promise((resolve, reject) => {
+          db.run(
+            "INSERT OR IGNORE INTO notes (id, userId, title, content, ydocUpdate) VALUES (?, ?, ?, ?, ?)",
+            [noteId, userId, title, `<p class="frontmatter"></p><p></p>`, new Uint8Array(ydocArray)],
+            (err) => {
+              if (err) {
+                console.error("Error creating note:", err);
+                return reject(err);
+              }
+
+              resolve();
+            },
+          );
+        });
+      } else if (msg.type === "delete") {
+        await new Promise((resolve, reject) => {
+          db.run(
+            "DELETE FROM notes WHERE id = ? AND userId = ?",
+            [noteId, userId],
+            (err) => {
+              if (err) {
+                console.error("Error deleting note:", err);
+                return reject(err);
+              }
+
+              resolve();
+            },
+          );
+        });
+      }
+
+      // broadcast a stateless message to all connections based on document
+      document.broadcastStateless(payload);
+    } catch (err) {
+      console.error("Error handling stateless message:", err);
+      throw err;
+    }
+  },
+  onConnect(data) {
+    console.log(
+      "connect:    ",
+      data.socketId,
+      " : ",
+      server.getConnectionsCount() + 1,
+    );
+  },
+  onDisconnect(data) {
+    console.log(
+      "disconnect: ",
+      data.socketId,
+      " : ",
+      server.getConnectionsCount(),
+    );
+  },
+});
+server.listen();
+
 const app = express();
 const port = 3000;
 const oAuth2Client = new OAuth2Client(
@@ -38,7 +228,7 @@ const oAuth2Client = new OAuth2Client(
 
 async function authCheck(req, res, next) {
   if (req.session) {
-    req.session.sessionExpiry = Date.now() + 1 * 1 * 60 * 1000;
+    req.session.sessionExpiry = Date.now() + 1 * 10 * 60 * 1000;
 
     const sessionExpirationDate = new Date(req.session.sessionExpiry);
     res.cookie("expiration", sessionExpirationDate.toISOString(), {
@@ -58,7 +248,7 @@ app.use(
   cookieSession({
     name: "session",
     keys: ["secret"],
-    maxAge: 1 * 1 * 60 * 1000,
+    maxAge: 1 * 10 * 60 * 1000,
   }),
 );
 
@@ -103,12 +293,13 @@ app.get("/api/auth", async (req, res) => {
             },
           );
           db.run(
-            "INSERT INTO notes (id, userId, title, content) VALUES (?, ?, ?, ?)",
+            "INSERT INTO notes (id, userId, title, content, ydocUpdate) VALUES (?, ?, ?, ?, ?)",
             [
               nanoid(6),
               userId,
               "Starred",
               `<p class="frontmatter"></p><p></p>`,
+              getDefaultYdocUpdate(),
             ],
             (err) => {
               if (err) {
@@ -121,7 +312,7 @@ app.get("/api/auth", async (req, res) => {
         }
 
         req.session.userId = userId;
-        res.status(200).send({ message: "Authenticated successfully" });
+        res.status(200).send({ message: "Authenticated successfully", userId });
       },
     );
   } catch (error) {
@@ -169,7 +360,7 @@ app.post("/api/search", authCheck, async (req, res) => {
 
 app.get("/api/notes", authCheck, async (req, res) => {
   db.all(
-    "SELECT id, title FROM notes WHERE userId = ?",
+    "SELECT id, title, content, ydocUpdate FROM notes WHERE userId = ?",
     [req.session.userId],
     (err, rows) => {
       if (err) {
@@ -179,8 +370,17 @@ app.get("/api/notes", authCheck, async (req, res) => {
       }
 
       const resultObject = Object.fromEntries(
-        rows.map((row) => [row.id, row.title]),
+        rows.map((row) => [
+          row.id,
+          {
+            title: row.title,
+            content: row.content,
+            ydocArray: Array.from(row.ydocUpdate),
+          },
+        ]),
       );
+
+      console.log(resultObject);
 
       res.status(200).json(resultObject);
     },

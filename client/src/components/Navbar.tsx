@@ -9,7 +9,7 @@ import StarIcon from "./icons/StarIcon";
 import LogoutIcon from "./icons/LogoutIcon";
 
 function Navbar() {
-  const { isAuthenticated } = useAuth();
+  const { currentUser } = useAuth();
   const location = useLocation();
   const { isLoading } = useLoading();
   const { logout } = useSession();
@@ -17,7 +17,7 @@ function Navbar() {
   return (
     <nav className="sticky top-0 z-50 flex h-10 w-full items-center justify-between bg-white/80 backdrop-blur">
       <div className="flex items-center">
-        {isAuthenticated ? (
+        {currentUser ? (
           <>
             <NavLink
               to="/app/notes"
@@ -42,12 +42,12 @@ function Navbar() {
           <></>
         )}
       </div>
-      {isAuthenticated &&
+      {currentUser &&
         !isLoading &&
         (location.pathname === "/app" ||
           location.pathname.startsWith("/app/notes/")) && <MoreOptionsButton />}
       <div className="flex items-center">
-        {isAuthenticated ? (
+        {currentUser ? (
           <span
             className="mr-2 cursor-pointer text-gray-400 hover:text-gray-600"
             onClick={() => {
@@ -57,7 +57,9 @@ function Navbar() {
             <LogoutIcon />
           </span>
         ) : (
-          <div className="mr-2 mt-2"> {/* create space for button */}
+          <div className="mr-2 mt-2">
+            {" "}
+            {/* create space for button */}
             <LoginButton />
           </div>
         )}

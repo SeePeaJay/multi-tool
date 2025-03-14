@@ -2,11 +2,12 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { db } from "../db";
-import { useAuthFetch } from "../hooks/AuthFetch";
 import DeleteIcon from "./icons/DeleteIcon";
+import { useAuth } from "../contexts/AuthContext";
+import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
 
 function MoreOptionsButton() {
-  const authFetch = useAuthFetch();
+  const { currentUser } = useAuth();
   const { pathname } = useLocation(); // need location instead of params bc params are actually not dynamic
   const navigate = useNavigate();
   const buttonRef = useRef(null);
@@ -14,6 +15,7 @@ function MoreOptionsButton() {
   const modalRef = useRef(null);
   const [shouldShowMenu, setShouldShowMenu] = useState(false);
   const [shouldShowModal, setShouldShowModal] = useState(false);
+  const { statelessMessengerRef } = useStatelessMessenger();
 
   const displayedNoteTitle = useLiveQuery(async () => {
     if (pathname === "/app") {
@@ -62,10 +64,14 @@ function MoreOptionsButton() {
       const noteIdToDelete = pathname.replace("/app/notes/", "");
 
       await db.notes.delete(noteIdToDelete);
-      await authFetch(`/api/delete/${noteIdToDelete}`, {
-        credentials: "include",
-        method: "POST",
-      });
+      
+      statelessMessengerRef.current?.sendStateless(
+        JSON.stringify({
+          type: "delete",
+          userId: currentUser,
+          noteId: noteIdToDelete,
+        }),
+      );
     } catch (error) {
       console.error(error);
     }

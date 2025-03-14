@@ -1,56 +1,44 @@
-import { useLiveQuery } from "dexie-react-hooks";
-import { useCallback, useEffect, useRef, useState } from "react";
+import Collaboration from "@tiptap/extension-collaboration";
 import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
-import { useParams } from "react-router-dom";
-import debounce from "lodash.debounce";
+import { useLiveQuery } from "dexie-react-hooks";
+import { useEffect, useRef, useState } from "react";
+import * as Y from "yjs";
 import { db } from "../db";
+import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
 import { createContentEditorExtensions } from "../utils/contentEditorExtensions";
 import {
   updateEditorBacklinksIfOutdated,
   fetchBacklinks,
-  pushEditorUpdate,
-  syncEditorWithCurrentNoteContentIfOutdated,
 } from "../utils/contentEditorHelpers";
 
-const ContentEditor = () => {
+interface ContentEditorProps {
+  noteId: string;
+}
+
+const ContentEditor = ({ noteId }: ContentEditorProps) => {
+  const {
+    statelessMessengerRef,
+    markNoteAsActive,
+    markNoteAsInactive,
+  } = useStatelessMessenger();
+  const yDocRef = useRef<Y.Doc>(markNoteAsActive({ noteId, isFromEditor: true }));
+
   const authFetch = useAuthFetch();
-  const { noteId: noteIdParam } = useParams();
   const editorRef = useRef<TiptapEditor | null>(null);
-  const previousEditorContentRef = useRef("");
-  const [editorIsUpToDate, setEditorIsUpToDate] = useState(false);
   const [backlinksAreUpToDate, setBacklinksAreUpToDate] = useState(false);
 
-  const currentNoteId = useLiveQuery(async () => {
-    return (
-      noteIdParam || (await db.table("notes").get({ title: "Starred" }))?.id
-    );
-  }, [noteIdParam]);
-
-  const currentNoteContent = useLiveQuery(async () => {
-    if (!currentNoteId) {
-      return;
-    }
-
-    return (await db.notes.get(currentNoteId))?.content;
-  }, [currentNoteId]);
-
   const currentNoteHasFetchedBacklinks = useLiveQuery(async () => {
-    if (!currentNoteId) {
-      return;
-    }
-
-    return (await db.notes.get(currentNoteId))?.hasFetchedBacklinks;
-  }, [currentNoteId]);
+    return (await db.notes.get(noteId))?.hasFetchedBacklinks;
+  });
 
   const currentBacklinks = useLiveQuery(async () => {
     setBacklinksAreUpToDate(false);
 
     const output: string[] = [];
 
-    // only continue if currentNoteId is ready and backlinks have been fetched
+    // only continue if backlinks have been fetched
     if (
-      !currentNoteId ||
       currentNoteHasFetchedBacklinks === undefined || // is undefined initially unless specified otherwise
       currentNoteHasFetchedBacklinks === false
     ) {
@@ -61,8 +49,7 @@ const ContentEditor = () => {
     const targetNotes = await db.notes
       .filter(
         (note) =>
-          !!note.contentWords &&
-          note.contentWords.includes(`#${currentNoteId}`),
+          !!note.contentWords && note.contentWords.includes(`#${noteId}`),
       )
       .toArray();
 
@@ -70,7 +57,7 @@ const ContentEditor = () => {
       const parser = new DOMParser();
       const doc = parser.parseFromString(note.content, "text/html");
       const targetSpans = doc.querySelectorAll(
-        `span.tag[data-type="tag"][data-target-note-id="${currentNoteId}"]`,
+        `span.tag[data-type="tag"][data-target-note-id="${noteId}"]`,
       );
       const parentElements = Array.from(targetSpans).map(
         (span) => span.parentElement!,
@@ -90,48 +77,18 @@ const ContentEditor = () => {
     setBacklinksAreUpToDate(true);
 
     return output;
-  }, [currentNoteId, currentNoteHasFetchedBacklinks]);
-
-  const pushEditorUpdateWithDelay = useCallback(
-    debounce(
-      async (noteIdParam: string | undefined, updatedContent: string) => {
-        pushEditorUpdate({ authFetch, noteIdParam, updatedContent });
-      },
-      2000,
-    ),
-    [],
-  );
-
-  useEffect(() => {
-    setEditorIsUpToDate(false);
-    setBacklinksAreUpToDate(false);
-  }, [noteIdParam]);
-
-  // need this when switched to a new note or other tabs have updated note content but current tab editor isn't up to date
-  useEffect(() => {
-    if (!editorRef.current || currentNoteContent === undefined) {
-      return;
-    }
-
-    syncEditorWithCurrentNoteContentIfOutdated({
-      currentNoteContent,
-      editorRef,
-      previousEditorContentRef,
-      setEditorIsUpToDate,
-    });
-  }, [currentNoteContent]);
+  }, [currentNoteHasFetchedBacklinks]);
 
   useEffect(
     () => {
       if (
-        !currentNoteId ||
         currentNoteHasFetchedBacklinks === undefined || // is undefined initially unless specified otherwise
         currentNoteHasFetchedBacklinks === true
       ) {
         return;
       }
 
-      fetchBacklinks({ authFetch, currentNoteId });
+      fetchBacklinks({ authFetch, noteId });
     },
     [currentNoteHasFetchedBacklinks],
     /* 
@@ -145,7 +102,7 @@ const ContentEditor = () => {
   // insert backlink nodes for each note/block that tags the current note
   // also remove them if their target do not tag the current note
   useEffect(() => {
-    if (!editorRef.current || !editorIsUpToDate || !backlinksAreUpToDate) {
+    if (!editorRef.current || !backlinksAreUpToDate) {
       return;
     }
 
@@ -153,29 +110,41 @@ const ContentEditor = () => {
       currentBacklinks,
       editorRef,
     });
-  }, [editorIsUpToDate, backlinksAreUpToDate]);
+  }, [backlinksAreUpToDate]);
+
+  // connect to collaboration server
+  useEffect(() => {
+    if (!statelessMessengerRef.current) { return; }
+
+    const statelessMessenger = statelessMessengerRef.current;
+
+    statelessMessenger.setAwarenessField("currentNote", noteId);
+
+    // collabProvider.on('unsyncedChanges', (n: number) => {
+    //   console.log('Number of changes to send to server:', n);
+    // });
+
+    return () => {
+      markNoteAsInactive({ noteId, isFromEditor: true });
+
+      statelessMessenger.setAwarenessField("currentNote", undefined);
+    };
+  }, [statelessMessengerRef.current]);
 
   return (
     <EditorProvider
-      // key={note?.id || "key"}
-      extensions={createContentEditorExtensions(authFetch)}
-      content=""
+      extensions={[
+        ...createContentEditorExtensions(authFetch),
+        Collaboration.configure({
+          document: yDocRef.current,
+        }),
+      ]}
       onCreate={({ editor }) => {
         editorRef.current = editor;
       }}
-      onUpdate={({ editor }) => {
-        // only debounce content update if editor update involves genuinely visible changes
-
-        // diff(editor.getHTML());
-
-        const currentEditorContent = editor.getHTML();
-
-        if (currentEditorContent !== previousEditorContentRef.current) {
-          previousEditorContentRef.current = currentEditorContent;
-
-          pushEditorUpdateWithDelay(noteIdParam, currentEditorContent); // passing in `noteId` ties the update to that `noteId` even if user switches to a different page before the actual update is made
-        }
-      }}
+      // onUpdate={({ editor }) => {
+      //   // diff(editor.getHTML());
+      // }}
     ></EditorProvider>
   );
 };

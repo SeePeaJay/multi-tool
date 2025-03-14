@@ -8,7 +8,7 @@ const LoginButton = () => {
     flow: "auth-code",
     scope: "https://www.googleapis.com/auth/drive.file",
     onSuccess: (credentialResponse) => {
-      console.log("Login success:", credentialResponse);
+      // console.log("Login success:", credentialResponse);
 
       navigate("/app", { state: { code: credentialResponse.code } });
     },

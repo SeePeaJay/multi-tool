@@ -7,28 +7,14 @@ interface FetchBacklinksParams {
     url: string,
     options?: RequestInit,
   ) => Promise<{ id: string; content: string }[]>;
-  currentNoteId: string;
-}
-interface SyncEditorParams {
-  currentNoteContent: string;
-  editorRef: React.MutableRefObject<TiptapEditor | null>;
-  previousEditorContentRef: React.MutableRefObject<string>;
-  setEditorIsUpToDate: React.Dispatch<React.SetStateAction<boolean>>;
+  noteId: string;
 }
 interface UpdateBacklinksParams {
   currentBacklinks: string[] | undefined;
   editorRef: React.MutableRefObject<TiptapEditor | null>;
 }
-interface PushUpdateParams {
-  authFetch: (url: string, options?: RequestInit) => Promise<void>;
-  noteIdParam: string | undefined;
-  updatedContent: string;
-}
 
-const fetchBacklinks = async ({
-  authFetch,
-  currentNoteId,
-}: FetchBacklinksParams) => {
+const fetchBacklinks = async ({ authFetch, noteId }: FetchBacklinksParams) => {
   // fetch notes that tag current note
   const response = await authFetch(`/api/search`, {
     credentials: "include",
@@ -36,7 +22,7 @@ const fetchBacklinks = async ({
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ query: `#${currentNoteId}` }),
+    body: JSON.stringify({ query: `#${noteId}` }),
   });
 
   // update Dexie
@@ -47,32 +33,10 @@ const fetchBacklinks = async ({
       }),
     ),
   );
-  await db.notes.update(currentNoteId, {
+  await db.notes.update(noteId, {
     hasFetchedBacklinks: true,
   });
 };
-
-async function syncEditorWithCurrentNoteContentIfOutdated({
-  currentNoteContent,
-  editorRef,
-  previousEditorContentRef,
-  setEditorIsUpToDate,
-}: SyncEditorParams) {
-  // setTimeout is necessary to avoid the error message: "Warning: flushSync was called from inside a
-  // lifecycle method. ..."
-  setTimeout(() => {
-    const currentEditorContent = editorRef.current!.getHTML();
-
-    if (currentEditorContent !== currentNoteContent) {
-      setEditorIsUpToDate(false);
-      editorRef.current!.commands.clearContent(); // need this for next line to function consistently
-      editorRef.current!.commands.setContent(currentNoteContent);
-      previousEditorContentRef.current = currentNoteContent;
-    }
-
-    setEditorIsUpToDate(true); // make sure this is still set to true when loading/refreshing a blank note
-  });
-}
 
 function updateEditorBacklinksIfOutdated({
   currentBacklinks,
@@ -142,42 +106,4 @@ function updateEditorBacklinksIfOutdated({
   }
 }
 
-const pushEditorUpdate = async ({
-  authFetch,
-  noteIdParam,
-  updatedContent,
-}: PushUpdateParams) => {
-  let noteIdToUpdate = noteIdParam;
-
-  if (!noteIdToUpdate) {
-    const starred = await db.table("notes").get({ title: "Starred" });
-    noteIdToUpdate = starred.id;
-  }
-
-  try {
-    await db.notes.update(noteIdToUpdate!, {
-      content: updatedContent,
-    });
-  } catch (error) {
-    console.error("Failed to save content:", error);
-  }
-
-  await authFetch(
-    `/api/notes/${noteIdToUpdate}`,
-    {
-      credentials: "include",
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json", // specify JSON content type for below
-      },
-      body: JSON.stringify({ updatedContent }),
-    }, // include cookies with request; required for cookie session to function
-  );
-};
-
-export {
-  updateEditorBacklinksIfOutdated,
-  fetchBacklinks,
-  pushEditorUpdate,
-  syncEditorWithCurrentNoteContentIfOutdated,
-};
+export { updateEditorBacklinksIfOutdated, fetchBacklinks };

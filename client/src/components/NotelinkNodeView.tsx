@@ -1,59 +1,24 @@
+import { NodeViewWrapper, NodeViewProps } from "@tiptap/react";
+import { TiptapCollabProvider } from "@hocuspocus/provider";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect } from "react";
 import { HashLink } from "react-router-hash-link";
-import { NodeViewWrapper, NodeViewProps } from "@tiptap/react";
+import * as Y from "yjs";
 import { db } from "../db";
-import { useAuthFetch } from "../hooks/AuthFetch";
+import { useAuth } from "../contexts/AuthContext";
 
 const NotelinkNodeView: React.FC<NodeViewProps> = ({
   node,
   updateAttributes,
 }) => {
-  const authFetch = useAuthFetch();
+  const { currentUser } = useAuth();
   const suggestionChar = node.attrs.type === "notelink" ? "[[" : "#";
   const {
     targetNoteId,
     targetBlockId,
-    initialTargetTitle,
     blockIndexForNewBlockId,
   } = node.attrs;
   const note = useLiveQuery(() => db.notes.get(targetNoteId), [targetNoteId]);
-
-  useEffect(() => {
-    const createNoteIfNew = async () => {
-      try {
-        if (initialTargetTitle) {
-          // add a new note entry to dexie
-          await db.notes.put({
-            id: targetNoteId,
-            title: initialTargetTitle,
-            content: `<p class="frontmatter"></p><p></p>`,
-            hasFetchedBacklinks: true,
-          });
-
-          await authFetch(`/api/create/${targetNoteId}`, {
-            credentials: "include", // required for cookie session to function
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              title: initialTargetTitle,
-            }),
-          });
-
-          // immediately remove initialTargetTitle after using it; otherwise it can persist to recreate the note you just deleted; this also causes an additional update request as a side effect
-          updateAttributes({
-            initialTargetTitle: "",
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching note title:", error);
-      }
-    };
-
-    createNoteIfNew();
-  }, []);
 
   useEffect(() => {
     const insertBlockIdIfNeeded = async () => {
@@ -81,22 +46,44 @@ const NotelinkNodeView: React.FC<NodeViewProps> = ({
             content: document.body.innerHTML,
           });
 
-          await authFetch(
-            `/api/notes/${targetNoteId}`,
-            {
-              credentials: "include",
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json", // specify JSON content type for below
-              },
-              body: JSON.stringify({ updatedContent: document.body.innerHTML }),
-            }, // include cookies with request; required for cookie session to function
-          );
+          //
+
+          const yDoc = new Y.Doc();
+          const tempCollabProvider = new TiptapCollabProvider({
+            name: `${currentUser}/${targetNoteId}`,
+            baseUrl: "ws://127.0.0.1:1234",
+            token: "notoken",
+            document: yDoc,
+
+            onConnect() {
+              tempCollabProvider.sendStateless(JSON.stringify({
+                type: "setTempProvider"
+              }));
+            },
+            onSynced() {
+              const xmlFragment = yDoc.getXmlFragment("default");
+              const targetElement = (xmlFragment.toArray()[blockIndexForNewBlockId]) as Y.XmlElement;
+              // console.log(xmlFragment.toArray(), blockIndexForNewBlockId);
+
+              const span = new Y.XmlElement("blockId");
+              span.setAttribute("id", targetBlockId);
+
+              targetElement.insert(targetElement.length, [span]);
+            },
+            onStateless({ payload }) {
+              const msg = JSON.parse(payload);
+
+              if (msg.type === "destroyTempProvider") {
+                tempCollabProvider.destroy();
+                yDoc.destroy();
+              }
+            }
+          });
 
           // immediately remove blockIndexForNewBlockId after using it
-          updateAttributes({
-            blockIndexForNewBlockId: undefined,
-          });
+          setTimeout(() => {
+            updateAttributes({ blockIndexForNewBlockId: undefined });
+          }, 0);
         }
       } catch (error) {
         console.error("Error fetching note title:", error);

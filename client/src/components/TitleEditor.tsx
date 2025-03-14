@@ -6,11 +6,13 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { db } from "../db";
-import { useAuthFetch } from "../hooks/AuthFetch";
+import { useAuth } from "../contexts/AuthContext";
+import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
 import Title from "../utils/title";
 
 const TitleEditor = () => {
-  const authFetch = useAuthFetch();
+  const { currentUser } = useAuth();
+  const { statelessMessengerRef } = useStatelessMessenger();
   const { noteId: noteIdParam } = useParams();
   const editorRef = useRef<TiptapEditor | null>(null);
   const previousTitleRef = useRef(""); // a copy of the last set title value, used to reset when rename fails
@@ -39,13 +41,14 @@ const TitleEditor = () => {
 
         db.notes.update(noteIdToUpdate!, { title: newTitle });
 
-        await authFetch(`/api/rename/${noteIdToUpdate}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ newTitle }),
-        });
+        statelessMessengerRef.current?.sendStateless(
+          JSON.stringify({
+            type: "rename",
+            userId: currentUser,
+            noteId: noteIdToUpdate,
+            title: newTitle,
+          }),
+        );
 
         previousTitleRef.current = newTitle;
       } catch (error) {
@@ -87,7 +90,6 @@ const TitleEditor = () => {
 
   return (
     <EditorProvider
-      // key={noteId}
       extensions={[
         Document.extend({
           content: "title",

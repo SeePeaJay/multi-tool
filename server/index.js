@@ -1,8 +1,8 @@
 require("dotenv").config();
 
-const { Hocuspocus } = require("@hocuspocus/server");
+const { Server } = require("@hocuspocus/server");
 const { TiptapTransformer } = require("@hocuspocus/transformer");
-const { generateJSON } = require('@tiptap/html');
+const { generateJSON, generateHTML } = require("@tiptap/html");
 const express = require("express");
 const cors = require("cors");
 const cookieSession = require("cookie-session");
@@ -11,7 +11,10 @@ const { google } = require("googleapis");
 const { nanoid } = require("nanoid");
 const sanitizeHtml = require("sanitize-html");
 const sqlite3 = require("sqlite3").verbose();
+const Y = require("yjs");
+const { yDocToProsemirrorJSON } = require("y-prosemirror");
 const createContentEditorExtensions = require("./contentEditorExtensions");
+const { Database } = require("@hocuspocus/extension-database");
 
 const db = new sqlite3.Database("./notes.db");
 db.serialize(() => {
@@ -32,23 +35,147 @@ db.serialize(() => {
   `);
 });
 
-const server = new Hocuspocus({
+const server = Server.configure({
   port: 1234,
   async onLoadDocument(data) {
-    console.log(data);
+    try {
+      const [userId, noteId] = data.documentName.split("/");
+      const html = await new Promise((resolve, reject) => {
+        db.get(
+          "SELECT content FROM notes WHERE id = ? AND userId = ?",
+          [noteId, userId],
+          (err, row) => {
+            if (err) {
+              console.error(err);
+              return reject(err);
+            }
 
-    const editorExtensions = createContentEditorExtensions();
-    const json = generateJSON(`<p class="frontmatter">On the server, or the browser</p><p></p>`, editorExtensions);
-    const ydoc = TiptapTransformer.toYdoc(
-      json,
-      // the `field` you’re using in Tiptap. If you don’t know what that is, use 'default'.
-      "default",
-      // The Tiptap extensions you’re using. Those are important to create a valid schema.
-      editorExtensions,
-    );
+            if (!row) {
+              return reject(new Error("Note not found"));
+            }
 
-    return ydoc;
+            resolve(row.content);
+          },
+        );
+      });
+      const editorExtensions = createContentEditorExtensions();
+      const json = generateJSON(html, editorExtensions);
+      const ydoc = TiptapTransformer.toYdoc(
+        json,
+        // the `field` you’re using in Tiptap. If you don’t know what that is, use 'default'.
+        "default",
+        // The Tiptap extensions you’re using. Those are important to create a valid schema.
+        editorExtensions,
+      );
+      // TiptapTransformer.from
+
+      return ydoc;
+    } catch (err) {
+      console.error("Error loading document:", err);
+      throw err;
+    }
   },
+  async onStoreDocument(data) {
+    try {
+      const [userId, noteId] = data.documentName.split("/");
+      const editorExtensions = createContentEditorExtensions();
+      const json = TiptapTransformer.fromYdoc(
+        data.document,
+        "default", // The field used in Tiptap
+        editorExtensions, // Your editor extensions
+      );
+      const html = generateHTML(json, editorExtensions);
+      const sanitizedHtml = sanitizeHtml(html, {
+        allowedAttributes: {
+          "*": [
+            "id",
+            "class",
+            "data-type",
+            "data-target-note-id",
+            "data-target-block-id",
+          ],
+        },
+      });
+
+      // const ydoc = new Y.Doc();
+      // Y.applyUpdate(ydoc, data.document);
+      // ydoc.applyUpdate(data.document);
+      // const json = yDocToProsemirrorJSON(ydoc);
+      // const html = generateHTML(json, editorExtensions);
+      // console.log(data.document);
+
+      await new Promise((resolve, reject) => {
+        db.run(
+          "UPDATE notes SET content = ? WHERE id = ? AND userId = ?",
+          [sanitizedHtml, noteId, userId],
+          (err) => {
+            if (err) {
+              console.error(err);
+              return reject(err);
+            }
+
+            resolve();
+          },
+        );
+      });
+    } catch (err) {
+      console.error("Error writing document:", err);
+      throw err;
+    }
+  },
+  // extensions: [
+  //   new Database({
+  //     // return a Promise to retrieve data …
+  //     fetch: async ({ documentName }) => {
+  //       const [userId, noteId] = documentName.split("/");
+
+  //       return new Promise((resolve, reject) => {
+  //         db.get(
+  //           `SELECT content FROM "notes" WHERE id = $id AND userId = $userId`,
+  //           {
+  //             $id: noteId,
+  //             $userId: userId,
+  //           },
+  //           (error, row) => {
+  //             if (error) {
+  //               return reject(error);
+  //             }
+
+  //             if (!row) {
+  //               return reject("Note not found");
+  //             }
+
+  //             const editorExtensions = createContentEditorExtensions();
+  //             const html = row.content;
+  //             const json = generateJSON(html, editorExtensions);
+  //             const ydoc = TiptapTransformer.toYdoc(
+  //               json,
+  //               // the `field` you’re using in Tiptap. If you don’t know what that is, use 'default'.
+  //               "default",
+  //               // The Tiptap extensions you’re using. Those are important to create a valid schema.
+  //               editorExtensions,
+  //             );
+
+  //             return resolve(ydoc);
+  //           },
+  //         );
+  //       });
+  //     },
+  //     // … and a Promise to store data:
+  //     // store: async ({ documentName, state }) => {
+  //     //   this.db?.run(
+  //     //     `
+  //     //     INSERT INTO "documents" ("name", "data") VALUES ($name, $data)
+  //     //       ON CONFLICT(name) DO UPDATE SET data = $data
+  //     //   `,
+  //     //     {
+  //     //       $name: documentName,
+  //     //       $data: state,
+  //     //     },
+  //     //   );
+  //     // },
+  //   }),
+  // ],
 });
 server.listen();
 
@@ -132,7 +259,7 @@ app.get("/api/auth", async (req, res) => {
               nanoid(6),
               userId,
               "Starred",
-              `<p class="frontmatter"></p><p></p>`,
+              `<p class="frontmatter"></p><p>HELLLO?</p>`,
             ],
             (err) => {
               if (err) {

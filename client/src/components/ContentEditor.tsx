@@ -3,9 +3,10 @@ import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import debounce from "lodash.debounce";
+// import debounce from "lodash.debounce";
 import { db } from "../db";
 import { useAuthFetch } from "../hooks/AuthFetch";
+import { useAuth } from "../contexts/AuthContext";
 import {
   createContentEditorExtensions,
   doc,
@@ -13,15 +14,16 @@ import {
 import {
   updateEditorBacklinksIfOutdated,
   fetchBacklinks,
-  pushEditorUpdate,
+  // pushEditorUpdate,
   // syncEditorWithCurrentNoteContentIfOutdated,
 } from "../utils/contentEditorHelpers";
 
 const ContentEditor = () => {
+  const { currentUser } = useAuth();
   const authFetch = useAuthFetch();
   const { noteId: noteIdParam } = useParams();
   const editorRef = useRef<TiptapEditor | null>(null);
-  const previousEditorContentRef = useRef("");
+  // const previousEditorContentRef = useRef("");
   const [editorIsUpToDate, setEditorIsUpToDate] = useState(false);
   const [backlinksAreUpToDate, setBacklinksAreUpToDate] = useState(false);
 
@@ -96,15 +98,15 @@ const ContentEditor = () => {
     return output;
   }, [currentNoteId, currentNoteHasFetchedBacklinks]);
 
-  const pushEditorUpdateWithDelay = useCallback(
-    debounce(
-      async (noteIdParam: string | undefined, updatedContent: string) => {
-        pushEditorUpdate({ authFetch, noteIdParam, updatedContent });
-      },
-      2000,
-    ),
-    [],
-  );
+  // const pushEditorUpdateWithDelay = useCallback(
+  //   debounce(
+  //     async (noteIdParam: string | undefined, updatedContent: string) => {
+  //       pushEditorUpdate({ authFetch, noteIdParam, updatedContent });
+  //     },
+  //     2000,
+  //   ),
+  //   [],
+  // );
 
   useEffect(() => {
     setEditorIsUpToDate(false);
@@ -161,8 +163,12 @@ const ContentEditor = () => {
 
   // connect to collaboration server
   useEffect(() => {
+    if (!currentNoteId) {
+      return;
+    }
+
     new TiptapCollabProvider({
-      name: "document.name", // Unique document identifier for syncing. This is your document name.
+      name: `${currentUser}/${currentNoteId}`, // unique document identifier for syncing
       baseUrl: "ws://127.0.0.1:1234", // Your Cloud Dashboard AppID or `baseURL` for on-premises
       token: "notoken", // Your JWT token
       document: doc,
@@ -174,7 +180,7 @@ const ContentEditor = () => {
         }
       },
     });
-  }, []);
+  }, [currentNoteId]);
 
   return (
     <EditorProvider
@@ -184,19 +190,19 @@ const ContentEditor = () => {
       onCreate={({ editor }) => {
         editorRef.current = editor;
       }}
-      onUpdate={({ editor }) => {
+      // onUpdate={({ editor }) => {
         // only debounce content update if editor update involves genuinely visible changes
 
         // diff(editor.getHTML());
 
-        const currentEditorContent = editor.getHTML();
+        // const currentEditorContent = editor.getHTML();
 
-        if (currentEditorContent !== previousEditorContentRef.current) {
-          previousEditorContentRef.current = currentEditorContent;
+        // if (currentEditorContent !== previousEditorContentRef.current) {
+        //   previousEditorContentRef.current = currentEditorContent;
 
-          pushEditorUpdateWithDelay(noteIdParam, currentEditorContent); // passing in `noteId` ties the update to that `noteId` even if user switches to a different page before the actual update is made
-        }
-      }}
+        //   pushEditorUpdateWithDelay(noteIdParam, currentEditorContent); // passing in `noteId` ties the update to that `noteId` even if user switches to a different page before the actual update is made
+        // }
+      // }}
     ></EditorProvider>
   );
 };

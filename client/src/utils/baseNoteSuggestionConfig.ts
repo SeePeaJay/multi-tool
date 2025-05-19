@@ -3,7 +3,6 @@
  */
 
 import { ReactRenderer } from "@tiptap/react";
-import { nanoid } from "nanoid";
 import tippy, { Instance as TippyInstance } from "tippy.js";
 import { db } from "../db";
 import NoteSuggestionMenu, {
@@ -30,23 +29,8 @@ const DOM_RECT_FALLBACK: DOMRect = {
 async function getBlockSuggestionItems(
   cachedNote: { id: string; title: string; content: string },
   blockQuery: string,
-  authFetch: (url: string, options?: RequestInit) => Promise<string>,
 ): Promise<NoteSuggestion[]> {
-  // if content is not cached, cache it first
-  if (!cachedNote.content) {
-    const content = await authFetch(
-      `/api/notes/${cachedNote.id}`,
-      { credentials: "include" }, // include cookies with request; required for cookie session to function
-    );
-
-    await db.notes.update(cachedNote.id, {
-      content,
-    });
-
-    cachedNote.content = content;
-  }
-
-  // then, convert into list of blocks
+  // convert into list of blocks
   const document = parser.parseFromString(cachedNote.content, "text/html");
   const elements = Array.from(document.body.children);
   const storedBlocks = elements.map((element) => element.outerHTML);
@@ -54,23 +38,18 @@ async function getBlockSuggestionItems(
   return Promise.resolve(
     storedBlocks
       .map((block, index) => {
-        let blockId = parser
+        const blockId = parser
           .parseFromString(block, "text/html")
           .querySelector("span.block-id")
-          ?.getAttribute("id");
-        let blockIdIsNew = false;
-
-        if (!blockId) {
-          blockId = nanoid(6);
-          blockIdIsNew = true;
-        }
+          ?.getAttribute("id") || null;
+        const blockIdDoesntExist = !blockId;
 
         return {
           suggestionId: index.toString(),
           suggestionLabel: block,
           targetNoteId: cachedNote.id,
           targetBlockId: blockId,
-          ...(blockIdIsNew && { blockIndexForNewBlockId: index }),
+          ...(blockIdDoesntExist && { blockIndexForNewBlockId: index }),
         };
       })
       .filter((item) =>
@@ -115,9 +94,7 @@ async function getTitleSuggestionItems(
   }
 }
 
-export const createBaseNoteSuggestionConfig = (
-  authFetch?: (url: string, options?: RequestInit) => Promise<string>,
-): NotelinkOptions["suggestion"] => ({
+export const createBaseNoteSuggestionConfig = (): NotelinkOptions["suggestion"] => ({
   allowSpaces: true,
 
   items: async ({ query }): Promise<NoteSuggestion[]> => {
@@ -128,10 +105,9 @@ export const createBaseNoteSuggestionConfig = (
     const [titleQuery, blockQuery] = query.split("::");
     const cachedNote = await db.table("notes").get({ title: titleQuery });
 
-    // if title has exact match and blockquery exists (and authFetch exists, which is the case if this config object is
-    // for [[...]] notelink)...
-    if (cachedNote && blockQuery !== undefined && authFetch) {
-      return getBlockSuggestionItems(cachedNote, blockQuery, authFetch);
+    // if title has exact match and blockquery exists
+    if (cachedNote && blockQuery !== undefined) {
+      return getBlockSuggestionItems(cachedNote, blockQuery);
     }
 
     // otherwise, perform standard title search

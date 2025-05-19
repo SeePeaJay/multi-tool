@@ -3,12 +3,13 @@ import { createContext, useContext, useEffect, useRef, ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as Y from "yjs";
 import { db } from "../db";
-import { useAuth } from "./AuthContext";
 import setupYdoc from "../utils/yjs";
+import { useAuth } from "./AuthContext";
 
 interface StatelessMessengerContextType {
   statelessMessengerRef: React.MutableRefObject<HocuspocusProvider | null>;
   activeYdocResourcesRef: React.MutableRefObject<ActiveYdocResources>;
+  tempYdocResourcesRef: React.MutableRefObject<TempYdocResources>;
   markNoteAsActive: MarkNoteAsActiveFn;
   markNoteAsInactive: MarkNoteAsInactiveFn;
 }
@@ -20,6 +21,12 @@ interface ActiveYdocResources {
     ydoc: Y.Doc;
     provider: TiptapCollabProvider;
     activeClientCount: number;
+  };
+}
+interface TempYdocResources {
+  [key: string]: {
+    provider: TiptapCollabProvider;
+    providerWillSendMsg: boolean;
   };
 }
 
@@ -46,7 +53,9 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
   const noteIdParamRef = useRef<string | null>(null);
   const statelessMessengerRef = useRef<HocuspocusProvider | null>(null);
   const currentAwarenessStateRef = useRef<CurrentAwarenessState>({});
+
   const activeYdocResourcesRef = useRef<ActiveYdocResources>({});
+  const tempYdocResourcesRef = useRef<TempYdocResources>({});
 
   const currentEditorNoteId = useRef("");
 
@@ -137,7 +146,11 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
       url: "ws://127.0.0.1:1234",
       onStateless: ({ payload }) => {
         const msg = JSON.parse(payload);
-        const { noteId, title, ydocArray } = msg;
+        const { noteId, title, ydocArray, clientId } = msg;
+
+        if (clientId === statelessMessenger.document.clientID) {
+          return;
+        }
 
         if (msg.type === "rename") {
           db.notes.update(noteId, { title });
@@ -155,15 +168,34 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
           if (noteIdParamRef.current === noteId) {
             navigate("/app/notes", { replace: true });
           }
+        } else if (msg.type === "temp") {
+          if (tempYdocResourcesRef.current[noteId]) {
+            return;
+          }
+
+          // console.log("creating temp provider for stateless");
+
+          const ydoc = new Y.Doc();
+          setupYdoc({ noteId, ydoc });
+
+          tempYdocResourcesRef.current[noteId] = {
+            provider: new TiptapCollabProvider({
+              name: `${currentUser}/${noteId}`, // unique document identifier for syncing
+              baseUrl: "ws://127.0.0.1:1234",
+              token: "notoken", // your JWT token
+              document: ydoc,
+              onSynced() {
+                // console.log("destroying temp provider for stateless");
+
+                tempYdocResourcesRef.current[noteId].provider.destroy();
+                delete tempYdocResourcesRef.current[noteId];
+              },
+            }),
+            providerWillSendMsg: false,
+          };
         }
       },
       onAwarenessChange: ({ states }) => {
-        console.log(
-          "awareness change: ",
-          currentAwarenessStateRef.current,
-          states,
-        );
-
         const updatedAwarenessState = states.reduce<CurrentAwarenessState>(
           (acc, state) => {
             // only assign if it exists
@@ -174,6 +206,12 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
             return acc;
           },
           {},
+        );
+
+        console.log(
+          "awareness change: ",
+          currentAwarenessStateRef.current,
+          updatedAwarenessState,
         );
 
         const allClientIds = new Set([
@@ -235,6 +273,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
       value={{
         statelessMessengerRef,
         activeYdocResourcesRef,
+        tempYdocResourcesRef,
         markNoteAsActive,
         markNoteAsInactive,
       }}

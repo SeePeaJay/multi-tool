@@ -89,9 +89,6 @@ const Notelink = Node.create({
       initialTargetTitle: {
         default: "",
       },
-      blockIndexForNewBlockId: {
-        default: undefined,
-      },
     };
   },
   parseHTML() {
@@ -244,9 +241,6 @@ const BlockId = Node.create({
         parseHTML: (element) => element.getAttribute("id"),
         renderHTML: (attributes) => ({ id: attributes.id }),
       },
-      blockIndexForNewBlockId: {
-        default: "",
-      },
     };
   },
   parseHTML() {
@@ -258,7 +252,7 @@ const BlockId = Node.create({
   },
   renderHTML({ node, HTMLAttributes }) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { blockIndexForNewBlockId, ...attributesToRender } = HTMLAttributes;
+    const { ...attributesToRender } = HTMLAttributes;
 
     return [
       "span",

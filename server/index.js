@@ -119,31 +119,17 @@ const server = Server.configure({
           },
         );
       });
-
-      if (data.context.providerIsTemp) {
-        data.document.broadcastStateless(
-          JSON.stringify({
-            type: "destroyTempProvider",
-            description: "Update caused by a temp provider has been stored.",
-          }),
-        );
-      }
     } catch (err) {
       console.error("Error writing document:", err);
       throw err;
     }
   },
-  async onStateless({ payload, document, connection }) {
+  async onStateless({ payload, document }) {
     console.log(`server has received a stateless message "${payload}"!`);
 
     try {
       const msg = JSON.parse(payload);
       const { userId, noteId, title, ydocArray } = msg;
-
-      if (msg.type === "setTempProvider") {
-        connection.context.providerIsTemp = true;
-        return;
-      }
 
       if (msg.type === "rename") {
         await new Promise((resolve, reject) => {

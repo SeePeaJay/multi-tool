@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useRef, ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as Y from "yjs";
 import { db } from "../db";
-import setupYdoc from "../utils/yjs";
+import { setupYdoc } from "../utils/yjs";
 import { useAuth } from "./AuthContext";
 
 interface StatelessMessengerContextType {

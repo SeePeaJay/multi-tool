@@ -11,9 +11,8 @@ import * as Y from "yjs";
 import { db } from "../db";
 import { useAuth } from "../contexts/AuthContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
-import { useDefaultYdocUpdate } from "../hooks/useDefaultYdocUpdate";
 import { NotelinkNodeAttrs } from "../utils/notelink";
-import setupYdoc from "../utils/yjs";
+import { setupYdoc, getDefaultYdocUpdate } from "../utils/yjs";
 
 export type NoteSuggestion = {
   suggestionId: string;
@@ -50,7 +49,6 @@ const NoteSuggestionMenu = forwardRef<
   NoteSuggestionMenuProps
 >((props, ref) => {
   const { currentUser } = useAuth();
-  const getDefaultYdocUpdate = useDefaultYdocUpdate();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const { statelessMessengerRef, tempYdocResourcesRef } =
     useStatelessMessenger();

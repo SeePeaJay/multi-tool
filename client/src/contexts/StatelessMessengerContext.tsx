@@ -16,6 +16,12 @@ interface StatelessMessengerContextType {
 interface CurrentAwarenessState {
   [key: string]: string;
 }
+
+/**
+ * @property {Y.Doc} ydoc - The ydoc that represents the current note.
+ * @property {TiptapCollabProvider} provider - The provider instance responsible for syncing with the server.
+ * @property {number} activeClientCount - The number of connected clients actively editting the current note.
+ */
 interface ActiveYdocResources {
   [key: string]: {
     ydoc: Y.Doc;
@@ -23,6 +29,12 @@ interface ActiveYdocResources {
     activeClientCount: number;
   };
 }
+
+/**
+ * @property {TiptapCollabProvider} provider - The provider instance responsible for syncing with the server.
+ * @property {boolean} providerWillSendMsg - Indicates whether the provider will send a "temp" stateless message on
+ * sync. This will prompt other clients to create their own temp providers to receive the update from the server.
+ */
 interface TempYdocResources {
   [key: string]: {
     provider: TiptapCollabProvider;
@@ -30,10 +42,21 @@ interface TempYdocResources {
   };
 }
 
+/**
+ * @param {number} noteId - The id of the note.
+ * @param {number} isFromEditor - Whether the caller is the current editor component.
+ * @returns {Y.Doc} The ydoc representing the note.
+ */
 type MarkNoteAsActiveFn = (params: {
   noteId: string;
   isFromEditor?: boolean;
 }) => Y.Doc;
+
+/**
+ * @param {number} noteId - The id of the note.
+ * @param {number} isFromEditor - Whether the caller is the current editor component.
+ * @returns {void}
+ */
 type MarkNoteAsInactiveFn = (params: {
   noteId: string;
   isFromEditor?: boolean;
@@ -51,14 +74,25 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
   const location = useLocation();
 
   const noteIdParamRef = useRef<string | null>(null);
+
+  // A global provider (one per client) that handles stateless messages and awareness updates.
   const statelessMessengerRef = useRef<HocuspocusProvider | null>(null);
+
+  // The latest snapshot of the awareness state, mapping each client to the id of the note they're working on.
   const currentAwarenessStateRef = useRef<CurrentAwarenessState>({});
 
+  // A ref holding resources for all notes that are currently being edited by at least one connected client.
   const activeYdocResourcesRef = useRef<ActiveYdocResources>({});
+
+  // A ref storing temporary providers for notes.
+  // Each provider is destroyed (and removed from this object) once synchronization with the server is complete.
   const tempYdocResourcesRef = useRef<TempYdocResources>({});
 
+  // The most recent snapshot of the id for the note that the current editor is working on.
+  // This is used to determine whether the editor is making the first `markNoteAsActive` call for that note.
   const currentEditorNoteId = useRef("");
 
+  // Marks a note as active (some client's editor is editting the note).
   const markNoteAsActive: MarkNoteAsActiveFn = ({ noteId, isFromEditor }) => {
     // If this is not the first function call from the editor (for the current note id), return the existing Yjs doc.
     // This is necessary because of the way the fn is invoked in the component (can get called multiple times).
@@ -96,7 +130,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
       return ydoc;
     }
 
-    // Otherwise, increment count for number of connected clients for this note, and return the ydoc
+    // Increment count for number of connected clients actively editting the note.
     activeYdocResourcesRef.current[noteId].activeClientCount++;
 
     console.log(
@@ -107,6 +141,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
     return activeYdocResourcesRef.current[noteId].ydoc;
   };
 
+  // Marks a note as inactive.
   const markNoteAsInactive: MarkNoteAsInactiveFn = ({
     noteId,
     isFromEditor,
@@ -115,8 +150,10 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
       currentEditorNoteId.current = "";
     }
 
+    // Decrement count for number of connected clients actively editting the note.
     activeYdocResourcesRef.current[noteId].activeClientCount--;
 
+    // If there are no connected clients editting the note, then we can safely destroy and delete the provider.
     if (activeYdocResourcesRef.current[noteId].activeClientCount === 0) {
       activeYdocResourcesRef.current[noteId].provider.destroy();
       delete activeYdocResourcesRef.current[noteId];

@@ -13,7 +13,7 @@ import {
 } from "../utils/contentEditorHelpers";
 
 interface ContentEditorProps {
-  noteId: string;
+  noteId: string; // using noteId props means we can call `markNoteAsActive` to setup ydocRef early
 }
 
 const ContentEditor = ({ noteId }: ContentEditorProps) => {
@@ -22,7 +22,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
     markNoteAsActive,
     markNoteAsInactive,
   } = useStatelessMessenger();
-  const yDocRef = useRef<Y.Doc>(markNoteAsActive({ noteId, isFromEditor: true }));
+  const yDocRef = useRef<Y.Doc>(markNoteAsActive({ noteId, isFromEditor: true })); // `markNoteAsActive` will be called every time this component rerenders, but this is necessary because we need to ensure a ydoc is setup before executing the component's return statement  
 
   const authFetch = useAuthFetch();
   const editorRef = useRef<TiptapEditor | null>(null);
@@ -112,7 +112,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
     });
   }, [backlinksAreUpToDate]);
 
-  // connect to collaboration server
+  // Inform other clients that this note is active so they can set up their own note provider to get updates
   useEffect(() => {
     if (!statelessMessengerRef.current) { return; }
 
@@ -124,6 +124,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
     //   console.log('Number of changes to send to server:', n);
     // });
 
+    // Before component unmounts, mark current note as inactive and inform this change to other clients, so that they can destroy the note provider (assuming no other clients are actively working on the note)
     return () => {
       markNoteAsInactive({ noteId, isFromEditor: true });
 

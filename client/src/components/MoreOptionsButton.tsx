@@ -70,6 +70,7 @@ function MoreOptionsButton() {
           type: "delete",
           userId: currentUser,
           noteId: noteIdToDelete,
+          clientId: statelessMessengerRef.current?.document.clientID,
         }),
       );
     } catch (error) {

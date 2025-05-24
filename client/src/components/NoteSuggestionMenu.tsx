@@ -73,6 +73,7 @@ const NoteSuggestionMenu = forwardRef<
         noteId: newNoteId,
         title: titleToCreate,
         ydocArray: Array.from(defaultYdocUpdate),
+        clientId: statelessMessengerRef.current?.document.clientID,
       }),
     );
   };

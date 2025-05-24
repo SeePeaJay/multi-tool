@@ -47,6 +47,7 @@ const TitleEditor = () => {
             userId: currentUser,
             noteId: noteIdToUpdate,
             title: newTitle,
+            clientId: statelessMessengerRef.current?.document.clientID,
           }),
         );
 

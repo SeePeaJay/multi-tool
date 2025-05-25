@@ -20,7 +20,7 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { setCurrentUser } = useAuth();
+  const { setCurrentUser, setStarredId } = useAuth();
   const navigate = useNavigate();
 
   const timeoutRef = useRef<number | undefined>(undefined);
@@ -51,6 +51,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
         credentials: "include",
       });
 
+      setStarredId("");
       setCurrentUser("");
 
       navigate("/");

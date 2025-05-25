@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { db } from "../db";
 import { useAuth } from "../contexts/AuthContext";
@@ -10,11 +10,9 @@ import Editor from "../components/Editor";
 function Starred() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser, setCurrentUser } = useAuth();
+  const { currentUser, setCurrentUser, starredId, setStarredId } = useAuth();
   const authFetch = useAuthFetch();
   const { setIsLoading } = useLoading();
-
-  const [starredId, setStarredId] = useState<string | null>(null);
 
   const fetchInitialResources = async () => {
     try {
@@ -37,9 +35,8 @@ function Starred() {
         navigate(location.pathname, { replace: true });
       }
 
-      // fetch then store list of notes on initial load
-      const starred = await db.table("notes").get({ title: "Starred" });
-      if (!starred?.hasFetchedBacklinks) {
+      // if starred id hasn't been set yet, fetch notes then store them
+      if (!starredId) {
         setIsLoading(true);
 
         const noteList = await authFetch(`/api/notes`, {
@@ -57,10 +54,7 @@ function Starred() {
             }),
           ),
         );
-      }
 
-      // ensure starred id ref is set
-      if (!starredId) {
         setStarredId((await db.table("notes").get({ title: "Starred" }))?.id);
       }
 

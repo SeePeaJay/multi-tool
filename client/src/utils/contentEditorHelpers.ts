@@ -1,42 +1,10 @@
 import { Editor as TiptapEditor } from "@tiptap/react";
 import isEqual from "lodash.isequal";
-import { db } from "../db";
 
-interface FetchBacklinksParams {
-  authFetch: (
-    url: string,
-    options?: RequestInit,
-  ) => Promise<{ id: string; content: string }[]>;
-  noteId: string;
-}
 interface UpdateBacklinksParams {
   currentBacklinks: string[] | undefined;
   editorRef: React.MutableRefObject<TiptapEditor | null>;
 }
-
-const fetchBacklinks = async ({ authFetch, noteId }: FetchBacklinksParams) => {
-  // fetch notes that tag current note
-  const response = await authFetch(`/api/search`, {
-    credentials: "include",
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query: `#${noteId}` }),
-  });
-
-  // update Dexie
-  await Promise.all(
-    response.map((note: { id: string; content: string }) =>
-      db.notes.update(note.id, {
-        content: note.content,
-      }),
-    ),
-  );
-  await db.notes.update(noteId, {
-    hasFetchedBacklinks: true,
-  });
-};
 
 function updateEditorBacklinksIfOutdated({
   currentBacklinks,
@@ -106,4 +74,4 @@ function updateEditorBacklinksIfOutdated({
   }
 }
 
-export { updateEditorBacklinksIfOutdated, fetchBacklinks };
+export { updateEditorBacklinksIfOutdated };

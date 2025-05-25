@@ -2,58 +2,9 @@
  * This file defines a custom backlink node.
  */
 
-import { Extension, Node } from "@tiptap/core";
+import { Node } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import BacklinkNodeView from "../components/BacklinkNodeView";
-import { Plugin } from "@tiptap/pm/state";
-
-const PreventEarlyBacklinkDeletion = Extension.create({
-  name: "preventEarlyBacklinkDeletion",
-
-  // block transactions that delete backlinks that are not ready
-  // source: https://github.com/ueberdosis/tiptap/issues/181#issuecomment-1833401187
-  addProseMirrorPlugins() {
-    return [
-      new Plugin({
-        filterTransaction(transaction, state) {
-          let result = true; // true to keep, false to stop transaction
-          const replaceSteps: any[] = [];
-
-          transaction.steps.forEach((step: any, index) => {
-            if (step.jsonID === "replace") {
-              const nodes = step.slice.content.content;
-
-              if (nodes.length === 1) {
-                const node = nodes[0];
-
-                // if it's updating backlink, don't stop transaction
-                if (node.type.name === "backlink" && node.attrs.isLoaded) {
-                  return;
-                }
-              }
-
-              replaceSteps.push(index);
-            }
-          });
-
-          replaceSteps.forEach((index) => {
-            const map = transaction.mapping.maps[index] as any;
-            const oldStart = map.ranges[0];
-            const oldEnd = map.ranges[0] + map.ranges[1];
-
-            state.doc.nodesBetween(oldStart, oldEnd, (node) => {
-              if (node.type.name === "backlink" && !node.attrs.isLoaded) {
-                result = false;
-              }
-            });
-          });
-
-          return result;
-        },
-      }),
-    ];
-  },
-});
 
 const Backlink = Node.create({
   name: "backlink",
@@ -68,10 +19,6 @@ const Backlink = Node.create({
       // technically, the id of the tag contained by the target block
       targetBlockId: {
         default: "",
-      },
-      // whether we've already tried to fetch the target of this backlink
-      isLoaded: {
-        default: false,
       },
     };
   },
@@ -107,4 +54,4 @@ const Backlink = Node.create({
   },
 });
 
-export { Backlink, PreventEarlyBacklinkDeletion };
+export { Backlink };

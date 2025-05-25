@@ -11,7 +11,6 @@ export interface Note {
   content: string;
   ydocArray: number[];
   contentWords?: string[];
-  hasFetchedBacklinks: boolean;
 }
 
 const db = new Dexie("AppDatabase") as Dexie & {

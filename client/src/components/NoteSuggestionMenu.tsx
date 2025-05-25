@@ -62,7 +62,6 @@ const NoteSuggestionMenu = forwardRef<
       title: titleToCreate!,
       content: `<p class="frontmatter"></p><p></p>`,
       ydocArray: Array.from(defaultYdocUpdate),
-      hasFetchedBacklinks: true,
     });
 
     // Broadcast to server and other clients

@@ -50,7 +50,6 @@ function Starred() {
               title: noteList[noteId].title,
               content: noteList[noteId].content,
               ydocArray: noteList[noteId].ydocArray,
-              hasFetchedBacklinks: false,
             }),
           ),
         );

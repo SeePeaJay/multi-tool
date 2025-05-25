@@ -195,10 +195,6 @@ const Backlink = Node.create({
       targetBlockId: {
         default: "",
       },
-      isLoaded: {
-        // whether we've already tried to fetch the target of this backlink
-        default: false,
-      },
     };
   },
   parseHTML() {

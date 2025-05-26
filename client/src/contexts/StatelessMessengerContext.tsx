@@ -73,8 +73,6 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
   const navigate = useNavigate();
   const location = useLocation();
 
-  const noteIdParamRef = useRef<string | null>(null);
-
   // A global provider (one per client) that handles stateless messages and awareness updates.
   const statelessMessengerRef = useRef<HocuspocusProvider | null>(null);
 
@@ -91,6 +89,9 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
   // The most recent snapshot of the id for the note that the current editor is working on.
   // This is used to determine whether the editor is making the first `markNoteAsActive` call for that note.
   const currentEditorNoteId = useRef("");
+
+  // A copy of location pathname to avoid stale closure below
+  const locationPathnameRef = useRef("");
 
   // Marks a note as active (some client's editor is editting the note).
   const markNoteAsActive: MarkNoteAsActiveFn = ({ noteId, isFromEditor }) => {
@@ -166,9 +167,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   useEffect(() => {
-    noteIdParamRef.current = location.pathname.startsWith("/app/notes/")
-      ? location.pathname.replace("/app/notes/", "")
-      : null;
+    locationPathnameRef.current = location.pathname;
   }, [location.pathname]);
 
   useEffect(() => {
@@ -201,7 +200,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
         } else if (msg.type === "delete") {
           db.notes.delete(noteId);
 
-          if (noteIdParamRef.current === noteId) {
+          if (locationPathnameRef.current === `/app/notes/${noteId}`) {
             navigate("/app/notes", { replace: true });
           }
         } else if (msg.type === "temp") {

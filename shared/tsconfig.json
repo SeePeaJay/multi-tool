@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "commonjs",
+    "lib": ["es2017"],
+    "experimentalDecorators": true,
+    "outDir": "dist", // good practice
+    "declaration": true,
+    "skipLibCheck": true // skip type checking of declaration files; this also avoids the error you see from parent node modules
+  },
+  "include": ["**/*.ts"], // matches all files ending in .ts in the current directory and all subdirectories
+  "exclude": ["node_modules", "dist"]
+}

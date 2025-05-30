@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
     "target": "es2017",
-    "module": "commonjs",
-    "lib": ["es2017"],
+    "module": "ESNext",
+    "moduleResolution": "Node", // this is required for above to work - https://stackoverflow.com/a/57383664
+    "lib": ["es2017", "DOM", "DOM.Iterable"], // include DOM to avoid ts error with getAttribute in backlink.ts
     "experimentalDecorators": true,
     "outDir": "dist", // good practice
     "declaration": true,

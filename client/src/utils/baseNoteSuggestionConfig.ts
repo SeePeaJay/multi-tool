@@ -9,7 +9,7 @@ import NoteSuggestionMenu, {
   NoteSuggestionMenuRef,
   NoteSuggestion,
 } from "../components/NoteSuggestionMenu";
-import { NotelinkOptions } from "./notelink";
+import { NotelinkOptions } from "shared/tiptap/notelink";
 
 const parser = new DOMParser();
 const DOM_RECT_FALLBACK: DOMRect = {
@@ -38,10 +38,11 @@ async function getBlockSuggestionItems(
   return Promise.resolve(
     storedBlocks
       .map((block, index) => {
-        const blockId = parser
-          .parseFromString(block, "text/html")
-          .querySelector("span.block-id")
-          ?.getAttribute("id") || null;
+        const blockId =
+          parser
+            .parseFromString(block, "text/html")
+            .querySelector("span.block-id")
+            ?.getAttribute("id") || null;
         const blockIdDoesntExist = !blockId;
 
         return {
@@ -94,83 +95,84 @@ async function getTitleSuggestionItems(
   }
 }
 
-export const createBaseNoteSuggestionConfig = (): NotelinkOptions["suggestion"] => ({
-  allowSpaces: true,
+export const createBaseNoteSuggestionConfig =
+  (): NotelinkOptions["suggestion"] => ({
+    allowSpaces: true,
 
-  items: async ({ query }): Promise<NoteSuggestion[]> => {
-    if (!query) {
-      return Promise.resolve([]);
-    }
+    items: async ({ query }): Promise<NoteSuggestion[]> => {
+      if (!query) {
+        return Promise.resolve([]);
+      }
 
-    const [titleQuery, blockQuery] = query.split("::");
-    const cachedNote = await db.table("notes").get({ title: titleQuery });
+      const [titleQuery, blockQuery] = query.split("::");
+      const cachedNote = await db.table("notes").get({ title: titleQuery });
 
-    // if title has exact match and blockquery exists
-    if (cachedNote && blockQuery !== undefined) {
-      return getBlockSuggestionItems(cachedNote, blockQuery);
-    }
+      // if title has exact match and blockquery exists
+      if (cachedNote && blockQuery !== undefined) {
+        return getBlockSuggestionItems(cachedNote, blockQuery);
+      }
 
-    // otherwise, perform standard title search
-    return getTitleSuggestionItems(titleQuery);
-  },
+      // otherwise, perform standard title search
+      return getTitleSuggestionItems(titleQuery);
+    },
 
-  render: () => {
-    let component: ReactRenderer<NoteSuggestionMenuRef> | undefined;
-    let popup: TippyInstance | undefined;
+    render: () => {
+      let component: ReactRenderer<NoteSuggestionMenuRef> | undefined;
+      let popup: TippyInstance | undefined;
 
-    return {
-      onStart: (props) => {
-        component = new ReactRenderer(NoteSuggestionMenu, {
-          props,
-          editor: props.editor,
-        });
+      return {
+        onStart: (props) => {
+          component = new ReactRenderer(NoteSuggestionMenu, {
+            props,
+            editor: props.editor,
+          });
 
-        popup = tippy("body", {
-          getReferenceClientRect: () =>
-            props.clientRect?.() ?? DOM_RECT_FALLBACK,
-          appendTo: () => document.body,
-          content: component.element,
-          showOnCreate: true,
-          interactive: true,
-          trigger: "manual",
-          placement: "bottom-start",
-        })[0];
-      },
+          popup = tippy("body", {
+            getReferenceClientRect: () =>
+              props.clientRect?.() ?? DOM_RECT_FALLBACK,
+            appendTo: () => document.body,
+            content: component.element,
+            showOnCreate: true,
+            interactive: true,
+            trigger: "manual",
+            placement: "bottom-start",
+          })[0];
+        },
 
-      onUpdate(props) {
-        component?.updateProps(props);
+        onUpdate(props) {
+          component?.updateProps(props);
 
-        popup?.setProps({
-          getReferenceClientRect: () =>
-            props.clientRect?.() ?? DOM_RECT_FALLBACK,
-        });
-      },
+          popup?.setProps({
+            getReferenceClientRect: () =>
+              props.clientRect?.() ?? DOM_RECT_FALLBACK,
+          });
+        },
 
-      onKeyDown(props) {
-        if (props.event.key === "Escape") {
-          popup?.hide();
-          return true;
-        }
+        onKeyDown(props) {
+          if (props.event.key === "Escape") {
+            popup?.hide();
+            return true;
+          }
 
-        if (!component?.ref) {
-          return false;
-        }
+          if (!component?.ref) {
+            return false;
+          }
 
-        return component.ref.onKeyDown(props);
-      },
+          return component.ref.onKeyDown(props);
+        },
 
-      onExit() {
-        popup?.destroy();
-        component?.destroy();
+        onExit() {
+          popup?.destroy();
+          component?.destroy();
 
-        // Remove references to the old popup and component upon destruction/exit.
-        // (This should prevent redundant calls to `popup.destroy()`, which Tippy
-        // warns in the console is a sign of a memory leak, as the `suggestion`
-        // plugin seems to call `onExit` both when a suggestion menu is closed after
-        // a user chooses an option, *and* when the editor itself is destroyed.)
-        popup = undefined;
-        component = undefined;
-      },
-    };
-  },
-});
+          // Remove references to the old popup and component upon destruction/exit.
+          // (This should prevent redundant calls to `popup.destroy()`, which Tippy
+          // warns in the console is a sign of a memory leak, as the `suggestion`
+          // plugin seems to call `onExit` both when a suggestion menu is closed after
+          // a user chooses an option, *and* when the editor itself is destroyed.)
+          popup = undefined;
+          component = undefined;
+        },
+      };
+    },
+  });

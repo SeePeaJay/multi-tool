@@ -1,9 +1,9 @@
-import * as Y from "yjs";
-import { db } from "../db";
-import { createContentEditorExtensions } from "./contentEditorExtensions";
 import { TiptapTransformer } from "@hocuspocus/transformer";
 import { generateHTML } from "@tiptap/core";
 import sanitizeHtml from "sanitize-html";
+import { createContentEditorExtensions } from "shared";
+import * as Y from "yjs";
+import { db } from "../db";
 
 interface InitializeYDocArgs {
   noteId: string;
@@ -11,9 +11,7 @@ interface InitializeYDocArgs {
 }
 
 function getHtmlFromYdoc({ ydoc }: { ydoc: Y.Doc }) {
-  const editorExtensions = createContentEditorExtensions(() =>
-    Promise.resolve(""),
-  );
+  const editorExtensions = createContentEditorExtensions();
   const json = TiptapTransformer.fromYdoc(
     ydoc,
     "default", // The field used in Tiptap
@@ -56,15 +54,4 @@ async function setupYdoc({ noteId, ydoc }: InitializeYDocArgs) {
   });
 }
 
-function getDefaultYdocUpdate() {
-  const yDoc = new Y.Doc();
-  const yXmlFragment = yDoc.getXmlFragment("default");
-  const frontmatter = new Y.XmlElement("frontmatter");
-  const paragraph = new Y.XmlElement("paragraph");
-
-  yXmlFragment.push([frontmatter, paragraph]);
-
-  return Y.encodeStateAsUpdate(yDoc);
-}
-
-export { setupYdoc, getDefaultYdocUpdate };
+export { setupYdoc };

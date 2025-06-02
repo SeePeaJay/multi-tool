@@ -2,12 +2,14 @@ import Collaboration from "@tiptap/extension-collaboration";
 import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useRef, useState } from "react";
+import { createContentEditorExtensions } from "shared";
 import * as Y from "yjs";
 import { db } from "../db";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
-import { useAuthFetch } from "../hooks/AuthFetch";
-import { createContentEditorExtensions } from "../utils/contentEditorExtensions";
+import { createBaseNoteSuggestionConfig } from "../utils/baseNoteSuggestionConfig";
 import { updateEditorBacklinksIfOutdated } from "../utils/contentEditorHelpers";
+import BacklinkNodeView from "./BacklinkNodeView";
+import NotelinkNodeView from "./NotelinkNodeView";
 
 interface ContentEditorProps {
   noteId: string; // using noteId props means we can call `markNoteAsActive` to setup ydocRef early
@@ -21,7 +23,6 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
   } = useStatelessMessenger();
   const yDocRef = useRef<Y.Doc>(markNoteAsActive({ noteId, isFromEditor: true })); // `markNoteAsActive` will be called every time this component rerenders, but this is necessary because we need to ensure a ydoc is setup before executing the component's return statement  
 
-  const authFetch = useAuthFetch();
   const editorRef = useRef<TiptapEditor | null>(null);
   const [backlinksAreUpToDate, setBacklinksAreUpToDate] = useState(false);
 
@@ -100,7 +101,11 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
   return (
     <EditorProvider
       extensions={[
-        ...createContentEditorExtensions(authFetch),
+        ...createContentEditorExtensions({
+          NotelinkNodeView,
+          BacklinkNodeView,
+          baseNoteSuggestionConfig: createBaseNoteSuggestionConfig(),
+        }),
         Collaboration.configure({
           document: yDocRef.current,
         }),

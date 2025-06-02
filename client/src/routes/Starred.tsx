@@ -25,7 +25,7 @@ function Starred() {
           { credentials: "include" }, // include cookies with request; required for cookie session to function
         );
         const { userId }: { userId: string } = await response.json();
-        // console.log(response, userId);
+        console.log(response, userId);
 
         if (response.ok) {
           setCurrentUser(userId);

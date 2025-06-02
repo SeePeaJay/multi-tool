@@ -1,20 +1,22 @@
-require("dotenv").config();
+import 'dotenv/config';
 
-const { Server } = require("@hocuspocus/server");
-const { TiptapTransformer } = require("@hocuspocus/transformer");
-const { generateHTML } = require("@tiptap/html");
-const express = require("express");
-const cors = require("cors");
-const cookieSession = require("cookie-session");
-const { OAuth2Client } = require("google-auth-library");
-const { google } = require("googleapis");
-const { nanoid } = require("nanoid");
-const sanitizeHtml = require("sanitize-html");
-const sqlite3 = require("sqlite3").verbose();
-const Y = require("yjs");
-const createContentEditorExtensions = require("./contentEditorExtensions");
+import { Server } from "@hocuspocus/server";
+import { TiptapTransformer } from "@hocuspocus/transformer";
+import { generateHTML } from "@tiptap/html";
+import express from "express";
+import cors from "cors";
+import cookieSession from "cookie-session";
+import { OAuth2Client } from "google-auth-library";
+import { google } from "googleapis";
+import { nanoid } from "nanoid";
+import sanitizeHtml from "sanitize-html";
+import sqlite3 from "sqlite3";
+import * as Y from "yjs";
+import { getDefaultYdocUpdate, createContentEditorExtensions } from "shared";
 
-const db = new sqlite3.Database("./notes.db");
+const sqlite3Verbose = sqlite3.verbose();
+
+const db = new sqlite3Verbose.Database("./notes.db");
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS notes (
@@ -33,17 +35,6 @@ db.serialize(() => {
     )
   `);
 });
-
-function getDefaultYdocUpdate() {
-  const yDoc = new Y.Doc();
-  const yXmlFragment = yDoc.getXmlFragment("default");
-  const frontmatter = new Y.XmlElement("frontmatter");
-  const paragraph = new Y.XmlElement("paragraph");
-
-  yXmlFragment.push([frontmatter, paragraph]);
-
-  return Y.encodeStateAsUpdate(yDoc);
-}
 
 const server = Server.configure({
   port: 1234,

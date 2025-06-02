@@ -7,12 +7,13 @@ import { TiptapCollabProvider } from "@hocuspocus/provider";
 import type { SuggestionOptions, SuggestionProps } from "@tiptap/suggestion";
 import { nanoid } from "nanoid";
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
+import { getDefaultYdocUpdate } from "shared";
 import * as Y from "yjs";
 import { db } from "../db";
 import { useAuth } from "../contexts/AuthContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
-import { NotelinkNodeAttrs } from "../utils/notelink";
-import { setupYdoc, getDefaultYdocUpdate } from "../utils/yjs";
+import { NotelinkNodeAttrs } from "shared/tiptap/notelink";
+import { setupYdoc } from "../utils/yjs";
 
 export type NoteSuggestion = {
   suggestionId: string;

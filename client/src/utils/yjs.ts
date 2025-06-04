@@ -3,7 +3,7 @@ import { generateHTML } from "@tiptap/core";
 import sanitizeHtml from "sanitize-html";
 import { createContentEditorExtensions } from "shared";
 import * as Y from "yjs";
-import { db } from "../db";
+import { db, turndownService } from "../db";
 
 interface InitializeYDocArgs {
   noteId: string;
@@ -45,9 +45,12 @@ async function setupYdoc({ noteId, ydoc }: InitializeYDocArgs) {
 
   // set up persistence: save updates to IndexedDB
   ydoc.on("update", () => {
+    const html = getHtmlFromYdoc({ ydoc });
+
     db.notes.update(noteId, {
       ydocArray: Array.from(Y.encodeStateAsUpdate(ydoc)),
-      content: getHtmlFromYdoc({ ydoc }),
+      content: html,
+      contentWords: turndownService.turndown(html).split(/\s+/),
     });
 
     console.log("persisted: ", noteId, getHtmlFromYdoc({ ydoc }));

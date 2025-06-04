@@ -22,23 +22,10 @@ db.version(1).stores({
   notes: "id, &title, *contentWords",
 });
 
+// Specify markdown converter to prevent escaping potential Markdown syntax like `[` or `]`
 const turndownService = new TurndownService();
-
 turndownService.escape = function (string: string) {
-  return string; // prevents escaping potential Markdown syntax like `[` or `]`
+  return string;
 };
 
-db.notes.hook("creating", function (primKey, obj) {
-  obj.contentWords = [""];
-});
-
-db.notes.hook("updating", function (mods: Partial<Note>) {
-  if (mods.content) {
-    const markdown = turndownService.turndown(mods.content);
-    const words = markdown.split(/\s+/);
-
-    return { contentWords: words };
-  }
-});
-
-export { db };
+export { db, turndownService };

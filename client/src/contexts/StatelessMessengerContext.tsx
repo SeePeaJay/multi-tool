@@ -195,6 +195,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
             id: noteId,
             title,
             content: `<p class="frontmatter"></p><p></p>`,
+            contentWords: [""],
             ydocArray,
           });
         } else if (msg.type === "delete") {

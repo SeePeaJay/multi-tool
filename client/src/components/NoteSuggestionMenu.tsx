@@ -62,6 +62,7 @@ const NoteSuggestionMenu = forwardRef<
       id: newNoteId,
       title: titleToCreate!,
       content: `<p class="frontmatter"></p><p></p>`,
+      contentWords: [""],
       ydocArray: Array.from(defaultYdocUpdate),
     });
 

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { db } from "../db";
+import { db, turndownService } from "../db";
 import { useAuth } from "../contexts/AuthContext";
 import { useLoading } from "../contexts/LoadingContext";
 import { useAuthFetch } from "../hooks/AuthFetch";
@@ -49,6 +49,7 @@ function Starred() {
               id: noteId,
               title: noteList[noteId].title,
               content: noteList[noteId].content,
+              contentWords: turndownService.turndown(noteList[noteId].content).split(/\s+/),
               ydocArray: noteList[noteId].ydocArray,
             }),
           ),

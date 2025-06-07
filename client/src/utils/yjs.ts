@@ -38,7 +38,7 @@ async function setupYdoc({ noteId, ydoc }: InitializeYDocArgs) {
   if (ydocArray) {
     Y.applyUpdate(ydoc, new Uint8Array(ydocArray));
 
-    console.log("init ydoc for: ", noteId);
+    // console.log("init ydoc for: ", noteId);
   } else {
     console.warn(`No state found for note ID: ${noteId}`);
   }
@@ -53,7 +53,7 @@ async function setupYdoc({ noteId, ydoc }: InitializeYDocArgs) {
       contentWords: turndownService.turndown(html).split(/\s+/),
     });
 
-    console.log("persisted: ", noteId, getHtmlFromYdoc({ ydoc }));
+    // console.log("persisted: ", noteId, getHtmlFromYdoc({ ydoc }));
   });
 }
 

@@ -116,7 +116,7 @@ const server = Server.configure({
     }
   },
   async onStateless({ payload, document }) {
-    console.log(`server has received a stateless message "${payload}"!`);
+    // console.log(`server has received a stateless message "${payload}"!`);
 
     try {
       const msg = JSON.parse(payload);
@@ -298,43 +298,6 @@ app.get("/api/auth", async (req, res) => {
   }
 });
 
-app.get("/api/notes/:noteId", authCheck, async (req, res) => {
-  db.get(
-    "SELECT content FROM notes WHERE id = ? AND userId = ?",
-    [req.params.noteId, req.session.userId],
-    (err, row) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send("Error getting note");
-        return;
-      }
-
-      if (!row) {
-        res.status(404).send("Note not found");
-        return;
-      }
-
-      res.status(200).send(row.content);
-    },
-  );
-});
-
-app.post("/api/search", authCheck, async (req, res) => {
-  db.all(
-    "SELECT id, content FROM notes WHERE content LIKE ?",
-    [`%${req.body.query}%`],
-    (err, rows) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send("Error searching notes");
-        return;
-      }
-
-      res.status(200).send(rows);
-    },
-  );
-});
-
 app.get("/api/notes", authCheck, async (req, res) => {
   db.all(
     "SELECT id, title, content, ydocUpdate FROM notes WHERE userId = ?",
@@ -357,90 +320,9 @@ app.get("/api/notes", authCheck, async (req, res) => {
         ]),
       );
 
-      console.log(resultObject);
+      // console.log(resultObject);
 
       res.status(200).json(resultObject);
-    },
-  );
-});
-
-app.post("/api/notes/:noteId", authCheck, async (req, res) => {
-  const sanitizedContent = sanitizeHtml(req.body.updatedContent, {
-    allowedAttributes: {
-      "*": [
-        "id",
-        "class",
-        "data-type",
-        "data-target-note-id",
-        "data-target-block-id",
-      ],
-    },
-  });
-
-  db.run(
-    "UPDATE notes SET content = ? WHERE id = ? AND userId = ?",
-    [sanitizedContent, req.params.noteId, req.session.userId],
-    (err) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send("Error updating note");
-        return;
-      }
-
-      res.status(200).send(sanitizedContent);
-    },
-  );
-});
-
-app.post("/api/create/:noteId", authCheck, async (req, res) => {
-  db.run(
-    "INSERT INTO notes (id, userId, title, content) VALUES (?, ?, ?, ?)",
-    [
-      req.params.noteId,
-      req.session.userId,
-      req.body.title,
-      `<p class="frontmatter"></p><p></p>`,
-    ],
-    (err) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send("Error inserting note");
-        return;
-      }
-
-      res.status(200).send({ message: "Note created successfully" });
-    },
-  );
-});
-
-app.post("/api/rename/:noteId", authCheck, async (req, res) => {
-  db.run(
-    "UPDATE notes SET title = ? WHERE id = ? AND userId = ?",
-    [req.body.newTitle, req.params.noteId, req.session.userId],
-    (err) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send("Error renaming note");
-        return;
-      }
-
-      res.status(200).send({ message: "Note renamed successfully" });
-    },
-  );
-});
-
-app.post("/api/delete/:noteId", authCheck, async (req, res) => {
-  db.run(
-    "DELETE FROM notes WHERE id = ? AND userId = ?",
-    [req.params.noteId, req.session.userId],
-    (err) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send("Error deleting note");
-        return;
-      }
-
-      res.status(200).send({ message: "Note deleted successfully" });
     },
   );
 });
@@ -452,7 +334,7 @@ app.post("/api/logout", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  console.log(`Server app listening on port ${port}`);
 });
 
 // close db connection when the app terminates to prevent resource leakage

@@ -123,10 +123,10 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
         activeClientCount: 1,
       };
 
-      console.log(
-        `marked note ${noteId} as active for the first time: `,
-        activeYdocResourcesRef.current,
-      );
+      // console.log(
+      //   `marked note ${noteId} as active for the first time: `,
+      //   activeYdocResourcesRef.current,
+      // );
 
       return ydoc;
     }
@@ -134,10 +134,10 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
     // Increment count for number of connected clients actively editting the note.
     activeYdocResourcesRef.current[noteId].activeClientCount++;
 
-    console.log(
-      `incrementing active count for note ${noteId}: `,
-      activeYdocResourcesRef.current,
-    );
+    // console.log(
+    //   `incrementing active count for note ${noteId}: `,
+    //   activeYdocResourcesRef.current,
+    // );
 
     return activeYdocResourcesRef.current[noteId].ydoc;
   };
@@ -160,10 +160,10 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
       delete activeYdocResourcesRef.current[noteId];
     }
 
-    console.log(
-      `note ${noteId} marked as inactive: `,
-      activeYdocResourcesRef.current,
-    );
+    // console.log(
+    //   `note ${noteId} marked as inactive: `,
+    //   activeYdocResourcesRef.current,
+    // );
   };
 
   useEffect(() => {
@@ -244,11 +244,11 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
           {},
         );
 
-        console.log(
-          "awareness change: ",
-          currentAwarenessStateRef.current,
-          updatedAwarenessState,
-        );
+        // console.log(
+        //   "awareness change: ",
+        //   currentAwarenessStateRef.current,
+        //   updatedAwarenessState,
+        // );
 
         const allClientIds = new Set([
           ...Object.keys(currentAwarenessStateRef.current),

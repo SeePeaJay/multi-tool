@@ -220,7 +220,7 @@ const NoteSuggestionMenu = forwardRef<
   }));
 
   return (
-    <div className="relative flex flex-col gap-0.5 overflow-auto rounded-xl border border-solid border-gray-300 bg-white p-1.5 shadow">
+    <div className="suggestion-menu relative flex flex-col gap-0.5 overflow-auto rounded-xl border border-solid border-gray-300 bg-white p-1.5 shadow">
       {props.items.length ? (
         props.items.map((item, index) => (
           <button

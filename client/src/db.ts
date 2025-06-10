@@ -10,7 +10,7 @@ export interface Note {
   title: string;
   content: string;
   ydocArray: number[];
-  contentWords?: string[];
+  contentWords: string[];
 }
 
 const db = new Dexie("AppDatabase") as Dexie & {

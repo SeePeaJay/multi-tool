@@ -53,4 +53,32 @@ describe("Content Editor", () => {
 
     screen.debug();
   });
+
+  // paragraph
+
+  // heading
+
+  // code block
+
+  // notelink
+
+  // swap back and forth
+
+  // new blocklink (how to test jump to block?)
+
+  // again blocklink
+
+  // tag in frontmatter
+
+  // remove tag in frontmatter (how do you go back though?)
+
+  // tag in block
+
+  // remove tag in block
+
+  // tag a new note
+
+  // rename note
+
+  // delete note
 });

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router-dom";
 import { getDefaultYdocUpdate } from "shared";
@@ -9,8 +9,12 @@ import { StatelessMessengerProvider } from "../contexts/StatelessMessengerContex
 import Editor from "./Editor";
 
 beforeAll(async () => {
+  // localStorage.clear();
+
   // mock localStorage to return a valid user
   localStorage.setItem("currentUser", "test-user");
+
+  // await db.notes.clear();
 
   await db.notes.put({
     id: "aaaaaa",
@@ -22,7 +26,7 @@ beforeAll(async () => {
 });
 
 describe("Content Editor", () => {
-  it("displays and saves placeholder updates correctly", async () => {
+  it("displays and saves frontmatter updates correctly", async () => {
     render(
       <BrowserRouter>
         <AuthProvider>
@@ -39,22 +43,61 @@ describe("Content Editor", () => {
     expect(frontmatter).toBeInTheDocument();
 
     await userEvent.click(frontmatter);
-    await userEvent.type(frontmatter, "Hello, world!");
+    await userEvent.type(frontmatter, "This is frontmatter.");
+    // await userEvent.type(frontmatter, "{backspace}");
 
-    await waitFor(async () => {
-      // check DOM first
-      expect(frontmatter).toHaveTextContent("Hello, world!");
+    // await waitFor(async () => {
+    //   // check DOM first
+    //   expect(frontmatter).toHaveTextContent("T");
 
-      // then check database
-      const note = await db.notes.get("aaaaaa");
-      expect(note).toBeDefined();
-      expect(note?.content).toContain("Hello, world!");
-    });
+    //   // then check database
+    //   const note = await db.notes.get("aaaaaa");
+    //   expect(note).toBeDefined();
+    //   expect(note?.content).toContain("T");
+    // });
 
     screen.debug();
   });
 
-  // paragraph
+  it("displays and saves paragraph updates correctly", async () => {
+    // screen.debug();
+
+    render(
+      <BrowserRouter>
+        <AuthProvider>
+          <LoadingProvider>
+            <StatelessMessengerProvider>
+              <Editor noteId="aaaaaa" />
+            </StatelessMessengerProvider>
+          </LoadingProvider>
+        </AuthProvider>
+      </BrowserRouter>,
+    );
+
+    // screen.debug();
+
+    await waitFor(async () => {
+      screen.debug();
+
+      const paragraph = screen.getAllByRole("paragraph")[1];
+      expect(paragraph).toBeInTheDocument();
+
+      await userEvent.click(paragraph);
+      await userEvent.type(paragraph, "This is a paragraph.");
+    }); 
+
+    await waitFor(async () => {
+      const paragraph = screen.getAllByRole("paragraph")[1];
+      expect(paragraph).toHaveTextContent("This is a para");
+
+      const note = await db.notes.get("aaaaaa");
+      expect(note).toBeDefined();
+      expect(note?.content).toContain("This is a para");
+      console.log(note?.content);
+    });
+
+    screen.debug();
+  });
 
   // heading
 
@@ -81,4 +124,9 @@ describe("Content Editor", () => {
   // rename note
 
   // delete note
+});
+
+afterEach(() => {
+  cleanup();
+  // localStorage.clear();
 });

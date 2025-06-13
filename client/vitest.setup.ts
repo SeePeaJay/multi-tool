@@ -39,7 +39,3 @@ HTMLElement.prototype.getBoundingClientRect = getBoundingClientRect;
 HTMLElement.prototype.getClientRects = (): DOMRectList => new FakeDOMRectList();
 Range.prototype.getBoundingClientRect = getBoundingClientRect;
 Range.prototype.getClientRects = (): DOMRectList => new FakeDOMRectList();
-
-afterEach(() => {
-  cleanup();
-});

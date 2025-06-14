@@ -42,12 +42,11 @@ describe("<Editor />", () => {
 
     cy.get("p.frontmatter").should("contain", "This is frontmatter.");
     cy.then(() => db.notes.get("aaaaaa")).should((note) => {
-      // if this assertion fails, Cypress will automatically retry the whole statement until it passes, ensuring the database update from editor is detected.
-      expect(note?.content).to.contain("This is frontmatter.");
+      expect(note?.content).to.contain("This is frontmatter."); // if this assertion fails, Cypress will automatically retry the whole statement until it passes, ensuring the database update from editor is detected.
     });
   });
 
-  it("displays and saves paragraph updates correctly", async () => {
+  it("displays and saves paragraph updates correctly", () => {
     cy.mount(
       <BrowserRouter>
         <AuthProvider>
@@ -68,9 +67,56 @@ describe("<Editor />", () => {
     });
   });
 
-  // heading
+  it("displays and saves heading updates correctly", () => {
+    cy.mount(
+      <BrowserRouter>
+        <AuthProvider>
+          <LoadingProvider>
+            <StatelessMessengerProvider>
+              <Editor noteId="aaaaaa" />
+            </StatelessMessengerProvider>
+          </LoadingProvider>
+        </AuthProvider>
+      </BrowserRouter>,
+    );
 
-  // code block
+    cy.get("p")
+      .eq(1)
+      .click()
+      .type(
+        "# This is a level 1 heading.{enter}## This is a level 2 heading.{enter}### This is a level 3 heading.",
+      );
+
+    cy.get("h1").eq(1).should("contain", "This is a level 1 heading.");
+    cy.get("h2").should("contain", "This is a level 2 heading.");
+    cy.get("h3").should("contain", "This is a level 3 heading.");
+    cy.then(() => db.notes.get("aaaaaa")).should((note) => {
+      expect(note?.content).to.contain("This is a level 1 heading.");
+      expect(note?.content).to.contain("This is a level 2 heading.");
+      expect(note?.content).to.contain("This is a level 3 heading.");
+    });
+  });
+
+  it("displays and saves code block updates correctly", () => {
+    cy.mount(
+      <BrowserRouter>
+        <AuthProvider>
+          <LoadingProvider>
+            <StatelessMessengerProvider>
+              <Editor noteId="aaaaaa" />
+            </StatelessMessengerProvider>
+          </LoadingProvider>
+        </AuthProvider>
+      </BrowserRouter>,
+    );
+
+    cy.get("p").eq(1).click().type("``` This is a code block.");
+
+    cy.get("code").should("contain", "This is a code block.");
+    cy.then(() => db.notes.get("aaaaaa")).should((note) => {
+      expect(note?.content).to.contain("This is a code block.");
+    });
+  });
 
   // notelink
 

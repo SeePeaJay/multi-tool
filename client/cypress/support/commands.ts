@@ -24,14 +24,31 @@
 //
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
-//
-// declare global {
-//   namespace Cypress {
-//     interface Chainable {
-//       login(email: string, password: string): Chainable<void>
-//       drag(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
-//       dismiss(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
-//       visit(originalFn: CommandOriginalFn, url: string, options: Partial<VisitOptions>): Chainable<Element>
-//     }
+
+Cypress.Commands.add("waitForDbUpdate", (conditionFn: () => boolean) => {
+  const pollCondition = () => {
+    if (conditionFn()) {
+      return;
+    }
+    cy.wait(100).then(pollCondition);
+  };
+  pollCondition();
+});
+
+declare global {
+  namespace Cypress {
+    interface Chainable {
+      // login(email: string, password: string): Chainable<void>
+      // drag(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
+      // dismiss(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
+      // visit(originalFn: CommandOriginalFn, url: string, options: Partial<VisitOptions>): Chainable<Element>
+      waitForDbUpdate(conditionFn: () => boolean): Chainable<void>;
+    }
+  }
+}
+
+// declare namespace Cypress {
+//   interface Chainable {
+//     waitForDbUpdate(conditionFn: () => boolean): Chainable<void>;
 //   }
 // }

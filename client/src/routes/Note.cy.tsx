@@ -6,6 +6,22 @@ import { StatelessMessengerProvider } from "../contexts/StatelessMessengerContex
 import { db } from "../db";
 import Note from "./Note";
 
+function insertNoteLink(
+  pIndex: number,
+  linkTrigger: string,
+  linkTitle: string,
+  blockText?: string,
+) {
+  cy.get("p").eq(pIndex).click();
+  cy.get("p").eq(pIndex).type(linkTrigger);
+  cy.get(".suggestion-menu").should("exist");
+  cy.get("p")
+    .eq(pIndex)
+    .type(blockText ? `${linkTitle}::${blockText}` : linkTitle);
+  cy.get(".suggestion-menu").should("include.text", blockText || linkTitle);
+  cy.get("p").eq(pIndex).type("{enter}");
+}
+
 // setup storage before each test; cypress clears browser storage after each test by default
 beforeEach(async () => {
   localStorage.setItem("currentUser", "test-user"); // mock localStorage to return a valid user
@@ -36,11 +52,9 @@ describe("<Editor />", () => {
       </MemoryRouter>,
     );
 
-    cy.get("p").eq(1).click().type("[[test");
-    cy.get('.suggestion-menu').should('include.text', 'test');
-    cy.get("p").eq(1).click().type("{enter}");
+    insertNoteLink(1, "[[", "test");
 
-    cy.get("p").eq(1).should("contain", "test");
+    cy.get("p").eq(1).should("include.text", "[[test]]");
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
     cy.then(async () => {
       const starred = await db.notes.get("aaaaaa");
@@ -54,7 +68,8 @@ describe("<Editor />", () => {
     cy.get("span.notelink").click();
 
     cy.get("p").eq(1).should("have.text", "");
-    cy.then(async () => db.notes.get({ title: "test" })).should((note) => {
+    cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
+    cy.then(() => db.notes.get({ title: "test" })).should((note) => {
       expect(note?.content).to.equal('<p class="frontmatter"></p><p></p>');
     });
   });
@@ -74,9 +89,9 @@ describe("<Editor />", () => {
       </MemoryRouter>,
     );
 
-    cy.get("p").eq(1).click().type("[[test{enter}");
+    insertNoteLink(1, "[[", "test");
     cy.get("span.notelink").click();
-    cy.get("p").eq(1).click().type("[[Starred{enter}");
+    insertNoteLink(1, "[[", "Starred");
     cy.get("span.notelink").click();
 
     cy.get("p").eq(1).should("contain", "test");
@@ -101,17 +116,19 @@ describe("<Editor />", () => {
       </MemoryRouter>,
     );
 
-    cy.get("p").eq(1).click().type("[[test{enter}");
+    insertNoteLink(1, "[[", "test");
     cy.get("span.notelink").click();
+    insertNoteLink(1, "[[", "Starred");
     cy.get("p")
       .eq(1)
-      .click()
       .type(
-        "[[Starred{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}test paragraph",
+        "{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}test paragraph",
       );
     cy.get("span.notelink").click();
-    cy.get("p").eq(1).click().type("{enter}[[test::test paragraph{enter}");
+    cy.get("p").eq(1).click().type("{enter}");
+    insertNoteLink(2, "[[", "test", "test paragraph");
     cy.get("span.notelink")
+      .eq(1)
       .invoke("text") // get the text content, e.g., '[[a::b]]'
       .then((text) => {
         const match = text.match(/\[\[.*?::(.*?)\]\]/);
@@ -153,16 +170,15 @@ describe("<Editor />", () => {
       </MemoryRouter>,
     );
 
-    cy.get("p").eq(1).click().type("[[test{enter}");
+    insertNoteLink(1, "[[", "test");
     cy.get("span.notelink").click();
-    cy.get("p").eq(1).click().type("[[Starred{enter}{enter}test paragraph");
+    insertNoteLink(1, "[[", "Starred");
+    cy.get("p").eq(1).type("{enter}test paragraph");
     cy.get("span.notelink").click();
-    cy.get("p")
-      .eq(1)
-      .click()
-      .type(
-        "{enter}[[test::test paragraph{enter}{enter}[[test::test paragraph{enter}",
-      );
+    cy.get("p").eq(1).click().type("{enter}");
+    insertNoteLink(2, "[[", "test", "test paragraph");
+    cy.get("p").eq(2).type("{enter}");
+    insertNoteLink(3, "[[", "test", "test paragraph");
     cy.get("span.notelink").eq(1).click();
 
     cy.get("span.block-id").should("have.length", 1);
@@ -183,9 +199,9 @@ describe("<Editor />", () => {
       </MemoryRouter>,
     );
 
-    cy.get("p").eq(1).click().type("[[test{enter}");
+    insertNoteLink(1, "[[", "test");
     cy.get("span.notelink").click();
-    cy.get("p").eq(0).click().type("#Starred{enter}");
+    insertNoteLink(0, "#", "Starred");
     cy.get("span.tag").click();
 
     cy.get('div[data-type="backlink"]').should("have.length", 1);
@@ -201,7 +217,7 @@ describe("<Editor />", () => {
     });
   });
 
-  it("removes tags in frontmatter correctly (removes block link from previously tagged note", () => {
+  it("removes tags in frontmatter correctly (removes block link from previously tagged note)", () => {
     cy.mount(
       <MemoryRouter initialEntries={["/app/notes/aaaaaa"]}>
         <AuthProvider>
@@ -216,9 +232,9 @@ describe("<Editor />", () => {
       </MemoryRouter>,
     );
 
-    cy.get("p").eq(1).click().type("[[test{enter}");
+    insertNoteLink(1, "[[", "test");
     cy.get("span.notelink").click();
-    cy.get("p").eq(0).click().type("#Starred{enter}");
+    insertNoteLink(0, "#", "Starred");
     cy.get("span.tag").click();
     cy.get("span.notelink").click();
     cy.get("p").eq(0).click().type("{backspace}{backspace}");

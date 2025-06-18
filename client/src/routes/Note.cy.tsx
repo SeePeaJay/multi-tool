@@ -7,7 +7,7 @@ import { StatelessMessengerProvider } from "../contexts/StatelessMessengerContex
 import { db } from "../db";
 import Note from "./Note";
 import Notes from "./Notes";
-import '../index.css'; // include tailwind to properly set visibility of more options menu and modal
+import "../index.css"; // include tailwind to properly set visibility of more options menu and modal
 
 function insertNoteLink(
   pIndex: number,
@@ -106,9 +106,7 @@ describe("<Note />", () => {
 
       cy.then(() => db.notes.get({ title: "test" })).should((note) => {
         const noteLength = note!.contentWords.length;
-        expect(note!.contentWords[noteLength - 1].split("::")[1]).to.equal(
-          blockId,
-        );
+        expect(note!.contentWords[noteLength - 1]).to.equal(`::${blockId}`);
       });
 
       cy.then(() => db.notes.get("aaaaaa")).should((note) => {
@@ -282,9 +280,13 @@ describe("<Note />", () => {
     insertNoteLink(1, "[[", "test");
     cy.get("span.notelink").click();
     cy.contains('div[role="button"]', "test").click();
-    cy.get('ul.menu').should('not.have.class', 'invisible');
-    cy.contains('li', /delete/i).should('be.visible').click();
-    cy.contains('button', /confirm/i).should('be.visible').click();
+    cy.get("ul.menu").should("not.have.class", "invisible");
+    cy.contains("li", /delete/i)
+      .should("be.visible")
+      .click();
+    cy.contains("button", /confirm/i)
+      .should("be.visible")
+      .click();
 
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
     cy.then(() => db.notes.toArray()).should((notes) => {

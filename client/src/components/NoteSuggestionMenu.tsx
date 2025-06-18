@@ -92,9 +92,11 @@ const NoteSuggestionMenu = forwardRef<
     const targetElement = xmlFragment.toArray()[
       blockIndexForNewBlockId
     ] as Y.XmlElement;
+    const space = new Y.XmlText();
     const span = new Y.XmlElement("blockId");
+    space.insert(0, " ");
     span.setAttribute("id", newBlockId);
-    targetElement.insert(targetElement.length, [span]);
+    targetElement.insert(targetElement.length, [space, span]);
 
     // No need to create a temp provider if there already exists one that will send the temp stateless msg
     if (tempYdocResourcesRef.current[targetNoteId]?.providerWillSendMsg) {

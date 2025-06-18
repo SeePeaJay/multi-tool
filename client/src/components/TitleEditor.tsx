@@ -4,27 +4,25 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Text from "@tiptap/extension-text";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
 import { db } from "../db";
 import { useAuth } from "../contexts/AuthContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
 import Title from "../utils/title";
 
-const TitleEditor = () => {
+interface TitleEditorProps {
+  noteId: string;
+}
+
+const TitleEditor = ({ noteId }: TitleEditorProps) => {
   const { currentUser } = useAuth();
   const { statelessMessengerRef } = useStatelessMessenger();
-  const { noteId: noteIdParam } = useParams();
   const editorRef = useRef<TiptapEditor | null>(null);
   const previousTitleRef = useRef(""); // a copy of the last set title value, used to reset when rename fails
 
   const noteTitleToDisplay = useLiveQuery(async () => {
-    if (noteIdParam) {
-      const note = await db.notes.get(noteIdParam);
-      return note?.title;
-    }
-
-    return "Starred";
-  }, [noteIdParam]);
+    const note = await db.notes.get(noteId);
+    return note?.title;
+  });
 
   const renameNote = async () => {
     const newTitle = editorRef.current!.getText();
@@ -32,20 +30,13 @@ const TitleEditor = () => {
 
     if (newTitle && !newTitleAlreadyExists) {
       try {
-        let noteIdToUpdate = noteIdParam;
-
-        if (!noteIdToUpdate) {
-          const starred = await db.table("notes").get({ title: "Starred" });
-          noteIdToUpdate = starred.id;
-        }
-
-        db.notes.update(noteIdToUpdate!, { title: newTitle });
+        db.notes.update(noteId, { title: newTitle });
 
         statelessMessengerRef.current?.sendStateless(
           JSON.stringify({
             type: "rename",
             userId: currentUser,
-            noteId: noteIdToUpdate,
+            noteId: noteId,
             title: newTitle,
             clientId: statelessMessengerRef.current?.document.clientID,
           }),
@@ -65,8 +56,14 @@ const TitleEditor = () => {
     }
   };
 
-  // dynamically update editor content when the query changes due to reasons outside of renaming in the current editor
-  // e.g., loading a different note, or other tabs have renamed current note but current editor hasn't been updated yet
+  // Update editable status whenever title to display changes 
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.setEditable(noteTitleToDisplay !== "Starred");
+    }
+  }, [noteTitleToDisplay]);
+
+  // Dynamically update editor content when the query changes, due to other tabs having renamed current note, but current editor hasn't been updated yet
   useEffect(() => {
     async function updateEditorDisplayIfOutdated() {
       if (editorRef.current && noteTitleToDisplay) {
@@ -109,7 +106,6 @@ const TitleEditor = () => {
           placeholder: "Add a title...",
         }),
       ]}
-      editable={noteTitleToDisplay !== "Starred"}
       content=""
       onCreate={({ editor }) => {
         editorRef.current = editor;

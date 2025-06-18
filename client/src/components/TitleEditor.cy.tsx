@@ -4,9 +4,9 @@ import { db } from "../db";
 import { AuthProvider } from "../contexts/AuthContext";
 import { LoadingProvider } from "../contexts/LoadingContext";
 import { StatelessMessengerProvider } from "../contexts/StatelessMessengerContext";
-import Editor from "./Editor";
+import TitleEditor from "./TitleEditor";
 
-before(() => {
+it("renames correctly", () => {
   cy.then(() =>
     db.notes.put({
       id: "bbbbbb",
@@ -16,15 +16,13 @@ before(() => {
       ydocArray: Array.from(getDefaultYdocUpdate()),
     }),
   );
-});
 
-it("renames correctly", () => {
   cy.mount(
     <MemoryRouter initialEntries={["/app/notes/bbbbbb"]}>
       <AuthProvider>
         <LoadingProvider>
           <StatelessMessengerProvider>
-            <Editor noteId="bbbbbb" />
+            <TitleEditor noteId="bbbbbb" />
           </StatelessMessengerProvider>
         </LoadingProvider>
       </AuthProvider>

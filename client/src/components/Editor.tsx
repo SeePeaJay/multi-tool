@@ -17,7 +17,7 @@ const Editor = ({ noteId }: EditorProps) => {
         <SkeletonEditor />
       ) : (
         <>
-          <TitleEditor />
+          <TitleEditor noteId={noteId} />
           <ContentEditor noteId={noteId} />
         </>
       )}

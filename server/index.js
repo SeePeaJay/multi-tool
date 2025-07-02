@@ -1,11 +1,12 @@
-import 'dotenv/config';
+import "dotenv/config";
 
 import { Server } from "@hocuspocus/server";
 import { TiptapTransformer } from "@hocuspocus/transformer";
 import { generateHTML } from "@tiptap/html";
-import express from "express";
-import cors from "cors";
 import cookieSession from "cookie-session";
+import cors from "cors";
+import express from "express";
+import expressWs from "express-ws";
 import { OAuth2Client } from "google-auth-library";
 import { google } from "googleapis";
 import { nanoid } from "nanoid";
@@ -37,7 +38,13 @@ db.serialize(() => {
 });
 
 const server = Server.configure({
-  port: 1234,
+  async onAuthenticate({ request, documentName }) {
+    const [userId] = documentName.split("/");
+
+    if (userId !== request.session.userId) {
+      throw new Error("Not authorized to access this document");
+    }
+  },
   async onLoadDocument(data) {
     try {
       const [userId, noteId] = data.documentName.split("/");
@@ -141,7 +148,13 @@ const server = Server.configure({
         await new Promise((resolve, reject) => {
           db.run(
             "INSERT OR IGNORE INTO notes (id, userId, title, content, ydocUpdate) VALUES (?, ?, ?, ?, ?)",
-            [noteId, userId, title, `<p class="frontmatter"></p><p></p>`, new Uint8Array(ydocArray)],
+            [
+              noteId,
+              userId,
+              title,
+              `<p class="frontmatter"></p><p></p>`,
+              new Uint8Array(ydocArray),
+            ],
             (err) => {
               if (err) {
                 console.error("Error creating note:", err);
@@ -193,9 +206,8 @@ const server = Server.configure({
     );
   },
 });
-server.listen();
 
-const app = express();
+const { app } = expressWs(express());
 const port = 3000;
 const oAuth2Client = new OAuth2Client(
   process.env.CLIENT_ID,
@@ -331,6 +343,10 @@ app.post("/api/logout", (req, res) => {
   req.session = null;
   res.clearCookie("session");
   res.status(200).send({ message: "Logout successful" });
+});
+
+app.ws("/collaboration", (ws, req) => {
+  server.handleConnection(ws, req);
 });
 
 app.listen(port, () => {

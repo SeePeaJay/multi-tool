@@ -116,7 +116,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
         ydoc,
         provider: new TiptapCollabProvider({
           name: `${currentUser}/${noteId}`, // unique document identifier for syncing
-          baseUrl: "ws://127.0.0.1:1234",
+          baseUrl: "ws://localhost:5173/collaboration",
           token: "notoken", // your JWT token
           document: ydoc,
         }),
@@ -179,7 +179,8 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
 
     const statelessMessenger = new HocuspocusProvider({
       name: currentUser,
-      url: "ws://127.0.0.1:1234",
+      url: "ws://localhost:5173/collaboration",
+      token: "notoken", // your JWT token
       onStateless: ({ payload }) => {
         const msg = JSON.parse(payload);
         const { noteId, title, ydocArray, clientId } = msg;
@@ -217,7 +218,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
           tempYdocResourcesRef.current[noteId] = {
             provider: new TiptapCollabProvider({
               name: `${currentUser}/${noteId}`, // unique document identifier for syncing
-              baseUrl: "ws://127.0.0.1:1234",
+              baseUrl: "ws://localhost:5173/collaboration",
               token: "notoken", // your JWT token
               document: ydoc,
               onSynced() {

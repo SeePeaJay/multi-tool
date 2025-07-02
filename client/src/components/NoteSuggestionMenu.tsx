@@ -115,7 +115,7 @@ const NoteSuggestionMenu = forwardRef<
     tempYdocResourcesRef.current[targetNoteId] = {
       provider: new TiptapCollabProvider({
         name: `${currentUser}/${targetNoteId}`, // unique document identifier for syncing
-        baseUrl: "ws://127.0.0.1:1234",
+        baseUrl: "ws://localhost:5173/collaboration",
         token: "notoken", // your JWT token
         document: ydoc,
         onSynced() {

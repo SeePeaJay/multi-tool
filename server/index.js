@@ -216,15 +216,7 @@ const oAuth2Client = new OAuth2Client(
 );
 
 async function authCheck(req, res, next) {
-  if (req.session) {
-    req.session.sessionExpiry = Date.now() + 1 * 10 * 60 * 1000;
-
-    const sessionExpirationDate = new Date(req.session.sessionExpiry);
-    res.cookie("expiration", sessionExpirationDate.toISOString(), {
-      httpOnly: false,
-      expires: sessionExpirationDate,
-    });
-
+  if (req.session && req.session.userId) {
     next();
   } else {
     res.status(401).send("Session expired, please log in again");

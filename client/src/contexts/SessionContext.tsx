@@ -3,7 +3,6 @@ import React, {
   useContext,
   useEffect,
   useRef,
-  useState,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -11,7 +10,6 @@ import { useAuth } from "./AuthContext";
 
 // define shape of context
 interface SessionContextType {
-  setSessionExpiry: (sessionExpiry: number | null) => void;
   logout: (logoutMessage?: string) => void;
 }
 
@@ -20,14 +18,10 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { setCurrentUser, setStarredId } = useAuth();
+  const { currentUser, setCurrentUser, setStarredId } = useAuth();
   const navigate = useNavigate();
 
-  const timeoutRef = useRef<number | undefined>(undefined);
-  const [sessionExpiry, setSessionExpiry] = useState<number | null>(() => {
-    const storedTime = localStorage.getItem("sessionExpiry");
-    return storedTime ? +storedTime : null;
-  });
+  const intervalRef = useRef<NodeJS.Timeout>();
 
   const showToastError = (message: string) => {
     toast.error(message, {
@@ -44,8 +38,6 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = (logoutMessage?: string) => {
     try {
-      clearTimeout(timeoutRef.current);
-
       fetch("/api/logout", {
         method: "POST",
         credentials: "include",
@@ -71,42 +63,25 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    // clear any existing timeout when sessionExpiry changes
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+    if (!currentUser) { return; }
 
-    // either setup new timeout, or just logout if already expired
-    if (sessionExpiry) {
-      const timeUntilExpiry = sessionExpiry - Date.now();
-      // console.log(sessionExpiry, timeUntilExpiry);
+    async function checkSession() {
+      const res = await fetch("/api", { credentials: "include" });
 
-      if (timeUntilExpiry > 0) {
-        timeoutRef.current = setTimeout(() => {
-          logout("Session expired. Please log in again.");
-        }, timeUntilExpiry);
-      } else {
-        logout("Session expired. Please log in again.");
+      if (res.status !== 200) {
+        logout();
       }
     }
 
-    // cleanup function to clear timeout on unmount
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [sessionExpiry]);
+    // start polling
+    intervalRef.current = setInterval(checkSession, 10000);
 
-  // keep localstorage/dexie up to date
-  useEffect(() => {
-    if (sessionExpiry) {
-      localStorage.setItem("sessionExpiry", sessionExpiry.toString());
-    }
-  }, [sessionExpiry]);
+    // clean up on logout/unmount
+    return () => clearInterval(intervalRef.current);
+  }, [currentUser]);
 
   return (
-    <SessionContext.Provider value={{ setSessionExpiry, logout }}>
+    <SessionContext.Provider value={{ logout }}>
       {children}
     </SessionContext.Provider>
   );

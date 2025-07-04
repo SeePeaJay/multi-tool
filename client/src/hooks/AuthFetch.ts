@@ -4,24 +4,10 @@
   This is primarily designed to block unauthorized users from accessing GET endpoints.
 */
 
-import Cookies from "js-cookie";
 import { useSession } from "../contexts/SessionContext";
 
-const getSessionExpiryFromCookie = () => {
-  const expirationCookie = Cookies.get("expiration");
-  return expirationCookie ? new Date(expirationCookie).getTime() : null;
-};
-
 export const useAuthFetch = () => {
-  const { logout, setSessionExpiry } = useSession();
-
-  const updateSessionExpiry = () => {
-    const sessionExpiryFromCookie = getSessionExpiryFromCookie();
-
-    if (sessionExpiryFromCookie) {
-      setSessionExpiry(sessionExpiryFromCookie);
-    }
-  };
+  const { logout } = useSession();
 
   const authFetch = async (url: string, options = {}) => {
     try {
@@ -37,8 +23,6 @@ export const useAuthFetch = () => {
             throw new Error(`Unexpected error: ${response.statusText}`);
         }
       }
-
-      updateSessionExpiry();
 
       // check content-type header to determine how to process response
       const contentType = response.headers.get("content-type");

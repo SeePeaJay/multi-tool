@@ -1,15 +1,11 @@
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-} from "react";
+import React, { createContext, useContext, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "./AuthContext";
 
 // define shape of context
 interface SessionContextType {
+  isConnectedToServerRef: React.MutableRefObject<boolean>;
   logout: (logoutMessage?: string) => void;
 }
 
@@ -18,9 +14,10 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { currentUser, setCurrentUser, setStarredId } = useAuth();
+  const { currentUser, setCurrentUser } = useAuth();
   const navigate = useNavigate();
 
+  const isConnectedToServerRef = useRef(false);
   const intervalRef = useRef<NodeJS.Timeout>();
 
   const showToastError = (message: string) => {
@@ -43,7 +40,6 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
         credentials: "include",
       });
 
-      setStarredId("");
       setCurrentUser("");
 
       navigate("/");
@@ -63,7 +59,9 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    if (!currentUser) { return; }
+    if (!currentUser) {
+      return;
+    }
 
     async function checkSession() {
       const res = await fetch("/api", { credentials: "include" });
@@ -81,7 +79,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [currentUser]);
 
   return (
-    <SessionContext.Provider value={{ logout }}>
+    <SessionContext.Provider value={{ isConnectedToServerRef, logout }}>
       {children}
     </SessionContext.Provider>
   );

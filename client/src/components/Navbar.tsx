@@ -17,33 +17,28 @@ function Navbar() {
   return (
     <nav className="sticky top-0 z-50 flex h-10 w-full items-center justify-between bg-white/80 backdrop-blur">
       <div className="flex items-center">
-        {currentUser ? (
-          <>
-            <NavLink
-              to="/app/notes"
-              end
-              className={({ isActive }) =>
-                `ml-2 ${isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"}`
-              }
-            >
-              <StackIcon />
-            </NavLink>
-            <NavLink
-              to="/app"
-              end
-              className={({ isActive }) =>
-                `ml-2 ${isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"}`
-              }
-            >
-              <StarIcon />
-            </NavLink>
-          </>
-        ) : (
-          <></>
-        )}
+        <>
+          <NavLink
+            to="/app/notes"
+            end
+            className={({ isActive }) =>
+              `ml-2 ${isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"}`
+            }
+          >
+            <StackIcon />
+          </NavLink>
+          <NavLink
+            to="/app"
+            end
+            className={({ isActive }) =>
+              `ml-2 ${isActive ? "text-blue-600" : "text-gray-400 hover:text-gray-600"}`
+            }
+          >
+            <StarIcon />
+          </NavLink>
+        </>
       </div>
-      {currentUser &&
-        !isLoading &&
+      {!isLoading &&
         (location.pathname === "/app" ||
           location.pathname.startsWith("/app/notes/")) && <MoreOptionsButton />}
       <div className="flex items-center">

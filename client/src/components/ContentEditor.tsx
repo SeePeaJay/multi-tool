@@ -80,11 +80,9 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
 
   // Inform other clients that this note is active so they can set up their own note provider to get updates
   useEffect(() => {
-    if (!statelessMessengerRef.current) { return; }
-
     const statelessMessenger = statelessMessengerRef.current;
 
-    statelessMessenger.setAwarenessField("currentNote", noteId);
+    statelessMessenger?.setAwarenessField("currentNote", noteId);
 
     // collabProvider.on('unsyncedChanges', (n: number) => {
     //   console.log('Number of changes to send to server:', n);
@@ -94,9 +92,9 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
     return () => {
       markNoteAsInactive({ noteId, isFromEditor: true });
 
-      statelessMessenger.setAwarenessField("currentNote", undefined);
+      statelessMessenger?.setAwarenessField("currentNote", undefined);
     };
-  }, [statelessMessengerRef.current]);
+  }, []);
 
   return (
     <EditorProvider

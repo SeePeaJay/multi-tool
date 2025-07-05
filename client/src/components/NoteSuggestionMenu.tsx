@@ -3,17 +3,15 @@
  * Based on https://github.com/ueberdosis/tiptap/discussions/2274#discussioncomment-6745835
  */
 
-import { TiptapCollabProvider } from "@hocuspocus/provider";
 import type { SuggestionOptions, SuggestionProps } from "@tiptap/suggestion";
 import { nanoid } from "nanoid";
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
-import { getDefaultYdocUpdate } from "shared";
 import * as Y from "yjs";
-import { db } from "../db";
 import { useAuth } from "../contexts/AuthContext";
+import { useSession } from "../contexts/SessionContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
 import { NotelinkNodeAttrs } from "shared/tiptap/notelink";
-import { setupYdoc } from "../utils/yjs";
+import { setupTempProvider, setupYdoc } from "../utils/yjs";
 
 export type NoteSuggestion = {
   suggestionId: string;
@@ -50,33 +48,19 @@ const NoteSuggestionMenu = forwardRef<
   NoteSuggestionMenuProps
 >((props, ref) => {
   const { currentUser } = useAuth();
+  const { isConnectedToServerRef } = useSession();
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const { statelessMessengerRef, tempYdocResourcesRef } =
-    useStatelessMessenger();
+  const {
+    statelessMessengerRef,
+    metadataYdocRef,
+    tempYdocResourcesRef,
+    setNoteIdsWithPendingUpdates,
+  } = useStatelessMessenger();
 
+  // Add a new note entry to metadata ydoc, which on change will create note
   const createNote = async ({ newNoteId, titleToCreate }: CreateNoteParams) => {
-    const defaultYdocUpdate = getDefaultYdocUpdate();
-
-    // Add a new note entry to dexie
-    await db.notes.put({
-      id: newNoteId,
-      title: titleToCreate!,
-      content: `<p class="frontmatter"></p><p></p>`,
-      contentWords: [""],
-      ydocArray: Array.from(defaultYdocUpdate),
-    });
-
-    // Broadcast to server and other clients
-    statelessMessengerRef.current?.sendStateless(
-      JSON.stringify({
-        type: "create",
-        userId: currentUser,
-        noteId: newNoteId,
-        title: titleToCreate,
-        ydocArray: Array.from(defaultYdocUpdate),
-        clientId: statelessMessengerRef.current?.document.clientID,
-      }),
-    );
+    const noteMetadata = metadataYdocRef.current.getMap("noteMetadata");
+    noteMetadata.set(newNoteId, titleToCreate);
   };
 
   const insertBlockId = async ({
@@ -98,41 +82,17 @@ const NoteSuggestionMenu = forwardRef<
     span.setAttribute("id", newBlockId);
     targetElement.insert(targetElement.length, [space, span]);
 
-    // No need to create a temp provider if there already exists one that will send the temp stateless msg
-    if (tempYdocResourcesRef.current[targetNoteId]?.providerWillSendMsg) {
-      return;
+    if (isConnectedToServerRef.current) {
+      setupTempProvider({
+        currentUser,
+        noteId: targetNoteId,
+        ydoc,
+        statelessMessengerRef,
+        tempYdocResourcesRef,
+      });
+    } else {
+      setNoteIdsWithPendingUpdates((prev) => new Set(prev).add(targetNoteId));
     }
-
-    // Destroy the old temp provider if it won't send the temp stateless msg
-    if (
-      tempYdocResourcesRef.current[targetNoteId] &&
-      !tempYdocResourcesRef.current[targetNoteId].providerWillSendMsg
-    ) {
-      tempYdocResourcesRef.current[targetNoteId].provider.destroy();
-    }
-
-    // Create the temp provider
-    tempYdocResourcesRef.current[targetNoteId] = {
-      provider: new TiptapCollabProvider({
-        name: `${currentUser}/${targetNoteId}`, // unique document identifier for syncing
-        baseUrl: "ws://localhost:5173/collaboration",
-        token: "notoken", // your JWT token
-        document: ydoc,
-        onSynced() {
-          statelessMessengerRef.current?.sendStateless(
-            JSON.stringify({
-              type: "temp",
-              noteId: targetNoteId,
-              clientId: statelessMessengerRef.current?.document.clientID,
-            }),
-          );
-
-          tempYdocResourcesRef.current[targetNoteId].provider.destroy();
-          delete tempYdocResourcesRef.current[targetNoteId!];
-        },
-      }),
-      providerWillSendMsg: true,
-    };
   };
 
   const selectItem = async (index: number) => {

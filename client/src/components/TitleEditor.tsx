@@ -5,7 +5,6 @@ import Text from "@tiptap/extension-text";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useRef } from "react";
 import { db } from "../db";
-import { useAuth } from "../contexts/AuthContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
 import Title from "../utils/title";
 
@@ -14,8 +13,7 @@ interface TitleEditorProps {
 }
 
 const TitleEditor = ({ noteId }: TitleEditorProps) => {
-  const { currentUser } = useAuth();
-  const { statelessMessengerRef } = useStatelessMessenger();
+  const { metadataYdocRef } = useStatelessMessenger();
   const editorRef = useRef<TiptapEditor | null>(null);
   const previousTitleRef = useRef(""); // a copy of the last set title value, used to reset when rename fails
 
@@ -30,17 +28,8 @@ const TitleEditor = ({ noteId }: TitleEditorProps) => {
 
     if (newTitle && !newTitleAlreadyExists) {
       try {
-        db.notes.update(noteId, { title: newTitle });
-
-        statelessMessengerRef.current?.sendStateless(
-          JSON.stringify({
-            type: "rename",
-            userId: currentUser,
-            noteId: noteId,
-            title: newTitle,
-            clientId: statelessMessengerRef.current?.document.clientID,
-          }),
-        );
+        const noteMetadata = metadataYdocRef.current.getMap("noteMetadata");
+        noteMetadata.set(noteId, newTitle); 
 
         previousTitleRef.current = newTitle;
       } catch (error) {

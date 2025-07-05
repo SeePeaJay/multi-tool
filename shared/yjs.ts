@@ -11,4 +11,13 @@ function getDefaultYdocUpdate() {
   return Y.encodeStateAsUpdate(yDoc);
 }
 
-export { getDefaultYdocUpdate };
+function getDefaultMetadataYdocArray() {
+  const ydoc = new Y.Doc();
+  const ymap = ydoc.getMap('noteMetadata');
+
+  ymap.set("starred", "Starred");
+
+  return Y.encodeStateAsUpdate(ydoc);
+}
+
+export { getDefaultYdocUpdate, getDefaultMetadataYdocArray };

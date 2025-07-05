@@ -1,50 +1,41 @@
-import { Routes, Route } from "react-router-dom";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import { Outlet } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
+import { AuthProvider } from "./contexts/AuthContext";
+import { LoadingProvider } from "./contexts/LoadingContext";
 import Navbar from "./components/Navbar";
-import Root from "./routes/Root";
-import Starred from "./routes/Starred";
-import Notes from "./routes/Notes";
-import Note from "./routes/Note";
-import ProtectedRoute from "./routes/ProtectedRoute";
+import { SessionProvider } from "./contexts/SessionContext";
+import { StatelessMessengerProvider } from "./contexts/StatelessMessengerContext";
 import "react-toastify/dist/ReactToastify.min.css";
 
 function App() {
   return (
-    <>
-      <ToastContainer
-        position="top-center"
-        autoClose={5000}
-        hideProgressBar
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Root />} />
-        <Route path="/app" element={<Starred />} />
-        <Route
-          path="/app/notes"
-          element={
-            <ProtectedRoute>
-              <Notes />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/app/notes/:noteId"
-          element={
-            <ProtectedRoute>
-              <Note />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </>
+    <AuthProvider>
+      <LoadingProvider>
+        <SessionProvider>
+          <GoogleOAuthProvider clientId={import.meta.env.VITE_CLIENT_ID}>
+            <StatelessMessengerProvider>
+              <>
+                <ToastContainer
+                  position="top-center"
+                  autoClose={5000}
+                  hideProgressBar
+                  newestOnTop={false}
+                  closeOnClick
+                  rtl={false}
+                  pauseOnFocusLoss
+                  draggable
+                  pauseOnHover
+                  theme="colored"
+                />
+                <Navbar />
+                <Outlet />
+              </>
+            </StatelessMessengerProvider>
+          </GoogleOAuthProvider>
+        </SessionProvider>
+      </LoadingProvider>
+    </AuthProvider>
   );
 }
 

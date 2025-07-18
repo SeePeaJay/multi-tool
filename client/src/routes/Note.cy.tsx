@@ -1,4 +1,5 @@
 import { Routes, Route, MemoryRouter } from "react-router-dom";
+import * as Y from "yjs";
 import Navbar from "../components/Navbar";
 import { AuthProvider } from "../contexts/AuthContext";
 import { LoadingProvider } from "../contexts/LoadingContext";
@@ -27,14 +28,16 @@ function insertNoteLink(
 
 beforeEach(() => {
   cy.mount(
-    <MemoryRouter initialEntries={["/app/notes/aaaaaa"]}>
+    <MemoryRouter initialEntries={["/app/notes/starred"]}>
       <AuthProvider>
         <LoadingProvider>
-          <StatelessMessengerProvider>
-            <Routes>
-              <Route path="/app/notes/:noteId" element={<Note />} />
-            </Routes>
-          </StatelessMessengerProvider>
+          <SessionProvider>
+            <StatelessMessengerProvider>
+              <Routes>
+                <Route path="/app/notes/:noteId" element={<Note />} />
+              </Routes>
+            </StatelessMessengerProvider>
+          </SessionProvider>
         </LoadingProvider>
       </AuthProvider>
     </MemoryRouter>,
@@ -48,12 +51,23 @@ describe("<Note />", () => {
     cy.get("p").eq(1).should("include.text", "[[test]]");
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
     cy.then(async () => {
-      const starred = await db.notes.get("aaaaaa");
+      const starred = await db.notes.get("starred");
       const test = await db.notes.get({ title: "test" });
 
       return { starred, test };
     }).should(({ starred, test }) => {
       expect(starred?.content).to.contain(`[[${test?.id}]]`);
+    });
+    cy.then(() => db.user.get(0)).should((user) => {
+      expect(user).to.not.equal(undefined);
+
+      const metadataYdocArray = user!.metadataYdocArray;
+      const ydoc = new Y.Doc();
+      Y.applyUpdate(ydoc, new Uint8Array(metadataYdocArray));
+      const noteMetadata = ydoc.getMap("noteMetadata");
+      const noteIsCreatedInMetadata = Array.from(noteMetadata.values()).includes("test");
+
+      expect(noteIsCreatedInMetadata).to.equal(true);
     });
 
     cy.get("span.notelink").click();
@@ -109,7 +123,7 @@ describe("<Note />", () => {
         expect(note!.contentWords[noteLength - 1]).to.equal(`::${blockId}`);
       });
 
-      cy.then(() => db.notes.get("aaaaaa")).should((note) => {
+      cy.then(() => db.notes.get("starred")).should((note) => {
         const noteLength = note!.contentWords.length;
         expect(note!.contentWords[noteLength - 1]).to.include(blockId);
       });
@@ -141,7 +155,7 @@ describe("<Note />", () => {
     cy.get('div[data-type="backlink"]').should("have.text", "test");
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
     cy.then(async () => {
-      const starred = await db.notes.get("aaaaaa");
+      const starred = await db.notes.get("starred");
       const test = await db.notes.get({ title: "test" });
 
       return { starred, test };
@@ -158,14 +172,16 @@ describe("<Note />", () => {
     cy.get("span.notelink").click();
     cy.get("p").eq(0).click().type("{backspace}{backspace}");
     cy.mount(
-      <MemoryRouter initialEntries={["/app/notes/aaaaaa"]}>
+      <MemoryRouter initialEntries={["/app/notes/starred"]}>
         <AuthProvider>
           <LoadingProvider>
-            <StatelessMessengerProvider>
-              <Routes>
-                <Route path="/app/notes/:noteId" element={<Note />} />
-              </Routes>
-            </StatelessMessengerProvider>
+            <SessionProvider>
+              <StatelessMessengerProvider>
+                <Routes>
+                  <Route path="/app/notes/:noteId" element={<Note />} />
+                </Routes>
+              </StatelessMessengerProvider>
+            </SessionProvider>
           </LoadingProvider>
         </AuthProvider>
       </MemoryRouter>,
@@ -173,7 +189,7 @@ describe("<Note />", () => {
     cy.wait(1000); // wait for editor display after remount
 
     cy.get('div[data-type="backlink"]').should("have.length", 0);
-    cy.then(() => db.notes.get("aaaaaa")).should((note) => {
+    cy.then(() => db.notes.get("starred")).should((note) => {
       expect(note?.content).to.not.contain(`$ `);
     });
   });
@@ -191,11 +207,11 @@ describe("<Note />", () => {
 
     cy.get('div[data-type="backlink"]').should("have.length", 1);
     cy.get('div[data-type="backlink"]').should("include.text", "test");
-    cy.get('div[data-type="backlink"]').should("include.text", "#aaaaaa");
+    cy.get('div[data-type="backlink"]').should("include.text", "#starred");
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
     cy.get("@tagId").then((tagId) => {
       cy.then(async () => {
-        const starred = await db.notes.get("aaaaaa");
+        const starred = await db.notes.get("starred");
         const test = await db.notes.get({ title: "test" });
 
         return { starred, test };
@@ -213,14 +229,16 @@ describe("<Note />", () => {
     cy.get("span.notelink").click();
     cy.get("p").eq(1).click().type("{backspace}{backspace}");
     cy.mount(
-      <MemoryRouter initialEntries={["/app/notes/aaaaaa"]}>
+      <MemoryRouter initialEntries={["/app/notes/starred"]}>
         <AuthProvider>
           <LoadingProvider>
-            <StatelessMessengerProvider>
-              <Routes>
-                <Route path="/app/notes/:noteId" element={<Note />} />
-              </Routes>
-            </StatelessMessengerProvider>
+            <SessionProvider>
+              <StatelessMessengerProvider>
+                <Routes>
+                  <Route path="/app/notes/:noteId" element={<Note />} />
+                </Routes>
+              </StatelessMessengerProvider>
+            </SessionProvider>
           </LoadingProvider>
         </AuthProvider>
       </MemoryRouter>,
@@ -228,7 +246,7 @@ describe("<Note />", () => {
     cy.wait(1000); // wait for editor display after remount
 
     cy.get('div[data-type="backlink"]').should("have.length", 0);
-    cy.then(() => db.notes.get("aaaaaa")).should((note) => {
+    cy.then(() => db.notes.get("starred")).should((note) => {
       expect(note?.content).to.not.contain(`$ `);
     });
   });
@@ -260,7 +278,7 @@ describe("<Note />", () => {
 
   it("deletes correctly (notelinks display undefined title)", () => {
     cy.mount(
-      <MemoryRouter initialEntries={["/app/notes/aaaaaa"]}>
+      <MemoryRouter initialEntries={["/app/notes/starred"]}>
         <AuthProvider>
           <LoadingProvider>
             <SessionProvider>
@@ -291,6 +309,19 @@ describe("<Note />", () => {
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
     cy.then(() => db.notes.toArray()).should((notes) => {
       expect(notes.length).to.equal(1);
+    });
+    cy.then(() => db.user.get(0)).should((user) => {
+      expect(user).to.not.equal(undefined);
+
+      const metadataYdocArray = user!.metadataYdocArray;
+      const ydoc = new Y.Doc();
+      Y.applyUpdate(ydoc, new Uint8Array(metadataYdocArray));
+      const noteMetadata = ydoc.getMap("noteMetadata");
+      const noteIsDeletedFromMetadata = !Array.from(noteMetadata.values()).includes(
+        "test",
+      );
+
+      expect(noteIsDeletedFromMetadata).to.equal(true);
     });
   });
 });

@@ -17,7 +17,6 @@
 import "./commands";
 
 import { mount } from "cypress/react";
-import { getDefaultYdocUpdate } from "shared";
 import { db } from "../../src/db";
 
 // Augment the Cypress namespace to include type definitions for
@@ -37,19 +36,15 @@ Cypress.Commands.add("mount", mount);
 // Example use:
 // cy.mount(<MyComponent />)
 
-// Setup storage before each test; cypress clears browser storage after each test by default
+// Before each test, setup `currentUser` to prevent navbar from displaying sign-in button (Cypress clears localstorage before each test by default)
 beforeEach(() => {
   localStorage.setItem("currentUser", "test-user");
+});
 
-  cy.then(
-    () => db.notes.clear(), // clear notes in case you rerun test in test runner; data from previous attempt can linger
-  ).then(() =>
-    db.notes.put({
-      id: "aaaaaa",
-      title: "Starred",
-      content: `<p class="frontmatter"></p><p></p>`,
-      contentWords: [""],
-      ydocArray: Array.from(getDefaultYdocUpdate()),
-    }),
-  );
+// After each test, clear dexie data; otherwise, data from previous tests can linger (Cypress does not clear this automatically)
+afterEach(() => {
+  cy.then(() => {
+    db.notes.clear();
+    db.user.clear();
+  });
 });

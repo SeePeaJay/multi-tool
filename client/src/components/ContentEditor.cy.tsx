@@ -1,18 +1,21 @@
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "../contexts/AuthContext";
 import { LoadingProvider } from "../contexts/LoadingContext";
+import { SessionProvider } from "../contexts/SessionContext";
 import { StatelessMessengerProvider } from "../contexts/StatelessMessengerContext";
 import { db } from "../db";
 import Editor from "./Editor";
 
 beforeEach(() => {
   cy.mount(
-    <MemoryRouter initialEntries={["/app/notes/aaaaaa"]}>
+    <MemoryRouter initialEntries={["/app/notes/starred"]}>
       <AuthProvider>
         <LoadingProvider>
-          <StatelessMessengerProvider>
-            <Editor noteId="aaaaaa" />
-          </StatelessMessengerProvider>
+          <SessionProvider>
+            <StatelessMessengerProvider>
+              <Editor noteId="starred" />
+            </StatelessMessengerProvider>
+          </SessionProvider>
         </LoadingProvider>
       </AuthProvider>
     </MemoryRouter>,
@@ -25,7 +28,7 @@ describe("<ContentEditor />", () => {
 
     cy.get("p.frontmatter").should("contain", "This is frontmatter.");
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
-    cy.then(() => db.notes.get("aaaaaa")).should((note) => {
+    cy.then(() => db.notes.get("starred")).should((note) => {
       expect(note?.content).to.contain("This is frontmatter."); // if this assertion fails, Cypress will automatically retry the whole statement until it passes, ensuring the database update from editor is detected.
     });
   });
@@ -35,7 +38,7 @@ describe("<ContentEditor />", () => {
 
     cy.get("p").eq(1).should("contain", "This is a paragraph.");
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
-    cy.then(() => db.notes.get("aaaaaa")).should((note) => {
+    cy.then(() => db.notes.get("starred")).should((note) => {
       expect(note?.content).to.contain("This is a paragraph.");
     });
   });
@@ -52,7 +55,7 @@ describe("<ContentEditor />", () => {
     cy.get("h2").should("contain", "This is a level 2 heading.");
     cy.get("h3").should("contain", "This is a level 3 heading.");
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
-    cy.then(() => db.notes.get("aaaaaa")).should((note) => {
+    cy.then(() => db.notes.get("starred")).should((note) => {
       expect(note?.content).to.contain("This is a level 1 heading.");
       expect(note?.content).to.contain("This is a level 2 heading.");
       expect(note?.content).to.contain("This is a level 3 heading.");
@@ -64,7 +67,7 @@ describe("<ContentEditor />", () => {
 
     cy.get("code").should("contain", "This is a code block.");
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
-    cy.then(() => db.notes.get("aaaaaa")).should((note) => {
+    cy.then(() => db.notes.get("starred")).should((note) => {
       expect(note?.content).to.contain("This is a code block.");
     });
   });

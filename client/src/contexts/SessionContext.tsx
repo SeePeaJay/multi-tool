@@ -1,11 +1,12 @@
-import React, { createContext, useContext, useEffect, useRef } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "./AuthContext";
 
 // define shape of context
 interface SessionContextType {
-  isConnectedToServerRef: React.MutableRefObject<boolean>;
+  isConnectedToServer: boolean;
+  setIsConnectedToServer: React.Dispatch<React.SetStateAction<boolean>>;
   logout: (logoutMessage?: string) => void;
 }
 
@@ -17,7 +18,8 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   const { currentUser, setCurrentUser } = useAuth();
   const navigate = useNavigate();
 
-  const isConnectedToServerRef = useRef(false);
+  const [isConnectedToServer, setIsConnectedToServer] = useState(false);
+  
   const intervalRef = useRef<NodeJS.Timeout>();
 
   const showToastError = (message: string) => {
@@ -79,7 +81,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [currentUser]);
 
   return (
-    <SessionContext.Provider value={{ isConnectedToServerRef, logout }}>
+    <SessionContext.Provider value={{ isConnectedToServer, setIsConnectedToServer, logout }}>
       {children}
     </SessionContext.Provider>
   );

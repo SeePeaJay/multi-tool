@@ -7,11 +7,10 @@ import type { SuggestionOptions, SuggestionProps } from "@tiptap/suggestion";
 import { nanoid } from "nanoid";
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import * as Y from "yjs";
-import { useAuth } from "../contexts/AuthContext";
 import { useSession } from "../contexts/SessionContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
 import { NotelinkNodeAttrs } from "shared/tiptap/notelink";
-import { setupTempProvider, setupYdoc } from "../utils/yjs";
+import { setupYdoc } from "../utils/yjs";
 
 export type NoteSuggestion = {
   suggestionId: string;
@@ -47,15 +46,10 @@ const NoteSuggestionMenu = forwardRef<
   NoteSuggestionMenuRef,
   NoteSuggestionMenuProps
 >((props, ref) => {
-  const { currentUser } = useAuth();
-  const { isConnectedToServerRef } = useSession();
+  const { isConnectedToServer } = useSession();
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const {
-    statelessMessengerRef,
-    metadataYdocRef,
-    tempYdocResourcesRef,
-    setNoteIdsWithPendingUpdates,
-  } = useStatelessMessenger();
+  const { metadataYdocRef, setNoteIdsWithPendingUpdates, setupTempProvider } =
+    useStatelessMessenger();
 
   // Add a new note entry to metadata ydoc, which on change will create note
   const createNote = async ({ newNoteId, titleToCreate }: CreateNoteParams) => {
@@ -82,14 +76,8 @@ const NoteSuggestionMenu = forwardRef<
     span.setAttribute("id", newBlockId);
     targetElement.insert(targetElement.length, [space, span]);
 
-    if (isConnectedToServerRef.current) {
-      setupTempProvider({
-        currentUser,
-        noteId: targetNoteId,
-        ydoc,
-        statelessMessengerRef,
-        tempYdocResourcesRef,
-      });
+    if (isConnectedToServer) {
+      setupTempProvider({ noteId: targetNoteId, ydoc, shouldSendMsg: true });
     } else {
       setNoteIdsWithPendingUpdates((prev) => new Set(prev).add(targetNoteId));
     }

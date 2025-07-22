@@ -7,31 +7,35 @@ import {
   ReactNode,
   useState,
 } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { getDefaultYdocUpdate } from "shared";
 import * as Y from "yjs";
 import { db } from "../db";
 import {
-  setupYdoc,
-  setupMetadataYdoc,
-  setupTempProvider,
-  getMetadataProvider,
-} from "../utils/yjs";
+  MarkNoteAsActiveArgs,
+  MarkNoteAsInactiveArgs,
+  SetupTempProviderArgs,
+  useStatelessMessengerHelpers,
+} from "../utils/statelessMessengerHelpers";
 import { useAuth } from "./AuthContext";
-import { useSession } from "./SessionContext";
 
-interface StatelessMessengerContextType {
+export interface StatelessMessengerContextType {
   statelessMessengerRef: React.MutableRefObject<HocuspocusProvider | null>;
   metadataYdocRef: React.MutableRefObject<Y.Doc>;
   activeYdocResourcesRef: React.MutableRefObject<ActiveYdocResources>;
   currentAwarenessStateRef: React.MutableRefObject<CurrentAwarenessState>;
   tempYdocResourcesRef: React.MutableRefObject<TempYdocResources>;
   noteIdsWithPendingUpdates: Set<string>;
-  setNoteIdsWithPendingUpdates: React.Dispatch<React.SetStateAction<Set<string>>>;
+  setNoteIdsWithPendingUpdates: React.Dispatch<
+    React.SetStateAction<Set<string>>
+  >;
+  currentEditorNoteId: React.MutableRefObject<string>;
   locationPathnameRef: React.MutableRefObject<string>;
   starredId: string;
-  markNoteAsActive: MarkNoteAsActiveFn;
-  markNoteAsInactive: MarkNoteAsInactiveFn;
+  markNoteAsActive: (params: MarkNoteAsActiveArgs) => Y.Doc;
+  markNoteAsInactive: (params: MarkNoteAsInactiveArgs) => void;
+  setupTempProvider: (params: SetupTempProviderArgs) => void;
+  setupCollabProviders: () => void;
 }
 export interface CurrentAwarenessState {
   [key: string]: string;
@@ -59,26 +63,6 @@ export interface TempYdocResources {
   [key: string]: Set<TiptapCollabProvider>;
 }
 
-/**
- * @param {number} noteId - The id of the note.
- * @param {number} isFromEditor - Whether the caller is the current editor component.
- * @returns {Y.Doc} The ydoc representing the note.
- */
-export type MarkNoteAsActiveFn = (params: {
-  noteId: string;
-  isFromEditor?: boolean;
-}) => Y.Doc;
-
-/**
- * @param {number} noteId - The id of the note.
- * @param {number} isFromEditor - Whether the caller is the current editor component.
- * @returns {void}
- */
-export type MarkNoteAsInactiveFn = (params: {
-  noteId: string;
-  isFromEditor?: boolean;
-}) => void;
-
 const StatelessMessengerContext = createContext<
   StatelessMessengerContextType | undefined
 >(undefined);
@@ -88,8 +72,6 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const { currentUser } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-  const { isConnectedToServerRef } = useSession();
 
   // A global provider (one per client) that handles stateless messages and awareness updates.
   const statelessMessengerRef = useRef<HocuspocusProvider | null>(null);
@@ -129,93 +111,24 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
     return storedStarredId || "";
   });
 
-  // Marks a note as active (some client's editor is editting the note).
-  const markNoteAsActive: MarkNoteAsActiveFn = ({ noteId, isFromEditor }) => {
-    // If this is not the first function call from the editor (for the current note id), return the existing Yjs doc.
-    // This is necessary because of the way the fn is invoked in the component (can get called multiple times).
-    if (isFromEditor && currentEditorNoteId.current === noteId) {
-      return activeYdocResourcesRef.current[noteId].ydoc;
-    }
-
-    // Otherwise (if this is the first function call for the current note), mark it as such and continue.
-    if (isFromEditor && currentEditorNoteId.current !== noteId) {
-      currentEditorNoteId.current = noteId;
-    }
-
-    // If note isn't marked as active yet, mark it as active, and return ydoc (in case it's for editor)
-    if (!activeYdocResourcesRef.current[noteId]) {
-      const ydoc = new Y.Doc();
-
-      setupYdoc({ noteId, ydoc });
-
-      activeYdocResourcesRef.current[noteId] = {
-        ydoc,
-        provider: isConnectedToServerRef.current
-          ? new TiptapCollabProvider({
-              name: `${currentUser}/${noteId}`, // unique document identifier for syncing
-              baseUrl: "ws://localhost:5173/collaboration",
-              token: "notoken", // your JWT token
-              document: ydoc,
-            })
-          : null,
-        activeClientCount: 1,
-      };
-
-      // console.log(
-      //   `marked note ${noteId} as active for the first time: `,
-      //   activeYdocResourcesRef.current,
-      // );
-
-      return ydoc;
-    }
-
-    // Increment count for number of connected clients actively editting the note.
-    activeYdocResourcesRef.current[noteId].activeClientCount++;
-
-    // console.log(
-    //   `incrementing active count for note ${noteId}: `,
-    //   activeYdocResourcesRef.current,
-    // );
-
-    return activeYdocResourcesRef.current[noteId].ydoc;
-  };
-
-  // Marks a note as inactive.
-  const markNoteAsInactive: MarkNoteAsInactiveFn = ({
-    noteId,
-    isFromEditor,
-  }) => {
-    if (isFromEditor && currentEditorNoteId.current === noteId) {
-      currentEditorNoteId.current = "";
-    }
-
-    // Decrement count for number of connected clients actively editting the note.
-    activeYdocResourcesRef.current[noteId].activeClientCount--;
-
-    // If there are no connected clients editting the note, then we can safely destroy and delete the provider.
-    if (activeYdocResourcesRef.current[noteId].activeClientCount === 0) {
-      activeYdocResourcesRef.current[noteId].provider?.destroy();
-
-      if (isConnectedToServerRef.current) {
-        setupTempProvider({
-          currentUser,
-          noteId,
-          ydoc: activeYdocResourcesRef.current[noteId].ydoc,
-          statelessMessengerRef,
-          tempYdocResourcesRef,
-        });
-      } else {
-        setNoteIdsWithPendingUpdates((prev) => new Set(prev).add(noteId));
-      }
-
-      delete activeYdocResourcesRef.current[noteId];
-    }
-
-    // console.log(
-    //   `note ${noteId} marked as inactive: `,
-    //   activeYdocResourcesRef.current,
-    // );
-  };
+  const {
+    markNoteAsActive,
+    markNoteAsInactive,
+    setupMetadataYdoc,
+    setupTempProvider,
+    setupCollabProviders,
+    destroyCollabResources,
+  } = useStatelessMessengerHelpers({
+    statelessMessengerRef,
+    metadataYdocRef,
+    activeYdocResourcesRef,
+    currentEditorNoteId,
+    currentAwarenessStateRef,
+    tempYdocResourcesRef,
+    noteIdsWithPendingUpdates,
+    setNoteIdsWithPendingUpdates,
+    locationPathnameRef,
+  });
 
   useEffect(() => {
     locationPathnameRef.current = location.pathname;
@@ -228,6 +141,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
     );
   }, [noteIdsWithPendingUpdates]);
 
+  // Setup basic offline note data
   useEffect(() => {
     const ensureStarred = async () => {
       if (!starredId) {
@@ -246,39 +160,26 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
 
     setupMetadataYdoc({
       metadataYdoc: metadataYdocRef.current,
-      locationPathnameRef,
-      navigate,
     }).then(() => {
-      if (isConnectedToServerRef.current) {
-        statelessMessengerRef.current = getMetadataProvider({
-          currentUser,
-          metadataYdocRef,
-          currentAwarenessStateRef,
-          tempYdocResourcesRef,
-          markNoteAsActive,
-          markNoteAsInactive,
-        });
-      }
-
       ensureStarred();
     });
+  }, []);
 
-    const handleBeforeUnload = () => {
-      const activeYdocResources = activeYdocResourcesRef.current;
+  // After above effect is completed, setup providers if currentUser is defined
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
 
-      statelessMessengerRef.current?.destroy();
+    setupCollabProviders();
 
-      Object.values(activeYdocResources).forEach((resource) => {
-        resource.provider?.destroy();
-      });
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("beforeunload", destroyCollabResources);
 
     return () => {
-      handleBeforeUnload();
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+      destroyCollabResources();
+      window.removeEventListener("beforeunload", destroyCollabResources);
     };
-  }, []);
+  }, [currentUser]);
 
   return (
     <StatelessMessengerContext.Provider
@@ -290,10 +191,13 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
         tempYdocResourcesRef,
         noteIdsWithPendingUpdates,
         setNoteIdsWithPendingUpdates,
+        currentEditorNoteId,
         locationPathnameRef,
         starredId,
         markNoteAsActive,
         markNoteAsInactive,
+        setupTempProvider,
+        setupCollabProviders,
       }}
     >
       {children}

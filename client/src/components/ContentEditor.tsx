@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { createContentEditorExtensions } from "shared";
 import * as Y from "yjs";
 import { db } from "../db";
+import { useSession } from "../contexts/SessionContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
 import { createBaseNoteSuggestionConfig } from "../utils/baseNoteSuggestionConfig";
 import { updateEditorBacklinksIfOutdated } from "../utils/contentEditorHelpers";
@@ -18,20 +19,27 @@ interface ContentEditorProps {
 const ContentEditor = ({ noteId }: ContentEditorProps) => {
   const {
     statelessMessengerRef,
+    setNoteIdsWithPendingUpdates,
     markNoteAsActive,
     markNoteAsInactive,
   } = useStatelessMessenger();
-  const yDocRef = useRef<Y.Doc>(markNoteAsActive({ noteId, isFromEditor: true })); // `markNoteAsActive` will be called every time this component rerenders, but this is necessary because we need to ensure a ydoc is setup before executing the component's return statement  
+  const { isConnectedToServer } = useSession();
+
+  const yDocRef = useRef<Y.Doc>(
+    markNoteAsActive({ noteId, isFromEditor: true }),
+  ); // `markNoteAsActive` will be called every time this component rerenders, but this is necessary because we need to ensure a ydoc is setup before executing the component's return statement
 
   const editorRef = useRef<TiptapEditor | null>(null);
+
   const [backlinksAreUpToDate, setBacklinksAreUpToDate] = useState(false);
+  const [hasOfflineChanges, setHasOfflineChanges] = useState(false);
 
   const currentBacklinks = useLiveQuery(async () => {
     setBacklinksAreUpToDate(false);
 
     const output: string[] = [];
 
-    // query notes containing the keyword; changes to this result will recompute the live query 
+    // query notes containing the keyword; changes to this result will recompute the live query
     const targetNotes = await db.notes
       .filter(
         (note) =>
@@ -64,6 +72,14 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
 
     return output;
   }, []);
+
+  useEffect(() => {
+    if (isConnectedToServer) {
+      setHasOfflineChanges(false);
+    } else if (hasOfflineChanges) {
+      setNoteIdsWithPendingUpdates((prev) => new Set(prev).add(noteId));
+    }
+  }, [isConnectedToServer, hasOfflineChanges]);
 
   // insert backlink nodes for each note/block that tags the current note
   // also remove them if their target do not tag the current note
@@ -111,9 +127,17 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
       onCreate={({ editor }) => {
         editorRef.current = editor;
       }}
-      // onUpdate={({ editor }) => {
-      //   // diff(editor.getHTML());
-      // }}
+      onUpdate={() => {
+        // diff(editor.getHTML());
+
+        if (!editorRef.current?.isFocused) {
+          return; // onUpdate handler is called once on mount; only execute below when editor is actually being edited
+        }
+
+        if (!isConnectedToServer && !hasOfflineChanges) {
+          setHasOfflineChanges(true);
+        }
+      }}
     ></EditorProvider>
   );
 };

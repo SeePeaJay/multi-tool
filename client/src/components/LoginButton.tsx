@@ -1,16 +1,25 @@
 import { useGoogleLogin } from "@react-oauth/google";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import "./LoginButton.css";
 
 const LoginButton = () => {
-  const navigate = useNavigate();
+  const { setCurrentUser } = useAuth();
+
   const login = useGoogleLogin({
     flow: "auth-code",
     scope: "https://www.googleapis.com/auth/drive.file",
-    onSuccess: (credentialResponse) => {
+    onSuccess: async (credentialResponse) => {
       // console.log("Login success:", credentialResponse);
 
-      navigate("/app", { state: { code: credentialResponse.code } });
+      const response = await fetch(
+        `/api/auth?code=${credentialResponse.code}`,
+        { credentials: "include" }, // include cookies with request; required for cookie session to function
+      );
+      const { userId }: { userId: string } = await response.json();
+
+      if (response.ok) {
+        setCurrentUser(userId);
+      }
     },
     onError: () => {
       console.error("Login failed");

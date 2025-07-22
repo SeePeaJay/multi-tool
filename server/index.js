@@ -1,8 +1,5 @@
 import "dotenv/config";
 
-import { Server } from "@hocuspocus/server";
-import { TiptapTransformer } from "@hocuspocus/transformer";
-import { generateHTML } from "@tiptap/html";
 import cookieSession from "cookie-session";
 import cors from "cors";
 import express from "express";
@@ -10,202 +7,11 @@ import expressWs from "express-ws";
 import { OAuth2Client } from "google-auth-library";
 import { google } from "googleapis";
 import { nanoid } from "nanoid";
-import sanitizeHtml from "sanitize-html";
-import sqlite3 from "sqlite3";
-import * as Y from "yjs";
-import { getDefaultYdocUpdate, createContentEditorExtensions } from "shared";
+import { getDefaultYdocUpdate, getDefaultMetadataYdocArray } from "shared";
+import db, { dbRun } from "./utils/db.js";
+import { getHocuspocusServer } from "./utils/hocuspocus.js";
 
-const sqlite3Verbose = sqlite3.verbose();
-
-const db = new sqlite3Verbose.Database("./notes.db");
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS notes (
-      id TEXT PRIMARY KEY,
-      userId TEXT NOT NULL,
-      title TEXT NOT NULL,
-      content TEXT NOT NULL,
-      ydocUpdate BLOB NOT NULL,
-      UNIQUE (userId, title)
-    )
-  `);
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      username TEXT NOT NULL UNIQUE
-    )
-  `);
-});
-
-const server = Server.configure({
-  async onAuthenticate({ request, documentName }) {
-    const [userId] = documentName.split("/");
-
-    if (userId !== request.session.userId) {
-      throw new Error("Not authorized to access this document");
-    }
-  },
-  async onLoadDocument(data) {
-    try {
-      const [userId, noteId] = data.documentName.split("/");
-
-      if (!noteId) {
-        return;
-      }
-
-      const ydoc = new Y.Doc();
-      const update = await new Promise((resolve, reject) => {
-        db.get(
-          "SELECT ydocUpdate FROM notes WHERE id = ? AND userId = ?",
-          [noteId, userId],
-          (err, row) => {
-            if (err) {
-              console.error(err);
-              return reject(err);
-            }
-
-            if (!row) {
-              return reject(new Error("Note not found"));
-            }
-
-            resolve(row.ydocUpdate);
-          },
-        );
-      });
-
-      Y.applyUpdate(ydoc, update);
-
-      return ydoc;
-    } catch (err) {
-      console.error("Error loading document:", err);
-      throw err;
-    }
-  },
-  async onStoreDocument(data) {
-    try {
-      const [userId, noteId] = data.documentName.split("/");
-      const editorExtensions = createContentEditorExtensions();
-      const json = TiptapTransformer.fromYdoc(
-        data.document,
-        "default", // The field used in Tiptap
-        editorExtensions, // Your editor extensions
-      );
-      const html = generateHTML(json, editorExtensions);
-      const sanitizedHtml = sanitizeHtml(html, {
-        allowedAttributes: {
-          "*": [
-            "id",
-            "class",
-            "data-type",
-            "data-target-note-id",
-            "data-target-block-id",
-          ],
-        },
-      });
-
-      await new Promise((resolve, reject) => {
-        db.run(
-          "UPDATE notes SET content = ?, ydocUpdate = ? WHERE id = ? AND userId = ?",
-          [sanitizedHtml, Y.encodeStateAsUpdate(data.document), noteId, userId],
-          (err) => {
-            if (err) {
-              console.error(err);
-              return reject(err);
-            }
-
-            resolve();
-          },
-        );
-      });
-    } catch (err) {
-      console.error("Error writing document:", err);
-      throw err;
-    }
-  },
-  async onStateless({ payload, document }) {
-    // console.log(`server has received a stateless message "${payload}"!`);
-
-    try {
-      const msg = JSON.parse(payload);
-      const { userId, noteId, title, ydocArray } = msg;
-
-      if (msg.type === "rename") {
-        await new Promise((resolve, reject) => {
-          db.run(
-            "UPDATE notes SET title = ? WHERE id = ? AND userId = ?",
-            [title, noteId, userId],
-            (err) => {
-              if (err) {
-                console.error("Error renaming note:", err);
-                return reject(err);
-              }
-
-              resolve();
-            },
-          );
-        });
-      } else if (msg.type === "create") {
-        await new Promise((resolve, reject) => {
-          db.run(
-            "INSERT OR IGNORE INTO notes (id, userId, title, content, ydocUpdate) VALUES (?, ?, ?, ?, ?)",
-            [
-              noteId,
-              userId,
-              title,
-              `<p class="frontmatter"></p><p></p>`,
-              new Uint8Array(ydocArray),
-            ],
-            (err) => {
-              if (err) {
-                console.error("Error creating note:", err);
-                return reject(err);
-              }
-
-              resolve();
-            },
-          );
-        });
-      } else if (msg.type === "delete") {
-        await new Promise((resolve, reject) => {
-          db.run(
-            "DELETE FROM notes WHERE id = ? AND userId = ?",
-            [noteId, userId],
-            (err) => {
-              if (err) {
-                console.error("Error deleting note:", err);
-                return reject(err);
-              }
-
-              resolve();
-            },
-          );
-        });
-      }
-
-      // broadcast a stateless message to all connections based on document
-      document.broadcastStateless(payload);
-    } catch (err) {
-      console.error("Error handling stateless message:", err);
-      throw err;
-    }
-  },
-  onConnect(data) {
-    console.log(
-      "connect:    ",
-      data.socketId,
-      " : ",
-      server.getConnectionsCount() + 1,
-    );
-  },
-  onDisconnect(data) {
-    console.log(
-      "disconnect: ",
-      data.socketId,
-      " : ",
-      server.getConnectionsCount(),
-    );
-  },
-});
+const hocuspocusServer = getHocuspocusServer();
 
 const { app } = expressWs(express());
 const port = 3000;
@@ -252,7 +58,7 @@ app.get("/api/auth", async (req, res) => {
     db.get(
       "SELECT id FROM users WHERE username = ?",
       [userInfo.data.email],
-      (err, row) => {
+      async (err, row) => {
         if (err) {
           console.error(err);
           res.status(500).send("Error checking user existence");
@@ -262,33 +68,19 @@ app.get("/api/auth", async (req, res) => {
         const userId = row?.id || nanoid(6);
 
         if (!row) {
-          db.run(
-            "INSERT INTO users (id, username) VALUES (?, ?)",
-            [userId, userInfo.data.email],
-            (err) => {
-              if (err) {
-                console.error(err);
-                res.status(500).send("Error inserting user");
-                return;
-              }
-            },
+          await dbRun(
+            "INSERT INTO users (id, username, metadataYdocArray) VALUES (?, ?, ?)",
+            [userId, userInfo.data.email, getDefaultMetadataYdocArray()],
           );
-          db.run(
+          await dbRun(
             "INSERT INTO notes (id, userId, title, content, ydocUpdate) VALUES (?, ?, ?, ?, ?)",
             [
-              nanoid(6),
+              "starred",
               userId,
               "Starred",
               `<p class="frontmatter"></p><p></p>`,
               getDefaultYdocUpdate(),
             ],
-            (err) => {
-              if (err) {
-                console.error(err);
-                res.status(500).send("Error inserting Starred");
-                return;
-              }
-            },
           );
         }
 
@@ -338,7 +130,8 @@ app.post("/api/logout", (req, res) => {
 });
 
 app.ws("/collaboration", (ws, req) => {
-  server.handleConnection(ws, req);
+  console.log("/collaboration", req.session);
+  hocuspocusServer.handleConnection(ws, req);
 });
 
 app.listen(port, () => {

@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "./AuthContext";
 
@@ -16,7 +15,6 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { currentUser, setCurrentUser } = useAuth();
-  const navigate = useNavigate();
 
   const [isConnectedToServer, setIsConnectedToServer] = useState(false);
   
@@ -43,8 +41,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       setCurrentUser("");
-
-      navigate("/");
+      setIsConnectedToServer(false); // to make sure pending note ids can still update
 
       if (logoutMessage) {
         showToastError(logoutMessage);

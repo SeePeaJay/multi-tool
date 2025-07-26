@@ -24,9 +24,9 @@ const TitleEditor = ({ noteId }: TitleEditorProps) => {
 
   const renameNote = async () => {
     const newTitle = editorRef.current!.getText();
-    const newTitleAlreadyExists = await db.notes.get({ title: newTitle });
+    // const newTitleAlreadyExists = await db.notes.get({ title: newTitle });
 
-    if (newTitle && !newTitleAlreadyExists) {
+    if (newTitle) {
       try {
         const noteMetadata = metadataYdocRef.current.getMap("noteMetadata");
         noteMetadata.set(noteId, newTitle); 

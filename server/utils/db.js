@@ -10,8 +10,7 @@ db.serialize(() => {
       userId TEXT NOT NULL,
       title TEXT NOT NULL,
       content TEXT NOT NULL,
-      ydocUpdate BLOB NOT NULL,
-      UNIQUE (userId, title)
+      ydocUpdate BLOB NOT NULL
     )
   `);
   db.run(`

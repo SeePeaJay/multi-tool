@@ -1,4 +1,6 @@
 import { HocuspocusProvider, TiptapCollabProvider } from "@hocuspocus/provider";
+import { useNavigate } from "react-router-dom";
+import { getDefaultMetadataYdocArray, getDefaultYdocUpdate } from "shared";
 import * as Y from "yjs";
 import { db, turndownService } from "../db";
 import { useAuth } from "../contexts/AuthContext";
@@ -28,10 +30,18 @@ export type MarkNoteAsInactiveArgs = {
   isFromEditor?: boolean;
 };
 
+interface SetupMetadataYDocArgs {
+  metadataYdoc: Y.Doc;
+}
+
 export type SetupTempProviderArgs = {
   noteId: string;
   ydoc: Y.Doc;
   shouldSendMsg?: boolean;
+};
+
+type DestroyCollabResourcesForDeletedNoteArgs = {
+  noteId: string;
 };
 
 export const useStatelessMessengerHelpers = (
@@ -45,10 +55,12 @@ export const useStatelessMessengerHelpers = (
     | "tempYdocResourcesRef"
     | "noteIdsWithPendingUpdates"
     | "setNoteIdsWithPendingUpdates"
+    | "locationPathnameRef"
   >,
 ) => {
   const { currentUser } = useAuth();
   const authFetch = useAuthFetch();
+  const navigate = useNavigate();
   const { isConnectedToServer, setIsConnectedToServer } = useSession();
 
   // Marks a note as active (some client's editor is editting the note).
@@ -106,6 +118,12 @@ export const useStatelessMessengerHelpers = (
     noteId,
     isFromEditor,
   }: MarkNoteAsInactiveArgs) => {
+    // It's possible to call this when resource is already deleted (due to deleting a note), so simply return
+    if (!props.activeYdocResourcesRef.current[noteId]) {
+      return;
+    }
+
+    // Unset current active note id if call is from editor
     if (isFromEditor && props.currentEditorNoteId.current === noteId) {
       props.currentEditorNoteId.current = "";
     }
@@ -123,10 +141,9 @@ export const useStatelessMessengerHelpers = (
             props.activeYdocResourcesRef.current[noteId].provider
               ?.hasUnsyncedChanges, // still create temp if there is no unsynced; it's possible to create active, then immediately destroy it before it can sync data from server
         });
-
-        props.activeYdocResourcesRef.current[noteId].provider?.destroy();
       }
 
+      props.activeYdocResourcesRef.current[noteId].provider?.destroy();
       delete props.activeYdocResourcesRef.current[noteId];
     }
 
@@ -338,11 +355,80 @@ export const useStatelessMessengerHelpers = (
     }
   }
 
+  function destroyCollabResourcesForDeletedNote({
+    noteId,
+  }: DestroyCollabResourcesForDeletedNoteArgs) {
+    const activeYdocResources = props.activeYdocResourcesRef.current;
+    const currentActiveProvider = activeYdocResources[noteId].provider;
+    const tempProviders = props.tempYdocResourcesRef.current[noteId];
+
+    currentActiveProvider?.destroy();
+    delete activeYdocResources[noteId];
+
+    if (tempProviders) {
+      tempProviders.forEach((provider) => {
+        provider.destroy();
+      });
+      delete props.tempYdocResourcesRef.current[noteId];
+    }
+  }
+
+  async function setupMetadataYdoc({ metadataYdoc }: SetupMetadataYDocArgs) {
+    let ydocArray = (await db.user.get(0))?.metadataYdocArray;
+
+    if (!ydocArray) {
+      ydocArray = Array.from(getDefaultMetadataYdocArray());
+
+      await db.user.put({
+        id: 0,
+        metadataYdocArray: ydocArray,
+      });
+    }
+
+    Y.applyUpdate(metadataYdoc, new Uint8Array(ydocArray));
+
+    // set up persistence
+    metadataYdoc.on("update", () => {
+      db.user.update(0, {
+        metadataYdocArray: Array.from(Y.encodeStateAsUpdate(metadataYdoc)),
+      });
+    });
+
+    const ymap = metadataYdoc.getMap("noteMetadata");
+    ymap.observe((event) => {
+      event.changes.keys.forEach((change, key) => {
+        if (change.action === "add") {
+          db.notes.put({
+            id: key,
+            title: ymap.get(key) as string,
+            content: `<p class="frontmatter"></p><p></p>`,
+            contentWords: [""],
+            ydocArray: Array.from(getDefaultYdocUpdate()),
+          });
+        } else if (change.action === "update") {
+          db.notes.update(key, { title: ymap.get(key) as string });
+        } else {
+          destroyCollabResourcesForDeletedNote({ noteId: key }); // make sure to destroy all providers before markNoteAsInactive
+
+          db.notes.delete(key);
+
+          if (props.locationPathnameRef.current === `/app/notes/${key}`) {
+            props.currentEditorNoteId.current = "";
+
+            navigate("/app/notes", { replace: true });
+          }
+        }
+      });
+    });
+  }
+
   return {
     markNoteAsActive,
     markNoteAsInactive,
+    setupMetadataYdoc,
     setupTempProvider,
     setupCollabProviders,
     destroyCollabResources,
+    destroyCollabResourcesForDeletedNote,
   };
 };

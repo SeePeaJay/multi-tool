@@ -7,11 +7,10 @@ import {
   ReactNode,
   useState,
 } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { getDefaultYdocUpdate } from "shared";
 import * as Y from "yjs";
 import { db } from "../db";
-import { setupMetadataYdoc } from "../utils/yjs";
 import {
   MarkNoteAsActiveArgs,
   MarkNoteAsInactiveArgs,
@@ -73,7 +72,6 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const { currentUser } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
 
   // A global provider (one per client) that handles stateless messages and awareness updates.
   const statelessMessengerRef = useRef<HocuspocusProvider | null>(null);
@@ -116,6 +114,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
   const {
     markNoteAsActive,
     markNoteAsInactive,
+    setupMetadataYdoc,
     setupTempProvider,
     setupCollabProviders,
     destroyCollabResources,
@@ -128,6 +127,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
     tempYdocResourcesRef,
     noteIdsWithPendingUpdates,
     setNoteIdsWithPendingUpdates,
+    locationPathnameRef,
   });
 
   useEffect(() => {
@@ -160,8 +160,6 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
 
     setupMetadataYdoc({
       metadataYdoc: metadataYdocRef.current,
-      locationPathnameRef,
-      navigate,
     }).then(() => {
       ensureStarred();
     });

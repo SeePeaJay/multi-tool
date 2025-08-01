@@ -7,12 +7,14 @@ function Note() {
   const { noteId: noteIdParam } = useParams();
   const { starredId } = useStatelessMessenger();
 
+  const noteId = noteIdParam || "starred";
+
   return (
     <>
       {starredId ? (
         <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
-          <Editor key={noteIdParam!} noteId={noteIdParam!} />{" "}
-          {/* Note route must have a param; key forces remount when param changes */}
+          <Editor key={noteId} noteId={noteId} />{" "}
+          {/* key forces remount when noteId changes */}
         </div>
       ) : (
         <InitialLoadingScreen />

@@ -6,7 +6,6 @@ import App from "./App";
 import Notes from "./routes/Notes";
 import Note from "./routes/Note";
 import Root from "./routes/Root";
-import Starred from "./routes/Starred";
 import "./index.css";
 
 createRoot(document.getElementById("root")!).render(
@@ -15,7 +14,7 @@ createRoot(document.getElementById("root")!).render(
       <Route path="/" element={<Root />} />
 
       <Route element={<App />}>
-        <Route path="/app" element={<Starred />} />
+        <Route path="/app" element={<Note />} />
         <Route path="/app/notes" element={<Notes />} />
         <Route path="/app/notes/:noteId" element={<Note />} />
       </Route>

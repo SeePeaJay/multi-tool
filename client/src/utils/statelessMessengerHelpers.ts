@@ -371,6 +371,12 @@ export const useStatelessMessengerHelpers = (
       });
       delete props.tempYdocResourcesRef.current[noteId];
     }
+
+    props.setNoteIdsWithPendingUpdates((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(noteId);
+      return newSet;
+    });
   }
 
   async function setupMetadataYdoc({ metadataYdoc }: SetupMetadataYDocArgs) {

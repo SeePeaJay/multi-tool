@@ -8,9 +8,7 @@ import {
   useState,
 } from "react";
 import { useLocation } from "react-router-dom";
-import { getDefaultYdocUpdate } from "shared";
 import * as Y from "yjs";
-import { db } from "../db";
 import {
   MarkNoteAsActiveArgs,
   MarkNoteAsInactiveArgs,
@@ -116,6 +114,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
     setupTempProvider,
     setupCollabProviders,
     destroyCollabResources,
+    ensureStarredExists,
   } = useStatelessMessengerHelpers({
     statelessMessengerRef,
     metadataYdocRef,
@@ -139,28 +138,18 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
     );
   }, [noteIdsWithPendingUpdates]);
 
-  // Setup basic offline note data
   useEffect(() => {
-    const ensureStarred = async () => {
-      const starredExists = await db.notes.get("starred");
+    async function setupStarredAndMetadata() {
+      await setupMetadataYdoc({
+        metadataYdoc: metadataYdocRef.current,
+      });
 
-      if (!starredExists) {
-        await db.notes.put({
-          id: "starred", // a fixed id since Starred is unique and this makes it easy to merge two Starred
-          title: "Starred",
-          content: `<p class="frontmatter"></p><p></p>`,
-          contentWords: [""],
-          ydocArray: Array.from(getDefaultYdocUpdate()),
-        });
-      }
-    };
+      await ensureStarredExists();
 
-    setupMetadataYdoc({
-      metadataYdoc: metadataYdocRef.current,
-    }).then(() => {
-      ensureStarred();
       setStarredAndMetadataAreReady(true);
-    });
+    }
+
+    setupStarredAndMetadata();
   }, []);
 
   // After above effect is completed, setup providers if currentUser is defined

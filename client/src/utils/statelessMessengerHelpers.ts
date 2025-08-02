@@ -428,6 +428,20 @@ export const useStatelessMessengerHelpers = (
     });
   }
 
+  async function ensureStarredExists() {
+    const starredExists = await db.notes.get("starred");
+
+    if (!starredExists) {
+      await db.notes.put({
+        id: "starred", // a fixed id since Starred is unique and this makes it easy to merge two Starred
+        title: "Starred",
+        content: `<p class="frontmatter"></p><p></p>`,
+        contentWords: [""],
+        ydocArray: Array.from(getDefaultYdocUpdate()),
+      });
+    }
+  };
+
   return {
     markNoteAsActive,
     markNoteAsInactive,
@@ -436,5 +450,6 @@ export const useStatelessMessengerHelpers = (
     setupCollabProviders,
     destroyCollabResources,
     destroyCollabResourcesForDeletedNote,
+    ensureStarredExists,
   };
 };

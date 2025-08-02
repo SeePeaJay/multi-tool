@@ -1,7 +1,7 @@
 import { TiptapTransformer } from "@hocuspocus/transformer";
 import { generateHTML } from "@tiptap/core";
 import sanitizeHtml from "sanitize-html";
-import { createContentEditorExtensions } from "shared";
+import { createContentEditorExtensions, getDefaultYdocUpdate } from "shared";
 import * as Y from "yjs";
 import { db, turndownService } from "../db";
 
@@ -33,18 +33,32 @@ function getHtmlFromYdoc({ ydoc }: { ydoc: Y.Doc }) {
 }
 
 async function setupYdoc({ noteId, ydoc }: InitializeYDocArgs) {
-  // hydrate from persisted state if available
-  const ydocArray = (await db.notes.get(noteId))?.ydocArray;
+  const ydocArray = (await db.notes.get(noteId))?.ydocArray; // hydrate from persisted state if available
+  let update;
+
+  // console.log("init ydoc for: ", noteId);
 
   if (ydocArray) {
-    Y.applyUpdate(ydoc, new Uint8Array(ydocArray));
-
-    // console.log("init ydoc for: ", noteId);
+    update = new Uint8Array(ydocArray);
   } else {
-    console.warn(`No state found for note ID: ${noteId}`);
+    update = getDefaultYdocUpdate();
+
+    console.warn(
+      `No state found for note ID: ${noteId}, initializing note data`,
+    ); // note data should be init at this point, hence the warning
+
+    await db.notes.put({
+      id: noteId,
+      title: noteId === "starred" ? "Starred" : "",
+      content: `<p class="frontmatter"></p><p></p>`,
+      contentWords: [""],
+      ydocArray: Array.from(update),
+    }); // but since the ydoc is designed to persist any changes later, makes sense to ensure the row exists and can be updated now
   }
 
-  // set up persistence: save updates to IndexedDB
+  Y.applyUpdate(ydoc, update);
+
+  // set up persistence
   ydoc.on("update", () => {
     const html = getHtmlFromYdoc({ ydoc });
 

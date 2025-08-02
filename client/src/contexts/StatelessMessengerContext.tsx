@@ -31,7 +31,7 @@ export interface StatelessMessengerContextType {
   >;
   currentEditorNoteId: React.MutableRefObject<string>;
   locationPathnameRef: React.MutableRefObject<string>;
-  starredId: string;
+  starredAndMetadataAreReady: boolean;
   markNoteAsActive: (params: MarkNoteAsActiveArgs) => Y.Doc;
   markNoteAsInactive: (params: MarkNoteAsInactiveArgs) => void;
   setupTempProvider: (params: SetupTempProviderArgs) => void;
@@ -105,11 +105,9 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
   // A copy of location pathname to avoid stale closure below
   const locationPathnameRef = useRef("");
 
-  // maintain a starred id variable from localStorage that can be checked synchronously for starred's existence
-  const [starredId, setStarredId] = useState(() => {
-    const storedStarredId = localStorage.getItem("starredId");
-    return storedStarredId || "";
-  });
+  // a variable that prevents editor from rendering until default note data are init
+  const [starredAndMetadataAreReady, setStarredAndMetadataAreReady] =
+    useState(false);
 
   const {
     markNoteAsActive,
@@ -144,7 +142,9 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
   // Setup basic offline note data
   useEffect(() => {
     const ensureStarred = async () => {
-      if (!starredId) {
+      const starredExists = await db.notes.get("starred");
+
+      if (!starredExists) {
         await db.notes.put({
           id: "starred", // a fixed id since Starred is unique and this makes it easy to merge two Starred
           title: "Starred",
@@ -152,9 +152,6 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
           contentWords: [""],
           ydocArray: Array.from(getDefaultYdocUpdate()),
         });
-
-        setStarredId("starred");
-        localStorage.setItem("starredId", "starred");
       }
     };
 
@@ -162,6 +159,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
       metadataYdoc: metadataYdocRef.current,
     }).then(() => {
       ensureStarred();
+      setStarredAndMetadataAreReady(true);
     });
   }, []);
 
@@ -193,7 +191,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
         setNoteIdsWithPendingUpdates,
         currentEditorNoteId,
         locationPathnameRef,
-        starredId,
+        starredAndMetadataAreReady,
         markNoteAsActive,
         markNoteAsInactive,
         setupTempProvider,

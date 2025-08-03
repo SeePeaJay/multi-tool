@@ -202,7 +202,7 @@ export const useStatelessMessengerHelpers = (
         await Promise.all(
           Object.keys(noteList)
             .filter(
-              ([noteId]) =>
+              (noteId) =>
                 props.currentEditorNoteId.current !== noteId &&
                 !props.noteIdsWithPendingUpdates.has(noteId),
             )
@@ -359,11 +359,14 @@ export const useStatelessMessengerHelpers = (
     noteId,
   }: DestroyCollabResourcesForDeletedNoteArgs) {
     const activeYdocResources = props.activeYdocResourcesRef.current;
-    const currentActiveProvider = activeYdocResources[noteId].provider;
+    
+    const activeResourceToDestroy = activeYdocResources[noteId];
     const tempProviders = props.tempYdocResourcesRef.current[noteId];
 
-    currentActiveProvider?.destroy();
-    delete activeYdocResources[noteId];
+    if (activeResourceToDestroy) {
+      activeResourceToDestroy.provider?.destroy(); // destroy if online
+      delete activeYdocResources[noteId];
+    } // delete if on page
 
     if (tempProviders) {
       tempProviders.forEach((provider) => {
@@ -440,7 +443,7 @@ export const useStatelessMessengerHelpers = (
         ydocArray: Array.from(getDefaultYdocUpdate()),
       });
     }
-  };
+  }
 
   return {
     markNoteAsActive,

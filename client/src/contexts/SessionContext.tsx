@@ -1,11 +1,10 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "./AuthContext";
 
 // define shape of context
 interface SessionContextType {
-  isConnectedToServer: boolean;
-  setIsConnectedToServer: React.Dispatch<React.SetStateAction<boolean>>;
+  isConnectedToServerRef: React.MutableRefObject<boolean>;
   logout: (logoutMessage?: string) => void;
 }
 
@@ -16,8 +15,8 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const { currentUser, setCurrentUser } = useAuth();
 
-  const [isConnectedToServer, setIsConnectedToServer] = useState(false);
-  
+  const isConnectedToServerRef = useRef(false);
+
   const intervalRef = useRef<NodeJS.Timeout>();
 
   const showToastError = (message: string) => {
@@ -41,7 +40,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       setCurrentUser("");
-      setIsConnectedToServer(false); // to make sure pending note ids can still update
+      isConnectedToServerRef.current = false; // to make sure pending note ids can still update
 
       if (logoutMessage) {
         showToastError(logoutMessage);
@@ -78,7 +77,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [currentUser]);
 
   return (
-    <SessionContext.Provider value={{ isConnectedToServer, setIsConnectedToServer, logout }}>
+    <SessionContext.Provider value={{ isConnectedToServerRef, logout }}>
       {children}
     </SessionContext.Provider>
   );

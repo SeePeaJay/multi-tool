@@ -46,7 +46,7 @@ const NoteSuggestionMenu = forwardRef<
   NoteSuggestionMenuRef,
   NoteSuggestionMenuProps
 >((props, ref) => {
-  const { isConnectedToServer } = useSession();
+  const { isConnectedToServerRef } = useSession();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const { metadataYdocRef, setNoteIdsWithPendingUpdates, setupTempProvider } =
     useStatelessMessenger();
@@ -76,7 +76,7 @@ const NoteSuggestionMenu = forwardRef<
     span.setAttribute("id", newBlockId);
     targetElement.insert(targetElement.length, [space, span]);
 
-    if (isConnectedToServer) {
+    if (isConnectedToServerRef.current) {
       setupTempProvider({ noteId: targetNoteId, ydoc, shouldSendMsg: true });
     } else {
       setNoteIdsWithPendingUpdates((prev) => new Set(prev).add(targetNoteId));

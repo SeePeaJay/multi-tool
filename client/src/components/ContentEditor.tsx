@@ -23,7 +23,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
     markNoteAsActive,
     markNoteAsInactive,
   } = useStatelessMessenger();
-  const { isConnectedToServer } = useSession();
+  const { isConnectedToServerRef } = useSession();
 
   const yDocRef = useRef<Y.Doc>(
     markNoteAsActive({ noteId, isFromEditor: true }),
@@ -32,7 +32,6 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
   const editorRef = useRef<TiptapEditor | null>(null);
 
   const [backlinksAreUpToDate, setBacklinksAreUpToDate] = useState(false);
-  const [hasOfflineChanges, setHasOfflineChanges] = useState(false);
 
   const currentBacklinks = useLiveQuery(async () => {
     setBacklinksAreUpToDate(false);
@@ -72,14 +71,6 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
 
     return output;
   }, []);
-
-  useEffect(() => {
-    if (isConnectedToServer) {
-      setHasOfflineChanges(false);
-    } else if (hasOfflineChanges) {
-      setNoteIdsWithPendingUpdates((prev) => new Set(prev).add(noteId));
-    }
-  }, [isConnectedToServer, hasOfflineChanges]);
 
   // insert backlink nodes for each note/block that tags the current note
   // also remove them if their target do not tag the current note
@@ -134,8 +125,10 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
           return; // onUpdate handler is called once on mount; only execute below when editor is actually being edited
         }
 
-        if (!isConnectedToServer && !hasOfflineChanges) {
-          setHasOfflineChanges(true);
+        if (!isConnectedToServerRef.current) {
+          setNoteIdsWithPendingUpdates((prev) =>
+            prev.has(noteId) ? prev : new Set(prev).add(noteId),
+          );
         }
       }}
     ></EditorProvider>

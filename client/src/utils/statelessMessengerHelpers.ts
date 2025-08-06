@@ -61,7 +61,7 @@ export const useStatelessMessengerHelpers = (
   const { currentUser } = useAuth();
   const authFetch = useAuthFetch();
   const navigate = useNavigate();
-  const { isConnectedToServer, setIsConnectedToServer } = useSession();
+  const { isConnectedToServerRef } = useSession();
 
   // Marks a note as active (some client's editor is editting the note).
   const markNoteAsActive = ({ noteId, isFromEditor }: MarkNoteAsActiveArgs) => {
@@ -84,7 +84,7 @@ export const useStatelessMessengerHelpers = (
 
       props.activeYdocResourcesRef.current[noteId] = {
         ydoc,
-        provider: isConnectedToServer
+        provider: isConnectedToServerRef.current
           ? new TiptapCollabProvider({
               name: `${currentUser}/${noteId}`, // unique document identifier for syncing
               baseUrl: "ws://localhost:5173/collaboration",
@@ -133,7 +133,7 @@ export const useStatelessMessengerHelpers = (
 
     // If there are no connected clients editting the note, then we can safely destroy and delete the provider.
     if (props.activeYdocResourcesRef.current[noteId].activeClientCount === 0) {
-      if (isConnectedToServer) {
+      if (isConnectedToServerRef.current) {
         setupTempProvider({
           noteId,
           ydoc: props.activeYdocResourcesRef.current[noteId].ydoc,
@@ -191,7 +191,7 @@ export const useStatelessMessengerHelpers = (
       token: "notoken", // your JWT token
       document: props.metadataYdocRef.current,
       onAuthenticated() {
-        setIsConnectedToServer(true);
+        isConnectedToServerRef.current = true;
       },
       async onSynced() {
         const noteList = await authFetch(`/api/notes`, {
@@ -320,7 +320,7 @@ export const useStatelessMessengerHelpers = (
         props.currentAwarenessStateRef.current = updatedAwarenessState;
       },
       // onDisconnect() {
-      //   setIsConnectedToServer(false);
+      //   isConnectedToServerRef.current = false;
       // },
     });
 
@@ -359,7 +359,7 @@ export const useStatelessMessengerHelpers = (
     noteId,
   }: DestroyCollabResourcesForDeletedNoteArgs) {
     const activeYdocResources = props.activeYdocResourcesRef.current;
-    
+
     const activeResourceToDestroy = activeYdocResources[noteId];
     const tempProviders = props.tempYdocResourcesRef.current[noteId];
 

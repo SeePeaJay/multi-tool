@@ -336,6 +336,8 @@ export const useStatelessMessengerHelpers = (
     props.statelessMessengerRef.current?.destroy();
     props.statelessMessengerRef.current = null;
 
+    props.currentAwarenessStateRef.current = {};
+
     Object.keys(activeYdocResources)
       .filter((noteId) => noteId !== props.currentEditorNoteId.current)
       .forEach((noteId) => {

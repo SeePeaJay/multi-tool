@@ -19,17 +19,17 @@ interface ContentEditorProps {
 const ContentEditor = ({ noteId }: ContentEditorProps) => {
   const {
     statelessMessengerRef,
+    currentEditorNoteId,
     setNoteIdsWithPendingUpdates,
     markNoteAsActive,
     markNoteAsInactive,
   } = useStatelessMessenger();
   const { isConnectedToServerRef } = useSession();
 
-  const yDocRef = useRef<Y.Doc>(
-    markNoteAsActive({ noteId, isFromEditor: true }),
-  ); // `markNoteAsActive` will be called every time this component rerenders, but this is necessary because we need to ensure a ydoc is setup before executing the component's return statement
-
   const editorRef = useRef<TiptapEditor | null>(null);
+  const [editorIsReady, setEditorIsReady] = useState(false);
+
+  const [ydoc, setYdoc] = useState<Y.Doc | null>(null);
 
   const [backlinksAreUpToDate, setBacklinksAreUpToDate] = useState(false);
 
@@ -72,22 +72,13 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
     return output;
   }, []);
 
-  // insert backlink nodes for each note/block that tags the current note
-  // also remove them if their target do not tag the current note
   useEffect(() => {
-    if (!editorRef.current || !backlinksAreUpToDate) {
-      return;
-    }
+    currentEditorNoteId.current = noteId;
 
-    updateEditorBacklinksIfOutdated({
-      currentBacklinks,
-      editorRef,
-    });
-  }, [backlinksAreUpToDate]);
-
-  // Inform other clients that this note is active so they can set up their own note provider to get updates
-  useEffect(() => {
+    // Inform other clients that this note is active so they can set up their own note provider to get updates
     statelessMessengerRef.current?.setAwarenessField("currentNote", noteId);
+
+    setYdoc(markNoteAsActive({ noteId }));
 
     // collabProvider.on('unsyncedChanges', (n: number) => {
     //   console.log('Number of changes to send to server:', n);
@@ -95,16 +86,30 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
 
     // Before component unmounts, mark current note as inactive and inform this change to other clients, so that they can destroy the note provider (assuming no other clients are actively working on the note)
     return () => {
-      markNoteAsInactive({ noteId, isFromEditor: true });
+      currentEditorNoteId.current = "";
 
       statelessMessengerRef.current?.setAwarenessField(
         "currentNote",
         undefined,
       ); // ref value is not a node, so we can ignore warning
+
+      markNoteAsInactive({ noteId });
     };
   }, []);
 
-  return (
+  // Update backlinks only until editorRef has a value and the backlinks for this noteId are computed
+  useEffect(() => {
+    if (!editorIsReady || !backlinksAreUpToDate) {
+      return;
+    }
+
+    updateEditorBacklinksIfOutdated({
+      currentBacklinks,
+      editorRef,
+    });
+  }, [editorIsReady, backlinksAreUpToDate]);
+
+  return ydoc ? ( // only render until ydoc is ready
     <EditorProvider
       extensions={[
         ...createContentEditorExtensions({
@@ -113,11 +118,12 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
           baseNoteSuggestionConfig: createBaseNoteSuggestionConfig(),
         }),
         Collaboration.configure({
-          document: yDocRef.current,
+          document: ydoc,
         }),
       ]}
       onCreate={({ editor }) => {
         editorRef.current = editor;
+        setEditorIsReady(true);
       }}
       onUpdate={() => {
         // diff(editor.getHTML());
@@ -133,7 +139,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
         }
       }}
     ></EditorProvider>
-  );
+  ) : null;
 };
 
 export default ContentEditor;

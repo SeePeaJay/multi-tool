@@ -18,7 +18,6 @@ import { setupYdoc } from "../utils/yjs";
  */
 export type MarkNoteAsActiveArgs = {
   noteId: string;
-  isFromEditor?: boolean;
 };
 
 /**
@@ -27,7 +26,6 @@ export type MarkNoteAsActiveArgs = {
  */
 export type MarkNoteAsInactiveArgs = {
   noteId: string;
-  isFromEditor?: boolean;
 };
 
 interface SetupMetadataYDocArgs {
@@ -64,18 +62,7 @@ export const useStatelessMessengerHelpers = (
   const { isConnectedToServerRef } = useSession();
 
   // Marks a note as active (some client's editor is editting the note).
-  const markNoteAsActive = ({ noteId, isFromEditor }: MarkNoteAsActiveArgs) => {
-    // If this is not the first function call from the editor (for the current note id), return the existing Yjs doc.
-    // This is necessary because of the way the fn is invoked in the component (can get called multiple times).
-    if (isFromEditor && props.currentEditorNoteId.current === noteId) {
-      return props.activeYdocResourcesRef.current[noteId].ydoc;
-    }
-
-    // Otherwise (if this is the first function call for the current note), mark it as such and continue.
-    if (isFromEditor && props.currentEditorNoteId.current !== noteId) {
-      props.currentEditorNoteId.current = noteId;
-    }
-
+  const markNoteAsActive = ({ noteId }: MarkNoteAsActiveArgs) => {
     // If note isn't marked as active yet, mark it as active, and return ydoc (in case it's for editor)
     if (!props.activeYdocResourcesRef.current[noteId]) {
       const ydoc = new Y.Doc();
@@ -114,18 +101,10 @@ export const useStatelessMessengerHelpers = (
     return props.activeYdocResourcesRef.current[noteId].ydoc;
   };
 
-  const markNoteAsInactive = ({
-    noteId,
-    isFromEditor,
-  }: MarkNoteAsInactiveArgs) => {
+  const markNoteAsInactive = ({ noteId }: MarkNoteAsInactiveArgs) => {
     // It's possible to call this when resource is already deleted (due to deleting a note), so simply return
     if (!props.activeYdocResourcesRef.current[noteId]) {
       return;
-    }
-
-    // Unset current active note id if call is from editor
-    if (isFromEditor && props.currentEditorNoteId.current === noteId) {
-      props.currentEditorNoteId.current = "";
     }
 
     // Decrement count for number of connected clients actively editting the note.

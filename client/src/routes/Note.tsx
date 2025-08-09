@@ -14,7 +14,7 @@ function Note() {
       {starredAndMetadataAreReady ? (
         <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
           <Editor key={noteId} noteId={noteId} />{" "}
-          {/* key forces remount when noteId changes */}
+          {/* Using a key is the only reliable way to force the editor to remount when noteId changes. We remount to initialize the content editor with a new ydoc */}
         </div>
       ) : (
         <InitialLoadingScreen />

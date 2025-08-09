@@ -1,5 +1,6 @@
 import { HocuspocusProvider, TiptapCollabProvider } from "@hocuspocus/provider";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { getDefaultMetadataYdocArray, getDefaultYdocUpdate } from "shared";
 import * as Y from "yjs";
 import { db, turndownService } from "../db";
@@ -53,13 +54,16 @@ export const useStatelessMessengerHelpers = (
     | "tempYdocResourcesRef"
     | "noteIdsWithPendingUpdates"
     | "setNoteIdsWithPendingUpdates"
-    | "locationPathnameRef"
   >,
 ) => {
   const { currentUser } = useAuth();
   const authFetch = useAuthFetch();
+  const location = useLocation();
   const navigate = useNavigate();
   const { isConnectedToServerRef } = useSession();
+
+  // A copy of location pathname to avoid stale closure below
+  const locationPathnameRef = useRef(location.pathname);
 
   // Marks a note as active (some client's editor is editting the note).
   const markNoteAsActive = ({ noteId }: MarkNoteAsActiveArgs) => {
@@ -402,7 +406,7 @@ export const useStatelessMessengerHelpers = (
 
           db.notes.delete(key);
 
-          if (props.locationPathnameRef.current === `/app/notes/${key}`) {
+          if (locationPathnameRef.current === `/app/notes/${key}`) {
             props.currentEditorNoteId.current = "";
 
             navigate("/app/notes", { replace: true });
@@ -425,6 +429,10 @@ export const useStatelessMessengerHelpers = (
       });
     }
   }
+
+  useEffect(() => {
+    locationPathnameRef.current = location.pathname;
+  }, [location.pathname]);
 
   return {
     markNoteAsActive,

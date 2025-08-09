@@ -7,7 +7,6 @@ import {
   ReactNode,
   useState,
 } from "react";
-import { useLocation } from "react-router-dom";
 import * as Y from "yjs";
 import {
   MarkNoteAsActiveArgs,
@@ -28,7 +27,6 @@ export interface StatelessMessengerContextType {
     React.SetStateAction<Set<string>>
   >;
   currentEditorNoteId: React.MutableRefObject<string>;
-  locationPathnameRef: React.MutableRefObject<string>;
   starredAndMetadataAreReady: boolean;
   markNoteAsActive: (params: MarkNoteAsActiveArgs) => Y.Doc;
   markNoteAsInactive: (params: MarkNoteAsInactiveArgs) => void;
@@ -69,7 +67,6 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const { currentUser } = useAuth();
-  const location = useLocation();
 
   // A global provider (one per client) that handles stateless messages and awareness updates.
   const statelessMessengerRef = useRef<HocuspocusProvider | null>(null);
@@ -100,9 +97,6 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
   // This is used to determine whether the editor is making the first `markNoteAsActive` call for that note.
   const currentEditorNoteId = useRef("");
 
-  // A copy of location pathname to avoid stale closure below
-  const locationPathnameRef = useRef("");
-
   // a variable that prevents editor from rendering until default note data are init
   const [starredAndMetadataAreReady, setStarredAndMetadataAreReady] =
     useState(false);
@@ -124,12 +118,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
     tempYdocResourcesRef,
     noteIdsWithPendingUpdates,
     setNoteIdsWithPendingUpdates,
-    locationPathnameRef,
   });
-
-  useEffect(() => {
-    locationPathnameRef.current = location.pathname;
-  }, [location.pathname]);
 
   useEffect(() => {
     localStorage.setItem(
@@ -179,7 +168,6 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
         noteIdsWithPendingUpdates,
         setNoteIdsWithPendingUpdates,
         currentEditorNoteId,
-        locationPathnameRef,
         starredAndMetadataAreReady,
         markNoteAsActive,
         markNoteAsInactive,

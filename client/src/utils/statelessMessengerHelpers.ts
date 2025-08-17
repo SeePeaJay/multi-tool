@@ -141,29 +141,35 @@ export const useStatelessMessengerHelpers = (
     ydoc,
     shouldSendMsg,
   }: SetupTempProviderArgs) {
-    const tempProvider = new TiptapCollabProvider({
-      name: `${currentUser}/${noteId}`, // unique document identifier for syncing
-      baseUrl: "ws://localhost:5173/collaboration",
-      token: "notoken",
-      document: ydoc,
-      onSynced() {
-        if (shouldSendMsg) {
-          props.statelessMessengerRef?.current?.sendStateless(
-            JSON.stringify({
-              type: "temp",
-              noteId: noteId,
-              clientId: props.statelessMessengerRef?.current?.document.clientID,
-            }),
-          );
-        }
+    const tempProviderResource = {
+      provider: new TiptapCollabProvider({
+        name: `${currentUser}/${noteId}`, // unique document identifier for syncing
+        baseUrl: "ws://localhost:5173/collaboration",
+        token: "notoken",
+        document: ydoc,
+        onSynced() {
+          if (shouldSendMsg) {
+            props.statelessMessengerRef?.current?.sendStateless(
+              JSON.stringify({
+                type: "temp",
+                noteId: noteId,
+                clientId:
+                  props.statelessMessengerRef?.current?.document.clientID,
+              }),
+            );
+          }
 
-        tempProvider.destroy();
-        props.tempProviderResourcesRef.current[noteId].delete(tempProvider);
-      },
-    });
+          tempProviderResource.provider.destroy();
+          props.tempProviderResourcesRef.current[noteId].delete(
+            tempProviderResource,
+          );
+        },
+      }),
+      providerWillSendMsg: !!shouldSendMsg,
+    };
 
     (props.tempProviderResourcesRef.current[noteId] ??= new Set()).add(
-      tempProvider,
+      tempProviderResource,
     );
   }
 
@@ -351,16 +357,16 @@ export const useStatelessMessengerHelpers = (
     const activeYdocResources = props.activeYdocResourcesRef.current;
 
     const activeResourceToDestroy = activeYdocResources[noteId];
-    const tempProviders = props.tempProviderResourcesRef.current[noteId];
+    const tempResourcesToDestroy = props.tempProviderResourcesRef.current[noteId];
 
     if (activeResourceToDestroy) {
       activeResourceToDestroy.provider?.destroy(); // destroy if online
       delete activeYdocResources[noteId];
     } // delete if on page
 
-    if (tempProviders) {
-      tempProviders.forEach((provider) => {
-        provider.destroy();
+    if (tempResourcesToDestroy) {
+      tempResourcesToDestroy.forEach((resource) => {
+        resource.provider.destroy();
       });
       delete props.tempProviderResourcesRef.current[noteId];
     }

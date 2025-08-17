@@ -56,7 +56,10 @@ export interface ActiveYdocResources {
  * sync. This will prompt other clients to create their own temp providers to receive the update from the server.
  */
 export interface TempProviderResources {
-  [key: string]: Set<TiptapCollabProvider>;
+  [key: string]: Set<{
+    provider: TiptapCollabProvider;
+    providerWillSendMsg: boolean;
+  }>;
 }
 
 const StatelessMessengerContext = createContext<

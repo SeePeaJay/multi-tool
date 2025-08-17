@@ -51,7 +51,7 @@ export const useStatelessMessengerHelpers = (
     | "activeYdocResourcesRef"
     | "currentEditorNoteId"
     | "currentAwarenessStateRef"
-    | "tempYdocResourcesRef"
+    | "tempProviderResourcesRef"
     | "noteIdsWithPendingUpdates"
     | "setNoteIdsWithPendingUpdates"
   >,
@@ -158,11 +158,11 @@ export const useStatelessMessengerHelpers = (
         }
 
         tempProvider.destroy();
-        props.tempYdocResourcesRef.current[noteId].delete(tempProvider);
+        props.tempProviderResourcesRef.current[noteId].delete(tempProvider);
       },
     });
 
-    (props.tempYdocResourcesRef.current[noteId] ??= new Set()).add(
+    (props.tempProviderResourcesRef.current[noteId] ??= new Set()).add(
       tempProvider,
     );
   }
@@ -351,7 +351,7 @@ export const useStatelessMessengerHelpers = (
     const activeYdocResources = props.activeYdocResourcesRef.current;
 
     const activeResourceToDestroy = activeYdocResources[noteId];
-    const tempProviders = props.tempYdocResourcesRef.current[noteId];
+    const tempProviders = props.tempProviderResourcesRef.current[noteId];
 
     if (activeResourceToDestroy) {
       activeResourceToDestroy.provider?.destroy(); // destroy if online
@@ -362,7 +362,7 @@ export const useStatelessMessengerHelpers = (
       tempProviders.forEach((provider) => {
         provider.destroy();
       });
-      delete props.tempYdocResourcesRef.current[noteId];
+      delete props.tempProviderResourcesRef.current[noteId];
     }
 
     props.setNoteIdsWithPendingUpdates((prev) => {

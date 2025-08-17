@@ -21,7 +21,7 @@ export interface StatelessMessengerContextType {
   metadataYdocRef: React.MutableRefObject<Y.Doc>;
   activeYdocResourcesRef: React.MutableRefObject<ActiveYdocResources>;
   currentAwarenessStateRef: React.MutableRefObject<CurrentAwarenessState>;
-  tempYdocResourcesRef: React.MutableRefObject<TempYdocResources>;
+  tempProviderResourcesRef: React.MutableRefObject<TempProviderResources>;
   noteIdsWithPendingUpdates: Set<string>;
   setNoteIdsWithPendingUpdates: React.Dispatch<
     React.SetStateAction<Set<string>>
@@ -55,7 +55,7 @@ export interface ActiveYdocResources {
  * @property {boolean} providerWillSendMsg - Indicates whether the provider will send a "temp" stateless message on
  * sync. This will prompt other clients to create their own temp providers to receive the update from the server.
  */
-export interface TempYdocResources {
+export interface TempProviderResources {
   [key: string]: Set<TiptapCollabProvider>;
 }
 
@@ -81,7 +81,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
 
   // A ref storing temporary providers for notes.
   // Each provider is destroyed (and removed from this object) once synchronization with the server is complete.
-  const tempYdocResourcesRef = useRef<TempYdocResources>({});
+  const tempProviderResourcesRef = useRef<TempProviderResources>({});
 
   const [noteIdsWithPendingUpdates, setNoteIdsWithPendingUpdates] = useState<
     Set<string>
@@ -115,7 +115,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
     activeYdocResourcesRef,
     currentEditorNoteId,
     currentAwarenessStateRef,
-    tempYdocResourcesRef,
+    tempProviderResourcesRef,
     noteIdsWithPendingUpdates,
     setNoteIdsWithPendingUpdates,
   });
@@ -164,7 +164,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
         metadataYdocRef,
         activeYdocResourcesRef,
         currentAwarenessStateRef,
-        tempYdocResourcesRef,
+        tempProviderResourcesRef,
         noteIdsWithPendingUpdates,
         setNoteIdsWithPendingUpdates,
         currentEditorNoteId,

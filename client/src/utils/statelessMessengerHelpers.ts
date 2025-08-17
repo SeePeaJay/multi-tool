@@ -313,12 +313,33 @@ export const useStatelessMessengerHelpers = (
 
         props.currentAwarenessStateRef.current = updatedAwarenessState;
       },
-      // onDisconnect() {
-      //   isConnectedToServerRef.current = false;
-      // },
+      onDisconnect() {
+        isConnectedToServerRef.current = false;
+
+        processTempProvidersOnDisconnect();
+      },
     });
 
     props.statelessMessengerRef.current = metadataProvider;
+  }
+
+  // Convert existing temp providers to noteIdsWithPendingUpdate if they should send stateless
+  function processTempProvidersOnDisconnect() {
+    for (const [noteId, set] of Object.entries(
+      props.tempProviderResourcesRef.current,
+    )) {
+      for (const { provider, providerWillSendMsg } of set) {
+        if (providerWillSendMsg) {
+          props.setNoteIdsWithPendingUpdates((prev) =>
+            new Set(prev).add(noteId),
+          );
+        }
+
+        provider.destroy();
+      }
+    }
+
+    props.tempProviderResourcesRef.current = {};
   }
 
   function destroyCollabResources() {
@@ -357,7 +378,8 @@ export const useStatelessMessengerHelpers = (
     const activeYdocResources = props.activeYdocResourcesRef.current;
 
     const activeResourceToDestroy = activeYdocResources[noteId];
-    const tempResourcesToDestroy = props.tempProviderResourcesRef.current[noteId];
+    const tempResourcesToDestroy =
+      props.tempProviderResourcesRef.current[noteId];
 
     if (activeResourceToDestroy) {
       activeResourceToDestroy.provider?.destroy(); // destroy if online

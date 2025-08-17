@@ -64,7 +64,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
     async function checkSession() {
       const res = await fetch("/api", { credentials: "include" });
 
-      if (res.status !== 200) {
+      if (res.status === 401) {
         logout();
       }
     }

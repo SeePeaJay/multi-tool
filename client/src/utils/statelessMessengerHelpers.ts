@@ -181,6 +181,11 @@ export const useStatelessMessengerHelpers = (
           credentials: "include",
         });
 
+        // This safeguard makes sure we exit early if onSynced is called during a server disconnect
+        if (!noteList) {
+          return;
+        }
+
         // Persist data for notes that won't be covered by active/temp providers
         await Promise.all(
           Object.keys(noteList)
@@ -266,7 +271,7 @@ export const useStatelessMessengerHelpers = (
 
         // console.log(
         //   "awareness change: ",
-        //   currentAwarenessStateRef.current,
+        //   props.currentAwarenessStateRef.current,
         //   updatedAwarenessState,
         // );
 

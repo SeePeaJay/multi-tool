@@ -48,7 +48,7 @@ const NoteSuggestionMenu = forwardRef<
 >((props, ref) => {
   const { isConnectedToServerRef } = useSession();
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const { metadataYdocRef, setNoteIdsWithPendingUpdates, setupTempProvider } =
+  const { metadataYdocRef, updatePendingNotes, setupTempProvider } =
     useStatelessMessenger();
 
   // Add a new note entry to metadata ydoc, which on change will create note
@@ -79,7 +79,7 @@ const NoteSuggestionMenu = forwardRef<
     if (isConnectedToServerRef.current) {
       setupTempProvider({ noteId: targetNoteId, ydoc, shouldSendMsg: true });
     } else {
-      setNoteIdsWithPendingUpdates((prev) => new Set(prev).add(targetNoteId));
+      updatePendingNotes("add", targetNoteId);
     }
   };
 

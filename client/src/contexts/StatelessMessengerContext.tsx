@@ -22,10 +22,8 @@ export interface StatelessMessengerContextType {
   activeYdocResourcesRef: React.MutableRefObject<ActiveYdocResources>;
   currentAwarenessStateRef: React.MutableRefObject<CurrentAwarenessState>;
   tempProviderResourcesRef: React.MutableRefObject<TempProviderResources>;
-  noteIdsWithPendingUpdates: Set<string>;
-  setNoteIdsWithPendingUpdates: React.Dispatch<
-    React.SetStateAction<Set<string>>
-  >;
+  pendingNotesRef: React.MutableRefObject<Set<string>>;
+  updatePendingNotes: (updateType: "add" | "delete", noteId: string) => void;
   currentEditorNoteId: React.MutableRefObject<string>;
   starredAndMetadataAreReady: boolean;
   markNoteAsActive: (params: MarkNoteAsActiveArgs) => Y.Doc;
@@ -86,15 +84,26 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
   // Each provider is destroyed (and removed from this object) once synchronization with the server is complete.
   const tempProviderResourcesRef = useRef<TempProviderResources>({});
 
-  const [noteIdsWithPendingUpdates, setNoteIdsWithPendingUpdates] = useState<
-    Set<string>
-  >(
+  const pendingNotesRef = useRef<Set<string>>(
     new Set(
-      localStorage.getItem("noteIdsWithPendingUpdates")
-        ? localStorage.getItem("noteIdsWithPendingUpdates")?.split(",")
+      localStorage.getItem("pendingNotes")
+        ? localStorage.getItem("pendingNotes")?.split(",")
         : [],
     ),
   );
+
+  function updatePendingNotes(updateType: "add" | "delete", noteId: string) {
+    if (updateType === "add") {
+      pendingNotesRef.current.add(noteId);
+    } else {
+      pendingNotesRef.current.delete(noteId);
+    }
+
+    localStorage.setItem(
+      "pendingNotes",
+      Array.from(pendingNotesRef.current).join(","),
+    );
+  }
 
   // The most recent snapshot of the id for the note that the current editor is working on.
   // This is used to determine whether the editor is making the first `markNoteAsActive` call for that note.
@@ -119,16 +128,9 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
     currentEditorNoteId,
     currentAwarenessStateRef,
     tempProviderResourcesRef,
-    noteIdsWithPendingUpdates,
-    setNoteIdsWithPendingUpdates,
+    pendingNotesRef,
+    updatePendingNotes,
   });
-
-  useEffect(() => {
-    localStorage.setItem(
-      "noteIdsWithPendingUpdates",
-      Array.from(noteIdsWithPendingUpdates).join(","),
-    );
-  }, [noteIdsWithPendingUpdates]);
 
   useEffect(() => {
     async function setupStarredAndMetadata() {
@@ -168,8 +170,8 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
         activeYdocResourcesRef,
         currentAwarenessStateRef,
         tempProviderResourcesRef,
-        noteIdsWithPendingUpdates,
-        setNoteIdsWithPendingUpdates,
+        pendingNotesRef,
+        updatePendingNotes,
         currentEditorNoteId,
         starredAndMetadataAreReady,
         markNoteAsActive,

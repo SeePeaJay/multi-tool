@@ -20,7 +20,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
   const {
     statelessMessengerRef,
     currentEditorNoteId,
-    setNoteIdsWithPendingUpdates,
+    updatePendingNotes,
     markNoteAsActive,
     markNoteAsInactive,
   } = useStatelessMessenger();
@@ -133,9 +133,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
         }
 
         if (!isConnectedToServerRef.current) {
-          setNoteIdsWithPendingUpdates((prev) =>
-            prev.has(noteId) ? prev : new Set(prev).add(noteId),
-          );
+          updatePendingNotes("add", noteId);
         }
       }}
     ></EditorProvider>

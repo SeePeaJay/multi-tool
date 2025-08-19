@@ -52,8 +52,8 @@ export const useStatelessMessengerHelpers = (
     | "currentEditorNoteId"
     | "currentAwarenessStateRef"
     | "tempProviderResourcesRef"
-    | "noteIdsWithPendingUpdates"
-    | "setNoteIdsWithPendingUpdates"
+    | "pendingNotesRef"
+    | "updatePendingNotes"
   >,
 ) => {
   const { currentUser } = useAuth();
@@ -198,7 +198,7 @@ export const useStatelessMessengerHelpers = (
             .filter(
               (noteId) =>
                 props.currentEditorNoteId.current !== noteId &&
-                !props.noteIdsWithPendingUpdates.has(noteId),
+                !props.pendingNotesRef.current.has(noteId),
             )
             .map((noteId: string) =>
               db.notes.put({
@@ -232,7 +232,7 @@ export const useStatelessMessengerHelpers = (
         }
 
         // Setup a temp provider for each id in the set
-        props.noteIdsWithPendingUpdates.forEach((noteId) => {
+        props.pendingNotesRef.current.forEach((noteId) => {
           if (noteId !== props.currentEditorNoteId.current) {
             const ydoc = new Y.Doc();
 
@@ -240,11 +240,7 @@ export const useStatelessMessengerHelpers = (
             setupTempProvider({ noteId, ydoc, shouldSendMsg: true });
           }
 
-          props.setNoteIdsWithPendingUpdates((prevSet) => {
-            const newSet = new Set(prevSet);
-            newSet.delete(noteId);
-            return newSet;
-          });
+          props.updatePendingNotes("delete", noteId);
         }); // if disconnected while loop is running, loop will still complete
       },
       onStateless({ payload }) {
@@ -330,9 +326,7 @@ export const useStatelessMessengerHelpers = (
     )) {
       for (const { provider, providerWillSendMsg } of set) {
         if (providerWillSendMsg) {
-          props.setNoteIdsWithPendingUpdates((prev) =>
-            new Set(prev).add(noteId),
-          );
+          props.updatePendingNotes("add", noteId);
         }
 
         provider.destroy();
@@ -362,9 +356,7 @@ export const useStatelessMessengerHelpers = (
 
     if (currentActiveProvider) {
       if (currentActiveProvider.hasUnsyncedChanges) {
-        props.setNoteIdsWithPendingUpdates((prev) =>
-          new Set(prev).add(props.currentEditorNoteId.current),
-        );
+        props.updatePendingNotes("add", props.currentEditorNoteId.current);
       }
 
       currentActiveProvider.destroy();
@@ -393,11 +385,7 @@ export const useStatelessMessengerHelpers = (
       delete props.tempProviderResourcesRef.current[noteId];
     }
 
-    props.setNoteIdsWithPendingUpdates((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(noteId);
-      return newSet;
-    });
+    props.updatePendingNotes("delete", noteId);
   }
 
   async function setupMetadataYdoc({ metadataYdoc }: SetupMetadataYDocArgs) {

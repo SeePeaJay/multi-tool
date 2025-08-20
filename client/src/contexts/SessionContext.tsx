@@ -65,7 +65,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
       const res = await fetch("/api", { credentials: "include" });
 
       if (res.status === 401) {
-        logout();
+        logout("Unauthorized access. Please log in again.");
       }
     }
 

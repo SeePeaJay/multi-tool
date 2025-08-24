@@ -3,7 +3,7 @@ import { generateHTML } from "@tiptap/core";
 import sanitizeHtml from "sanitize-html";
 import { createContentEditorExtensions, getDefaultYdocUpdate } from "shared";
 import * as Y from "yjs";
-import { db, turndownService } from "../db";
+import { db, dbCreateNote, turndownService } from "../db";
 
 interface InitializeYDocArgs {
   noteId: string;
@@ -47,12 +47,9 @@ async function setupYdoc({ noteId, ydoc }: InitializeYDocArgs) {
       `No state found for note ID: ${noteId}, initializing note data`,
     ); // note data should be init at this point, hence the warning
 
-    await db.notes.put({
+    await dbCreateNote({
       id: noteId,
       title: noteId === "starred" ? "Starred" : "",
-      content: `<p class="frontmatter"></p><p></p>`,
-      contentWords: [""],
-      ydocArray: Array.from(update),
     }); // but since the ydoc is designed to persist any changes later, makes sense to ensure the row exists and can be updated now
   }
 

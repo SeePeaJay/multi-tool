@@ -1,7 +1,6 @@
 import { MemoryRouter } from "react-router-dom";
-import { getDefaultYdocUpdate } from "shared";
 import * as Y from "yjs";
-import { db } from "../db";
+import { db, dbCreateNote } from "../db";
 import { AuthProvider } from "../contexts/AuthContext";
 import { LoadingProvider } from "../contexts/LoadingContext";
 import { SessionProvider } from "../contexts/SessionContext";
@@ -10,13 +9,7 @@ import TitleEditor from "./TitleEditor";
 
 it("renames correctly", () => {
   cy.then(() =>
-    db.notes.put({
-      id: "bbbbbb",
-      title: "test",
-      content: `<p class="frontmatter"></p><p></p>`,
-      contentWords: [""],
-      ydocArray: Array.from(getDefaultYdocUpdate()),
-    }),
+    dbCreateNote({ id: "bbbbbb", title: "test" }),
   );
 
   cy.mount(

@@ -1,9 +1,9 @@
 import { HocuspocusProvider, TiptapCollabProvider } from "@hocuspocus/provider";
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getDefaultMetadataYdocArray, getDefaultYdocUpdate } from "shared";
+import { getDefaultMetadataYdocArray } from "shared";
 import * as Y from "yjs";
-import { db, turndownService } from "../db";
+import { db, dbCreateNote, turndownService } from "../db";
 import { useAuth } from "../contexts/AuthContext";
 import { useSession } from "../contexts/SessionContext";
 import {
@@ -413,12 +413,9 @@ export const useStatelessMessengerHelpers = (
     ymap.observe((event) => {
       event.changes.keys.forEach((change, key) => {
         if (change.action === "add") {
-          db.notes.put({
+          dbCreateNote({
             id: key,
             title: ymap.get(key) as string,
-            content: `<p class="frontmatter"></p><p></p>`,
-            contentWords: [""],
-            ydocArray: Array.from(getDefaultYdocUpdate()),
           });
         } else if (change.action === "update") {
           db.notes.update(key, { title: ymap.get(key) as string });
@@ -441,13 +438,7 @@ export const useStatelessMessengerHelpers = (
     const starredExists = await db.notes.get("starred");
 
     if (!starredExists) {
-      await db.notes.put({
-        id: "starred", // a fixed id since Starred is unique and this makes it easy to merge two Starred
-        title: "Starred",
-        content: `<p class="frontmatter"></p><p></p>`,
-        contentWords: [""],
-        ydocArray: Array.from(getDefaultYdocUpdate()),
-      });
+      await dbCreateNote({ id: "starred", title: "Starred" }); // a fixed id since Starred is unique and this makes it easy to merge two Starred
     }
   }
 

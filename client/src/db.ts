@@ -3,6 +3,7 @@
  */
 
 import Dexie, { type EntityTable } from "dexie";
+import { getDefaultYdocUpdate } from "shared";
 import TurndownService from "turndown";
 
 export interface Note {
@@ -28,10 +29,20 @@ db.version(1).stores({
   user: "id, metadataYdocArray",
 });
 
+async function dbCreateNote({ id, title }: Pick<Note, "id" | "title">) {
+  return db.notes.put({
+    id,
+    title,
+    content: `<p class="frontmatter"></p><p></p>`,
+    contentWords: [""],
+    ydocArray: Array.from(getDefaultYdocUpdate()),
+  });
+}
+
 // Specify markdown converter to prevent escaping potential Markdown syntax like `[` or `]`
 const turndownService = new TurndownService();
 turndownService.escape = function (string: string) {
   return string;
 };
 
-export { db, turndownService };
+export { db, dbCreateNote, turndownService };

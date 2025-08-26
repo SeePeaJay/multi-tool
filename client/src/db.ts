@@ -25,7 +25,7 @@ const db = new Dexie("AppDatabase") as Dexie & {
 
 // Schema declaration: define primary key (id) and indexed props to enable faster querying when they're used
 db.version(1).stores({
-  notes: "id, title, *contentWords",
+  notes: "id, &title, *contentWords",
   user: "id, metadataYdocArray",
 });
 

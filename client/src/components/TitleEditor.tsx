@@ -24,12 +24,12 @@ const TitleEditor = ({ noteId }: TitleEditorProps) => {
 
   const renameNote = async () => {
     const newTitle = editorRef.current!.getText();
-    // const newTitleAlreadyExists = await db.notes.get({ title: newTitle });
+    const newTitleIsUnique = !(await db.notes.get({ title: newTitle }));
 
-    if (newTitle) {
+    if (newTitle && newTitleIsUnique) {
       try {
         const noteMetadata = metadataYdocRef.current.getMap("noteMetadata");
-        noteMetadata.set(noteId, newTitle); 
+        noteMetadata.set(noteId, newTitle);
 
         previousTitleRef.current = newTitle;
       } catch (error) {
@@ -45,7 +45,7 @@ const TitleEditor = ({ noteId }: TitleEditorProps) => {
     }
   };
 
-  // Update editable status whenever title to display changes 
+  // Update editable status whenever title to display changes
   useEffect(() => {
     if (editorRef.current) {
       editorRef.current.setEditable(noteTitleToDisplay !== "Starred");

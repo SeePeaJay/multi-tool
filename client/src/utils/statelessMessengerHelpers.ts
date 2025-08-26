@@ -33,6 +33,14 @@ interface SetupMetadataYDocArgs {
   metadataYdoc: Y.Doc;
 }
 
+type ResolveDuplicateTitleArgs = {
+  duplicateTitle: string;
+  existingNoteId: string;
+  incomingNoteId: string;
+  metadataYdoc: Y.Doc;
+  TRANSACTION_ORIGIN: string;
+};
+
 export type SetupTempProviderArgs = {
   noteId: string;
   ydoc: Y.Doc;
@@ -409,13 +417,55 @@ export const useStatelessMessengerHelpers = (
     });
 
     const ymap = metadataYdoc.getMap("noteMetadata");
-    ymap.observe((event) => {
-      event.changes.keys.forEach((change, key) => {
-        if (change.action === "add") {
-          dbCreateNote({
-            id: key,
-            title: ymap.get(key) as string,
+    const FIX_DUPLICATE_TITLE_ORIGIN = "metadata-autofix";
+
+    // If duplicate titles detected, resolve them first
+    if (ymap.size > new Set(ymap.values()).size) {
+      const titleToKeys = getTitleToKeys(ymap);
+
+      for (const [title, keys] of titleToKeys.entries()) {
+        while (keys.length > 1) {
+          await resolveDuplicateTitle({
+            duplicateTitle: title,
+            existingNoteId: keys[0],
+            incomingNoteId: keys[1],
+            metadataYdoc,
+            TRANSACTION_ORIGIN: FIX_DUPLICATE_TITLE_ORIGIN,
           });
+
+          keys.splice(keys[0] > keys[1] ? 0 : 1, 1);
+        }
+      }
+    }
+
+    ymap.observe((event, tr) => {
+      if (tr?.origin === FIX_DUPLICATE_TITLE_ORIGIN) {
+        return;
+      }
+
+      for (const [key, change] of event.changes.keys) {
+        if (change.action === "add") {
+          const incomingTitle = ymap.get(key) as string;
+
+          if (ymap.size > new Set(ymap.values()).size) {
+            const titleToKeys = getTitleToKeys(ymap);
+            const existingNoteId = (
+              titleToKeys.get(incomingTitle) as string[]
+            ).filter((id) => id !== key)[0];
+
+            resolveDuplicateTitle({
+              duplicateTitle: incomingTitle,
+              existingNoteId,
+              incomingNoteId: key,
+              metadataYdoc,
+              TRANSACTION_ORIGIN: FIX_DUPLICATE_TITLE_ORIGIN,
+            });
+          } else {
+            dbCreateNote({
+              id: key,
+              title: incomingTitle,
+            });
+          }
         } else if (change.action === "update") {
           db.notes.update(key, { title: ymap.get(key) as string });
         } else {
@@ -429,7 +479,7 @@ export const useStatelessMessengerHelpers = (
             navigate("/app/notes", { replace: true });
           }
         }
-      });
+      }
     });
   }
 
@@ -440,6 +490,69 @@ export const useStatelessMessengerHelpers = (
       await dbCreateNote({ id: "starred", title: "Starred" }); // a fixed id since Starred is unique and this makes it easy to merge two Starred
     }
   }
+
+  const resolveDuplicateTitle = async ({
+    duplicateTitle,
+    existingNoteId,
+    incomingNoteId,
+    metadataYdoc,
+    TRANSACTION_ORIGIN,
+  }: ResolveDuplicateTitleArgs) => {
+    const getUniqueTitle = (title: string, existingTitles: Set<string>) => {
+      if (!existingTitles.has(title)) {
+        return title;
+      }
+
+      let counter = 1;
+      let candidate: string;
+
+      do {
+        candidate = `${title} (${counter})`;
+        counter++;
+      } while (existingTitles.has(candidate));
+
+      return candidate;
+    };
+
+    const ymap = metadataYdoc.getMap("noteMetadata");
+    const allNoteTitles = new Set(ymap.values()) as Set<string>;
+    const uniqueTitle = getUniqueTitle(duplicateTitle, allNoteTitles);
+
+    if (existingNoteId > incomingNoteId) {
+      // rename existing note
+
+      metadataYdoc.transact(() => {
+        ymap.set(existingNoteId, uniqueTitle);
+      }, TRANSACTION_ORIGIN);
+
+      await db.notes.update(existingNoteId, {
+        title: uniqueTitle,
+      }); // has to await to ensure below db call doesn't run in uniqueness error
+    } else {
+      // rename incoming note in ydoc before continuing to next part
+      metadataYdoc.transact(() => {
+        ymap.set(incomingNoteId, uniqueTitle);
+      }, TRANSACTION_ORIGIN);
+    }
+
+    dbCreateNote({
+      id: incomingNoteId,
+      title: existingNoteId > incomingNoteId ? duplicateTitle : uniqueTitle,
+    });
+  };
+
+  const getTitleToKeys = (ymap: Y.Map<unknown>) => {
+    const titleToKeys = new Map();
+
+    ymap.forEach((value, key) => {
+      if (!titleToKeys.has(value)) {
+        titleToKeys.set(value, []);
+      }
+      titleToKeys.get(value).push(key);
+    });
+
+    return titleToKeys;
+  };
 
   useEffect(() => {
     locationPathnameRef.current = location.pathname;

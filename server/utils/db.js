@@ -8,7 +8,6 @@ db.serialize(() => {
     CREATE TABLE IF NOT EXISTS notes (
       id TEXT PRIMARY KEY,
       userId TEXT NOT NULL,
-      title TEXT NOT NULL,
       content TEXT NOT NULL,
       ydocUpdate BLOB NOT NULL
     )

@@ -43,11 +43,10 @@ export function getHocuspocusServer() {
 
         if (!noteIdIsInOld && noteIdIsInNew) {
           await dbRun(
-            "INSERT OR IGNORE INTO notes (id, userId, title, content, ydocUpdate) VALUES (?, ?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO notes (id, userId, content, ydocUpdate) VALUES (?, ?, ?, ?)",
             [
               noteId,
               userId,
-              newMetadataYdocMap.get(noteId),
               `<p class="frontmatter"></p><p></p>`,
               getDefaultYdocUpdate(),
             ],
@@ -57,15 +56,6 @@ export function getHocuspocusServer() {
             noteId,
             userId,
           ]);
-        } else if (
-          noteIdIsInOld &&
-          noteIdIsInNew &&
-          oldMetadataYdocMap.get(noteId) !== newMetadataYdocMap.get(noteId)
-        ) {
-          await dbRun(
-            "UPDATE notes SET title = ? WHERE id = ? AND userId = ?",
-            [newMetadataYdocMap.get(noteId), noteId, userId],
-          );
         }
       }
     },

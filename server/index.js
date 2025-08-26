@@ -73,11 +73,10 @@ app.get("/api/auth", async (req, res) => {
             [userId, userInfo.data.email, getDefaultMetadataYdocArray()],
           );
           await dbRun(
-            "INSERT INTO notes (id, userId, title, content, ydocUpdate) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO notes (id, userId, content, ydocUpdate) VALUES (?, ?, ?, ?)",
             [
               "starred",
               userId,
-              "Starred",
               `<p class="frontmatter"></p><p></p>`,
               getDefaultYdocUpdate(),
             ],
@@ -96,7 +95,7 @@ app.get("/api/auth", async (req, res) => {
 
 app.get("/api/notes", authCheck, async (req, res) => {
   db.all(
-    "SELECT id, title, content, ydocUpdate FROM notes WHERE userId = ?",
+    "SELECT id, content, ydocUpdate FROM notes WHERE userId = ?",
     [req.session.userId],
     (err, rows) => {
       if (err) {
@@ -109,7 +108,6 @@ app.get("/api/notes", authCheck, async (req, res) => {
         rows.map((row) => [
           row.id,
           {
-            title: row.title,
             content: row.content,
             ydocArray: Array.from(row.ydocUpdate),
           },

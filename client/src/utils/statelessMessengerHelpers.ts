@@ -200,16 +200,15 @@ export const useStatelessMessengerHelpers = (
                 props.currentEditorNoteId.current !== noteId &&
                 !props.pendingNotesRef.current.has(noteId),
             )
-            .map((noteId: string) =>
-              db.notes.put({
-                id: noteId,
-                title: noteList[noteId].title,
-                content: noteList[noteId].content,
-                contentWords: turndownService
-                  .turndown(noteList[noteId].content)
-                  .split(/\s+/),
-                ydocArray: noteList[noteId].ydocArray,
-              }),
+            .map(
+              (noteId: string) =>
+                db.notes.update(noteId, {
+                  content: noteList[noteId].content,
+                  contentWords: turndownService
+                    .turndown(noteList[noteId].content)
+                    .split(/\s+/),
+                  ydocArray: noteList[noteId].ydocArray,
+                }), // assume metadata observe would have created the rows already, so we just update here
             ),
         );
 

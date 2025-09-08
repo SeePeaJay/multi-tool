@@ -22,7 +22,7 @@
     @apply font-semibold text-blue-600;
   }
 
-  .blocklink {
+  .block-embed {
     @apply block rounded-lg bg-blue-50 p-2;
   }
 

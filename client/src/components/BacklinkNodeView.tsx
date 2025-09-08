@@ -92,7 +92,7 @@ const BacklinkNodeView: React.FC<NodeViewProps> = ({
       </NavLink>
       {targetBlockId ? (
         <HashLink
-          className="blocklink"
+          className="block-embed"
           to={`/app/notes/${targetNoteId}#${targetBlockId}`}
           dangerouslySetInnerHTML={{
             __html:

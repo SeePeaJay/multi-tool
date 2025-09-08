@@ -92,7 +92,7 @@ describe("<Note />", () => {
     cy.get("p").eq(1).should("contain", "test");
   });
 
-  it("displays, saves, and opens blocklinks correctly", () => {
+  it("displays, saves, and opens block references correctly", () => {
     insertNoteLink(1, "[[", "test");
     cy.get("span.notelink").click();
     insertNoteLink(1, "[[", "Starred");
@@ -130,7 +130,7 @@ describe("<Note />", () => {
     });
   });
 
-  it("handles duplicated blocklinks correctly (doesn't create extra block ids to the same block)", () => {
+  it("handles duplicated block references correctly (doesn't create extra block ids to the same block)", () => {
     insertNoteLink(1, "[[", "test");
     cy.get("span.notelink").click();
     insertNoteLink(1, "[[", "Starred");

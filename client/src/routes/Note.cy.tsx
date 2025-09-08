@@ -10,7 +10,7 @@ import Note from "./Note";
 import Notes from "./Notes";
 import "../index.css"; // include tailwind to properly set visibility of more options menu and modal
 
-function insertNoteLink(
+function insertNoteReference(
   pIndex: number,
   linkTrigger: string,
   linkTitle: string,
@@ -45,8 +45,8 @@ beforeEach(() => {
 });
 
 describe("<Note />", () => {
-  it("displays, saves, and opens notelinks correctly", () => {
-    insertNoteLink(1, "[[", "test");
+  it("displays, saves, and opens page references correctly", () => {
+    insertNoteReference(1, "[[", "test");
 
     cy.get("p").eq(1).should("include.text", "[[test]]");
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
@@ -72,7 +72,7 @@ describe("<Note />", () => {
       expect(noteIsCreatedInMetadata).to.equal(true);
     });
 
-    cy.get("span.notelink").click();
+    cy.get("span.note-reference").click();
 
     cy.get("p").eq(1).should("have.text", "");
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
@@ -82,31 +82,31 @@ describe("<Note />", () => {
   });
 
   it("goes back and forth between two notes correctly", () => {
-    insertNoteLink(1, "[[", "test");
-    cy.get("span.notelink").click();
-    insertNoteLink(1, "[[", "Starred");
-    cy.get("span.notelink").click();
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
+    insertNoteReference(1, "[[", "Starred");
+    cy.get("span.note-reference").click();
 
     cy.get("p").eq(1).should("contain", "test");
-    cy.get("span.notelink").click();
+    cy.get("span.note-reference").click();
     cy.get("p").eq(1).should("contain", "Starred");
-    cy.get("span.notelink").click();
+    cy.get("span.note-reference").click();
     cy.get("p").eq(1).should("contain", "test");
   });
 
   it("displays, saves, and opens block references correctly", () => {
-    insertNoteLink(1, "[[", "test");
-    cy.get("span.notelink").click();
-    insertNoteLink(1, "[[", "Starred");
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
+    insertNoteReference(1, "[[", "Starred");
     cy.get("p")
       .eq(1)
       .type(
         "{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}{enter}test paragraph",
       );
-    cy.get("span.notelink").click();
+    cy.get("span.note-reference").click();
     cy.get("p").eq(1).click().type("{enter}");
-    insertNoteLink(2, "[[", "test", "test paragraph");
-    cy.get("span.notelink")
+    insertNoteReference(2, "[[", "test", "test paragraph");
+    cy.get("span.note-reference")
       .eq(1)
       .invoke("text") // get the text content, e.g., '[[a::b]]'
       .then((text) => {
@@ -115,7 +115,7 @@ describe("<Note />", () => {
           cy.wrap(match[1]).as("blockId"); // store 'b' as alias
         }
       });
-    cy.get("span.notelink").eq(1).click();
+    cy.get("span.note-reference").eq(1).click();
 
     cy.get("@blockId").then((blockId) => {
       cy.get("span.block-id").should("have.text", `::${blockId}`);
@@ -133,24 +133,24 @@ describe("<Note />", () => {
   });
 
   it("handles duplicated block references correctly (doesn't create extra block ids to the same block)", () => {
-    insertNoteLink(1, "[[", "test");
-    cy.get("span.notelink").click();
-    insertNoteLink(1, "[[", "Starred");
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
+    insertNoteReference(1, "[[", "Starred");
     cy.get("p").eq(1).type("{enter}test paragraph");
-    cy.get("span.notelink").click();
+    cy.get("span.note-reference").click();
     cy.get("p").eq(1).click().type("{enter}");
-    insertNoteLink(2, "[[", "test", "test paragraph");
+    insertNoteReference(2, "[[", "test", "test paragraph");
     cy.get("p").eq(2).type("{enter}");
-    insertNoteLink(3, "[[", "test", "test paragraph");
-    cy.get("span.notelink").eq(1).click();
+    insertNoteReference(3, "[[", "test", "test paragraph");
+    cy.get("span.note-reference").eq(1).click();
 
     cy.get("span.block-id").should("have.length", 1);
   });
 
   it("tags in frontmatter correctly (creates a note embed in the tagged note)", () => {
-    insertNoteLink(1, "[[", "test");
-    cy.get("span.notelink").click();
-    insertNoteLink(0, "#", "Starred");
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
+    insertNoteReference(0, "#", "Starred");
     cy.get("span.tag").click();
 
     cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
@@ -167,11 +167,11 @@ describe("<Note />", () => {
   });
 
   it("removes tags in frontmatter correctly (removes note embed from previously tagged note)", () => {
-    insertNoteLink(1, "[[", "test");
-    cy.get("span.notelink").click();
-    insertNoteLink(0, "#", "Starred");
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
+    insertNoteReference(0, "#", "Starred");
     cy.get("span.tag").click();
-    cy.get("span.notelink").click();
+    cy.get("span.note-reference").click();
     cy.get("p").eq(0).click().type("{backspace}{backspace}");
     cy.mount(
       <MemoryRouter initialEntries={["/app/notes/starred"]}>
@@ -197,9 +197,9 @@ describe("<Note />", () => {
   });
 
   it("tags in block correctly (creates a note embed w/ block in the tagged note)", () => {
-    insertNoteLink(1, "[[", "test");
-    cy.get("span.notelink").click();
-    insertNoteLink(1, "#", "Starred");
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
+    insertNoteReference(1, "#", "Starred");
     cy.get("span.tag")
       .invoke("attr", "id")
       .then((id) => {
@@ -224,11 +224,11 @@ describe("<Note />", () => {
   });
 
   it("removes tags in block correctly (removes note embed w/ block from previously tagged note)", () => {
-    insertNoteLink(1, "[[", "test");
-    cy.get("span.notelink").click();
-    insertNoteLink(1, "#", "Starred");
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
+    insertNoteReference(1, "#", "Starred");
     cy.get("span.tag").click();
-    cy.get("span.notelink").click();
+    cy.get("span.note-reference").click();
     cy.get("p").eq(1).click().type("{backspace}{backspace}");
     cy.mount(
       <MemoryRouter initialEntries={["/app/notes/starred"]}>
@@ -254,9 +254,9 @@ describe("<Note />", () => {
   });
 
   it("creates a new note by tagging correctly", () => {
-    insertNoteLink(1, "[[", "test");
-    cy.get("span.notelink").click();
-    insertNoteLink(0, "#", "dashboard");
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
+    insertNoteReference(0, "#", "dashboard");
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
 
     cy.then(() => db.notes.get({ title: "dashboard" })).should((note) => {
@@ -278,7 +278,7 @@ describe("<Note />", () => {
     });
   });
 
-  it("deletes correctly (notelinks display undefined title)", () => {
+  it("deletes correctly (note references display undefined title)", () => {
     cy.mount(
       <MemoryRouter initialEntries={["/app/notes/starred"]}>
         <AuthProvider>
@@ -297,8 +297,8 @@ describe("<Note />", () => {
       </MemoryRouter>,
     );
 
-    insertNoteLink(1, "[[", "test");
-    cy.get("span.notelink").click();
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
     cy.contains('div[role="button"]', "test").click();
     cy.get("ul.menu").should("not.have.class", "invisible");
     cy.contains("li", /delete/i)

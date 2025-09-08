@@ -1,5 +1,5 @@
 /*
- * This file defines a shared suggestion config for both notelink and tag.
+ * This file defines a shared suggestion config for both note reference and tag.
  */
 
 import { ReactRenderer } from "@tiptap/react";
@@ -9,7 +9,7 @@ import NoteSuggestionMenu, {
   NoteSuggestionMenuRef,
   NoteSuggestion,
 } from "../components/NoteSuggestionMenu";
-import { NotelinkOptions } from "shared/tiptap/notelink";
+import { NoteReferenceOptions } from "shared/tiptap/note-reference";
 
 const parser = new DOMParser();
 const DOM_RECT_FALLBACK: DOMRect = {
@@ -96,7 +96,7 @@ async function getTitleSuggestionItems(
 }
 
 export const createBaseNoteSuggestionConfig =
-  (): NotelinkOptions["suggestion"] => ({
+  (): NoteReferenceOptions["suggestion"] => ({
     allowSpaces: true,
 
     items: async ({ query }): Promise<NoteSuggestion[]> => {

@@ -1,5 +1,5 @@
 /*
- * This file defines defines the actual dropdown menu to be rendered for both notelink and tag suggestion.
+ * This file defines defines the actual dropdown menu to be rendered for both note reference and tag suggestion.
  * Based on https://github.com/ueberdosis/tiptap/discussions/2274#discussioncomment-6745835
  */
 
@@ -9,7 +9,7 @@ import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import * as Y from "yjs";
 import { useSession } from "../contexts/SessionContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
-import { NotelinkNodeAttrs } from "shared/tiptap/notelink";
+import { NoteReferenceNodeAttrs } from "shared/tiptap/note-reference";
 import { setupYdoc } from "../utils/yjs";
 
 export type NoteSuggestion = {
@@ -99,7 +99,7 @@ const NoteSuggestionMenu = forwardRef<
       targetBlockId,
       blockIndexForNewBlockId,
     } = props.items[index];
-    let notelinkAttrsFromSelection: NotelinkNodeAttrs;
+    let selectedNoteReferenceTarget: NoteReferenceNodeAttrs;
 
     if (targetNoteId && !titleToCreate) {
       let blockId = targetBlockId;
@@ -114,7 +114,7 @@ const NoteSuggestionMenu = forwardRef<
         });
       }
 
-      notelinkAttrsFromSelection = {
+      selectedNoteReferenceTarget = {
         targetNoteId,
         targetBlockId: blockId,
       };
@@ -123,13 +123,13 @@ const NoteSuggestionMenu = forwardRef<
 
       await createNote({ newNoteId, titleToCreate: titleToCreate! });
 
-      notelinkAttrsFromSelection = {
+      selectedNoteReferenceTarget = {
         targetNoteId: newNoteId,
         targetBlockId: null,
       };
     }
 
-    props.command(notelinkAttrsFromSelection);
+    props.command(selectedNoteReferenceTarget);
   };
 
   const upHandler = () => {

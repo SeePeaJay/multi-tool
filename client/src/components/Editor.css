@@ -65,7 +65,7 @@ p.frontmatter {
   }
 }
 
-.notelink {
+.note-reference {
   color: rgb(37 99 235);
 
   &:hover {

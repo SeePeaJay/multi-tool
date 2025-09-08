@@ -9,7 +9,7 @@ import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
 import { nanoid } from "nanoid";
 
 interface CreateTagParams {
-  NotelinkNodeView?: React.FC<NodeViewProps>;
+  NoteReferenceNodeView?: React.FC<NodeViewProps>;
 }
 
 interface TagNodeAttrs {
@@ -33,7 +33,7 @@ type TagOptions<
   /**
    * The suggestion options.
    * @default {}
-   * @example { char: '@', pluginKey: NotelinkPluginKey, command: ({ editor, range, props }) => { ... } }
+   * @example { char: '@', pluginKey: NoteReferencePluginKey, command: ({ editor, range, props }) => { ... } }
    */
   suggestion: Omit<SuggestionOptions<SuggestionItem, Attrs>, "editor">;
 };
@@ -47,7 +47,7 @@ const TagPluginKey = new PluginKey("tag");
 /**
  * This extension allows you to insert tags into the editor.
  */
-function Tag({ NotelinkNodeView }: CreateTagParams) {
+function Tag({ NoteReferenceNodeView }: CreateTagParams) {
   return Node.create<TagOptions>({
     name: "tag",
 
@@ -210,9 +210,9 @@ function Tag({ NotelinkNodeView }: CreateTagParams) {
     /*
      * This replaces `renderHTML` with a component containing a router link, but doesn't affect the html output
      */
-    ...(NotelinkNodeView && {
+    ...(NoteReferenceNodeView && {
       addNodeView() {
-        return ReactNodeViewRenderer(NotelinkNodeView);
+        return ReactNodeViewRenderer(NoteReferenceNodeView);
       },
     }),
   });

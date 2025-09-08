@@ -10,7 +10,7 @@ import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
 import { createBaseNoteSuggestionConfig } from "../utils/baseNoteSuggestionConfig";
 import { updateEditorNoteEmbedsIfOutdated } from "../utils/contentEditorHelpers";
 import NoteEmbedNodeView from "./NoteEmbedNodeView";
-import NotelinkNodeView from "./NotelinkNodeView";
+import NoteReferenceNodeView from "./NoteReferenceNodeView";
 
 interface ContentEditorProps {
   noteId: string; // using noteId props means we can call `markNoteAsActive` to setup ydocRef early
@@ -113,7 +113,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
     <EditorProvider
       extensions={[
         ...createContentEditorExtensions({
-          NotelinkNodeView,
+          NoteReferenceNodeView,
           NoteEmbedNodeView,
           baseNoteSuggestionConfig: createBaseNoteSuggestionConfig(),
         }),

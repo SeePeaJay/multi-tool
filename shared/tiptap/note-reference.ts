@@ -1,5 +1,5 @@
 /*
- * This file defines a custom notelink node, based on Tiptap's mention.ts.
+ * This file defines a custom note reference node, based on Tiptap's mention.ts.
  */
 
 import { mergeAttributes, Node } from "@tiptap/core";
@@ -7,11 +7,11 @@ import { PluginKey } from "@tiptap/pm/state";
 import { ReactNodeViewRenderer, NodeViewProps } from "@tiptap/react";
 import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
 
-interface CreateNotelinkParams {
-  NotelinkNodeView?: React.FC<NodeViewProps>;
+interface CreateNoteReferenceParams {
+  NoteReferenceNodeView?: React.FC<NodeViewProps>;
 }
 
-export interface NotelinkNodeAttrs {
+export interface NoteReferenceNodeAttrs {
   /**
    * The target id to be rendered by the editor. Stored as a `data-target-note-id` attribute.
    */
@@ -21,9 +21,9 @@ export interface NotelinkNodeAttrs {
 }
 
 // define a type for addOptions below
-export type NotelinkOptions<
+export type NoteReferenceOptions<
   SuggestionItem = any,
-  Attrs extends Record<string, any> = NotelinkNodeAttrs,
+  Attrs extends Record<string, any> = NoteReferenceNodeAttrs,
 > = {
   /**
    * Whether to delete the trigger character with backspace.
@@ -34,23 +34,23 @@ export type NotelinkOptions<
   /**
    * The suggestion options.
    * @default {}
-   * @example { char: '@', pluginKey: NotelinkPluginKey, command: ({ editor, range, props }) => { ... } }
+   * @example { char: '@', pluginKey: NoteReferencePluginKey, command: ({ editor, range, props }) => { ... } }
    */
   suggestion: Omit<SuggestionOptions<SuggestionItem, Attrs>, "editor">;
 };
 
 /**
- * The plugin key for the notelink plugin.
- * @default 'notelink'
+ * The plugin key for the note reference plugin.
+ * @default 'noteReference'
  */
-export const NotelinkPluginKey = new PluginKey("notelink");
+export const NoteReferencePluginKey = new PluginKey("noteReference");
 
 /**
- * This extension allows you to insert notelinks into the editor.
+ * This extension allows you to insert note references into the editor.
  */
-function Notelink({ NotelinkNodeView }: CreateNotelinkParams) {
-  return Node.create<NotelinkOptions>({
-    name: "notelink",
+function NoteReference({ NoteReferenceNodeView }: CreateNoteReferenceParams) {
+  return Node.create<NoteReferenceOptions>({
+    name: "noteReference",
 
     priority: 101,
 
@@ -60,7 +60,7 @@ function Notelink({ NotelinkNodeView }: CreateNotelinkParams) {
         deleteTriggerWithBackspace: true,
         suggestion: {
           char: "[[",
-          pluginKey: NotelinkPluginKey,
+          pluginKey: NoteReferencePluginKey,
           command: ({ editor, range, props }) => {
             // increase range.to by one when the next node is of type "text"
             // and starts with a space character
@@ -156,7 +156,7 @@ function Notelink({ NotelinkNodeView }: CreateNotelinkParams) {
         "span",
         mergeAttributes(
           {
-            class: "notelink",
+            class: "note-reference",
           },
           attributesToRender,
         ),
@@ -172,7 +172,7 @@ function Notelink({ NotelinkNodeView }: CreateNotelinkParams) {
       return {
         Backspace: () =>
           this.editor.commands.command(({ tr, state }) => {
-            let isNotelink = false;
+            let isNoteReference = false;
             const { selection } = state;
             const { empty, anchor } = selection;
 
@@ -182,7 +182,7 @@ function Notelink({ NotelinkNodeView }: CreateNotelinkParams) {
 
             state.doc.nodesBetween(anchor - 1, anchor, (node, pos) => {
               if (node.type.name === this.name) {
-                isNotelink = true;
+                isNoteReference = true;
                 tr.insertText(
                   this.options.deleteTriggerWithBackspace
                     ? ""
@@ -195,7 +195,7 @@ function Notelink({ NotelinkNodeView }: CreateNotelinkParams) {
               }
             });
 
-            return isNotelink;
+            return isNoteReference;
           }),
       };
     },
@@ -212,12 +212,12 @@ function Notelink({ NotelinkNodeView }: CreateNotelinkParams) {
     /*
      * This replaces `renderHTML` with a component containing a router link, but doesn't affect the html output
      */
-    ...(NotelinkNodeView && {
+    ...(NoteReferenceNodeView && {
       addNodeView() {
-        return ReactNodeViewRenderer(NotelinkNodeView);
+        return ReactNodeViewRenderer(NoteReferenceNodeView);
       },
     }),
   });
 }
 
-export default Notelink;
+export default NoteReference;

@@ -7,13 +7,13 @@ import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import NoteEmbed from "./note-embed.js";
 import BlockId from "./block-id.js";
 import Frontmatter from "./frontmatter.js";
-import Notelink, { NotelinkOptions } from "./notelink.js";
+import NoteReference, { NoteReferenceOptions } from "./note-reference.js";
 import Tag from "./tag.js";
 
 interface CreateContentEditorExtensionsParams {
-  NotelinkNodeView: React.FC<NodeViewProps>;
+  NoteReferenceNodeView: React.FC<NodeViewProps>;
   NoteEmbedNodeView: React.FC<NodeViewProps>;
-  baseNoteSuggestionConfig: NotelinkOptions["suggestion"];
+  baseNoteSuggestionConfig: NoteReferenceOptions["suggestion"];
 }
 
 const CustomDocument = Document.extend({
@@ -41,7 +41,7 @@ const CustomPlaceholder = Placeholder.configure({
 export const createContentEditorExtensions = (
   params?: CreateContentEditorExtensionsParams,
 ) => {
-  const { NotelinkNodeView, NoteEmbedNodeView, baseNoteSuggestionConfig } =
+  const { NoteReferenceNodeView, NoteEmbedNodeView, baseNoteSuggestionConfig } =
     params || {};
 
   return [
@@ -67,10 +67,10 @@ export const createContentEditorExtensions = (
     CustomDocument,
     Frontmatter,
     CustomParagraph,
-    Notelink({ NotelinkNodeView }).configure({
+    NoteReference({ NoteReferenceNodeView }).configure({
       ...(baseNoteSuggestionConfig && { suggestion: baseNoteSuggestionConfig }),
     }),
-    Tag({ NotelinkNodeView }).configure({
+    Tag({ NoteReferenceNodeView }).configure({
       ...(baseNoteSuggestionConfig && { suggestion: baseNoteSuggestionConfig }),
     }),
     NoteEmbed({ NoteEmbedNodeView }),

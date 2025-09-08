@@ -3,14 +3,9 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { HashLink } from "react-router-hash-link";
 import { db } from "../db";
 
-const NotelinkNodeView: React.FC<NodeViewProps> = ({
-  node,
-}) => {
-  const suggestionChar = node.attrs.type === "notelink" ? "[[" : "#";
-  const {
-    targetNoteId,
-    targetBlockId,
-  } = node.attrs;
+const NoteReferenceNodeView: React.FC<NodeViewProps> = ({ node }) => {
+  const suggestionChar = node.attrs.type === "noteReference" ? "[[" : "#";
+  const { targetNoteId, targetBlockId } = node.attrs;
   const note = useLiveQuery(() => db.notes.get(targetNoteId), [targetNoteId]);
 
   return (
@@ -18,7 +13,7 @@ const NotelinkNodeView: React.FC<NodeViewProps> = ({
       as="span"
       // only display id if current node is a tag; used to target a block in a note embed
       id={node.attrs.type === "tag" ? node.attrs.id : ""}
-      className={`${node.attrs.type} ${!note ? "text-blue-100" : ""}`}
+      className={`${node.attrs.type === "noteReference" ? "note-reference" : "tag"} ${!note ? "text-blue-100" : ""}`}
     >
       {!note ? (
         <>Cannot find note with id "{targetNoteId}"</>
@@ -35,4 +30,4 @@ const NotelinkNodeView: React.FC<NodeViewProps> = ({
   );
 };
 
-export default NotelinkNodeView;
+export default NoteReferenceNodeView;

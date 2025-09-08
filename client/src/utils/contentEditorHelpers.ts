@@ -1,30 +1,30 @@
 import { Editor as TiptapEditor } from "@tiptap/react";
 import isEqual from "lodash.isequal";
 
-interface UpdateBacklinksParams {
-  currentBacklinks: string[] | undefined;
+interface UpdateNoteEmbedsParams {
+  currentNoteEmbeds: string[] | undefined;
   editorRef: React.MutableRefObject<TiptapEditor | null>;
 }
 
-function updateEditorBacklinksIfOutdated({
-  currentBacklinks,
+function updateEditorNoteEmbedsIfOutdated({
+  currentNoteEmbeds,
   editorRef,
-}: UpdateBacklinksParams) {
-  const backlinksFromEditor: Record<
+}: UpdateNoteEmbedsParams) {
+  const noteEmbedsFromEditor: Record<
     string,
     Array<{ pos: number; size: number }>
   > = {};
 
-  // populate backlinksFromEditor
+  // populate noteEmbedsFromEditor
   editorRef.current!.state.doc.descendants((node, pos) => {
-    if (node.type.name === "backlink") {
+    if (node.type.name === "noteEmbed") {
       const { targetNoteId, targetBlockId } = node.attrs;
 
-      if (!backlinksFromEditor[`${targetNoteId}::${targetBlockId}`]) {
-        backlinksFromEditor[`${targetNoteId}::${targetBlockId}`] = [];
+      if (!noteEmbedsFromEditor[`${targetNoteId}::${targetBlockId}`]) {
+        noteEmbedsFromEditor[`${targetNoteId}::${targetBlockId}`] = [];
       }
 
-      backlinksFromEditor[`${targetNoteId}::${targetBlockId}`].push({
+      noteEmbedsFromEditor[`${targetNoteId}::${targetBlockId}`].push({
         pos,
         size: node.nodeSize,
       });
@@ -32,46 +32,46 @@ function updateEditorBacklinksIfOutdated({
   });
 
   // convert to sets for comparison
-  const [setOfBacklinks, setOfBacklinksFromEditor] = [
-    new Set(currentBacklinks),
-    new Set(Object.keys(backlinksFromEditor)),
+  const [setOfNoteEmbeds, setOfNoteEmbedsFromEditor] = [
+    new Set(currentNoteEmbeds),
+    new Set(Object.keys(noteEmbedsFromEditor)),
   ];
 
-  // diff the sets and create/remove backlinks accordingly
+  // diff the sets and create/remove note embeds accordingly
   if (
-    currentBacklinks && // backlinks can be undefined initially
-    !isEqual(setOfBacklinks, setOfBacklinksFromEditor)
+    currentNoteEmbeds && // note embeds can be undefined initially
+    !isEqual(setOfNoteEmbeds, setOfNoteEmbedsFromEditor)
   ) {
-    const backlinksToCreate = Array.from(
-      setOfBacklinks.difference(setOfBacklinksFromEditor),
+    const noteEmbedsToCreate = Array.from(
+      setOfNoteEmbeds.difference(setOfNoteEmbedsFromEditor),
     );
-    const backlinksToRemove = Array.from(
-      setOfBacklinksFromEditor.difference(setOfBacklinks),
+    const noteEmbedsToRemove = Array.from(
+      setOfNoteEmbedsFromEditor.difference(setOfNoteEmbeds),
     );
 
-    backlinksToRemove.forEach((backlink) => {
-      const posAndSizeOfBacklink = backlinksFromEditor[backlink];
+    noteEmbedsToRemove.forEach((noteEmbed) => {
+      const posAndSizeOfNoteEmbed = noteEmbedsFromEditor[noteEmbed];
       const { tr } = editorRef.current!.state;
 
-      posAndSizeOfBacklink.forEach(({ pos, size }) => {
+      posAndSizeOfNoteEmbed.forEach(({ pos, size }) => {
         tr.delete(pos, pos + size);
       });
 
       editorRef.current!.view.dispatch(tr);
     });
 
-    backlinksToCreate.forEach((backlink) => {
+    noteEmbedsToCreate.forEach((noteEmbed) => {
       setTimeout(() => {
-        const [targetNoteId, targetBlockId] = backlink.split("::");
+        const [targetNoteId, targetBlockId] = noteEmbed.split("::");
 
         const endPosition = editorRef.current!.state.doc.content.size;
         editorRef.current!.commands.insertContentAt(
           endPosition,
-          `<div class="backlink" data-target-note-id="${targetNoteId}" data-target-block-id="${targetBlockId}">${targetBlockId}</div>`,
+          `<div class="note-embed" data-target-note-id="${targetNoteId}" data-target-block-id="${targetBlockId}">${targetBlockId}</div>`,
         );
       });
     });
   }
 }
 
-export { updateEditorBacklinksIfOutdated };
+export { updateEditorNoteEmbedsIfOutdated };

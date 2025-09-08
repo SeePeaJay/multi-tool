@@ -65,7 +65,9 @@ describe("<Note />", () => {
       const ydoc = new Y.Doc();
       Y.applyUpdate(ydoc, new Uint8Array(metadataYdocArray));
       const noteMetadata = ydoc.getMap("noteMetadata");
-      const noteIsCreatedInMetadata = Array.from(noteMetadata.values()).includes("test");
+      const noteIsCreatedInMetadata = Array.from(
+        noteMetadata.values(),
+      ).includes("test");
 
       expect(noteIsCreatedInMetadata).to.equal(true);
     });
@@ -145,14 +147,14 @@ describe("<Note />", () => {
     cy.get("span.block-id").should("have.length", 1);
   });
 
-  it("tags in frontmatter correctly (creates a backlink in the tagged note)", () => {
+  it("tags in frontmatter correctly (creates a note embed in the tagged note)", () => {
     insertNoteLink(1, "[[", "test");
     cy.get("span.notelink").click();
     insertNoteLink(0, "#", "Starred");
     cy.get("span.tag").click();
 
-    cy.get('div[data-type="backlink"]').should("have.length", 1);
-    cy.get('div[data-type="backlink"]').should("have.text", "test");
+    cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
+    cy.get('div[data-type="noteEmbed"]').should("have.text", "test");
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
     cy.then(async () => {
       const starred = await db.notes.get("starred");
@@ -164,7 +166,7 @@ describe("<Note />", () => {
     });
   });
 
-  it("removes tags in frontmatter correctly (removes backlink from previously tagged note)", () => {
+  it("removes tags in frontmatter correctly (removes note embed from previously tagged note)", () => {
     insertNoteLink(1, "[[", "test");
     cy.get("span.notelink").click();
     insertNoteLink(0, "#", "Starred");
@@ -188,13 +190,13 @@ describe("<Note />", () => {
     );
     cy.wait(1000); // wait for editor display after remount
 
-    cy.get('div[data-type="backlink"]').should("have.length", 0);
+    cy.get('div[data-type="noteEmbed"]').should("have.length", 0);
     cy.then(() => db.notes.get("starred")).should((note) => {
       expect(note?.content).to.not.contain(`$ `);
     });
   });
 
-  it("tags in block correctly (creates a backlink w/ block in the tagged note)", () => {
+  it("tags in block correctly (creates a note embed w/ block in the tagged note)", () => {
     insertNoteLink(1, "[[", "test");
     cy.get("span.notelink").click();
     insertNoteLink(1, "#", "Starred");
@@ -205,9 +207,9 @@ describe("<Note />", () => {
       });
     cy.get("span.tag").click();
 
-    cy.get('div[data-type="backlink"]').should("have.length", 1);
-    cy.get('div[data-type="backlink"]').should("include.text", "test");
-    cy.get('div[data-type="backlink"]').should("include.text", "#starred");
+    cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
+    cy.get('div[data-type="noteEmbed"]').should("include.text", "test");
+    cy.get('div[data-type="noteEmbed"]').should("include.text", "#starred");
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
     cy.get("@tagId").then((tagId) => {
       cy.then(async () => {
@@ -221,7 +223,7 @@ describe("<Note />", () => {
     });
   });
 
-  it("removes tags in block correctly (removes backlink w/ block from previously tagged note)", () => {
+  it("removes tags in block correctly (removes note embed w/ block from previously tagged note)", () => {
     insertNoteLink(1, "[[", "test");
     cy.get("span.notelink").click();
     insertNoteLink(1, "#", "Starred");
@@ -245,7 +247,7 @@ describe("<Note />", () => {
     );
     cy.wait(1000); // wait for editor display after remount
 
-    cy.get('div[data-type="backlink"]').should("have.length", 0);
+    cy.get('div[data-type="noteEmbed"]').should("have.length", 0);
     cy.then(() => db.notes.get("starred")).should((note) => {
       expect(note?.content).to.not.contain(`$ `);
     });
@@ -263,8 +265,8 @@ describe("<Note />", () => {
 
     cy.get("span.tag").click();
 
-    cy.get('div[data-type="backlink"]').should("have.length", 1);
-    cy.get('div[data-type="backlink"]').should("have.text", "test");
+    cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
+    cy.get('div[data-type="noteEmbed"]').should("have.text", "test");
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
     cy.then(async () => {
       const dashboard = await db.notes.get({ title: "dashboard" });
@@ -317,9 +319,9 @@ describe("<Note />", () => {
       const ydoc = new Y.Doc();
       Y.applyUpdate(ydoc, new Uint8Array(metadataYdocArray));
       const noteMetadata = ydoc.getMap("noteMetadata");
-      const noteIsDeletedFromMetadata = !Array.from(noteMetadata.values()).includes(
-        "test",
-      );
+      const noteIsDeletedFromMetadata = !Array.from(
+        noteMetadata.values(),
+      ).includes("test");
 
       expect(noteIsDeletedFromMetadata).to.equal(true);
     });

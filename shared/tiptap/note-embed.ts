@@ -1,17 +1,17 @@
 /*
- * This file defines a custom backlink node.
+ * This file defines a custom note embed node.
  */
 
 import { Node } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewProps } from "@tiptap/react";
 
-interface CreateBacklinkParams {
-  BacklinkNodeView?: React.FC<NodeViewProps>;
+interface CreateNoteEmbedParams {
+  NoteEmbedNodeView?: React.FC<NodeViewProps>;
 }
 
-function Backlink({ BacklinkNodeView }: CreateBacklinkParams) {
+function NoteEmbed({ NoteEmbedNodeView }: CreateNoteEmbedParams) {
   return Node.create({
-    name: "backlink",
+    name: "noteEmbed",
 
     group: "block",
 
@@ -30,7 +30,7 @@ function Backlink({ BacklinkNodeView }: CreateBacklinkParams) {
     parseHTML() {
       return [
         {
-          tag: "div.backlink",
+          tag: "div.note-embed",
           getAttrs: (element) => ({
             targetNoteId: element.getAttribute("data-target-note-id"),
             targetBlockId: element.getAttribute("data-target-block-id"),
@@ -45,7 +45,7 @@ function Backlink({ BacklinkNodeView }: CreateBacklinkParams) {
       return [
         "div",
         {
-          class: "backlink",
+          class: "note-embed",
           "data-target-note-id": targetNoteId,
           "data-target-block-id": targetBlockId,
         },
@@ -53,12 +53,12 @@ function Backlink({ BacklinkNodeView }: CreateBacklinkParams) {
       ];
     },
 
-    ...(BacklinkNodeView && {
+    ...(NoteEmbedNodeView && {
       addNodeView() {
-        return ReactNodeViewRenderer(BacklinkNodeView);
+        return ReactNodeViewRenderer(NoteEmbedNodeView);
       },
     }),
   });
 }
 
-export default Backlink;
+export default NoteEmbed;

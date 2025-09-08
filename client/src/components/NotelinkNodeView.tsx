@@ -16,7 +16,7 @@ const NotelinkNodeView: React.FC<NodeViewProps> = ({
   return (
     <NodeViewWrapper
       as="span"
-      // only display id if current node is a tag; used to target a block in a backlink
+      // only display id if current node is a tag; used to target a block in a note embed
       id={node.attrs.type === "tag" ? node.attrs.id : ""}
       className={`${node.attrs.type} ${!note ? "text-blue-100" : ""}`}
     >

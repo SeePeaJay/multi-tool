@@ -8,8 +8,8 @@ import { db } from "../db";
 import { useSession } from "../contexts/SessionContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
 import { createBaseNoteSuggestionConfig } from "../utils/baseNoteSuggestionConfig";
-import { updateEditorBacklinksIfOutdated } from "../utils/contentEditorHelpers";
-import BacklinkNodeView from "./BacklinkNodeView";
+import { updateEditorNoteEmbedsIfOutdated } from "../utils/contentEditorHelpers";
+import NoteEmbedNodeView from "./NoteEmbedNodeView";
 import NotelinkNodeView from "./NotelinkNodeView";
 
 interface ContentEditorProps {
@@ -31,10 +31,10 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
 
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null);
 
-  const [backlinksAreUpToDate, setBacklinksAreUpToDate] = useState(false);
+  const [noteEmbedsAreUpToDate, setNoteEmbedsAreUpToDate] = useState(false);
 
-  const currentBacklinks = useLiveQuery(async () => {
-    setBacklinksAreUpToDate(false);
+  const currentNoteEmbeds = useLiveQuery(async () => {
+    setNoteEmbedsAreUpToDate(false);
 
     const output: string[] = [];
 
@@ -67,7 +67,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
       });
     });
 
-    setBacklinksAreUpToDate(true);
+    setNoteEmbedsAreUpToDate(true);
 
     return output;
   }, []);
@@ -97,24 +97,24 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
     };
   }, []);
 
-  // Update backlinks only until editorRef has a value and the backlinks for this noteId are computed
+  // Update note embeds only until editorRef has a value and the note embeds for this noteId are computed
   useEffect(() => {
-    if (!editorIsReady || !backlinksAreUpToDate) {
+    if (!editorIsReady || !noteEmbedsAreUpToDate) {
       return;
     }
 
-    updateEditorBacklinksIfOutdated({
-      currentBacklinks,
+    updateEditorNoteEmbedsIfOutdated({
+      currentNoteEmbeds,
       editorRef,
     });
-  }, [editorIsReady, backlinksAreUpToDate]);
+  }, [editorIsReady, noteEmbedsAreUpToDate]);
 
   return ydoc ? ( // only render until ydoc is ready
     <EditorProvider
       extensions={[
         ...createContentEditorExtensions({
           NotelinkNodeView,
-          BacklinkNodeView,
+          NoteEmbedNodeView,
           baseNoteSuggestionConfig: createBaseNoteSuggestionConfig(),
         }),
         Collaboration.configure({

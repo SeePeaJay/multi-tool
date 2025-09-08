@@ -18,7 +18,7 @@
 }
 
 @layer components {
-  .backlinkTitle {
+  .note-embed-title {
     @apply font-semibold text-blue-600;
   }
 

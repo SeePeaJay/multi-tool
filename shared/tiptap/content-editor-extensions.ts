@@ -4,7 +4,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { NodeViewProps } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
-import Backlink from "./backlink.js";
+import NoteEmbed from "./note-embed.js";
 import BlockId from "./block-id.js";
 import Frontmatter from "./frontmatter.js";
 import Notelink, { NotelinkOptions } from "./notelink.js";
@@ -12,7 +12,7 @@ import Tag from "./tag.js";
 
 interface CreateContentEditorExtensionsParams {
   NotelinkNodeView: React.FC<NodeViewProps>;
-  BacklinkNodeView: React.FC<NodeViewProps>;
+  NoteEmbedNodeView: React.FC<NodeViewProps>;
   baseNoteSuggestionConfig: NotelinkOptions["suggestion"];
 }
 
@@ -41,7 +41,7 @@ const CustomPlaceholder = Placeholder.configure({
 export const createContentEditorExtensions = (
   params?: CreateContentEditorExtensionsParams,
 ) => {
-  const { NotelinkNodeView, BacklinkNodeView, baseNoteSuggestionConfig } =
+  const { NotelinkNodeView, NoteEmbedNodeView, baseNoteSuggestionConfig } =
     params || {};
 
   return [
@@ -50,9 +50,9 @@ export const createContentEditorExtensions = (
       scrollTreshold: 100,
       excludedTags: [
         "p.frontmatter",
-        "div:has(> div.pointer-events-none)", // the selector for container of backlink node view; prevent dragging the backlink until it is ready
+        "div:has(> div.pointer-events-none)", // the selector for container of node embed node view; prevent dragging the note embed until it is ready
       ],
-      customNodes: ["backlink"],
+      customNodes: ["noteEmbed"],
     }),
     StarterKit.configure({
       document: false,
@@ -73,7 +73,7 @@ export const createContentEditorExtensions = (
     Tag({ NotelinkNodeView }).configure({
       ...(baseNoteSuggestionConfig && { suggestion: baseNoteSuggestionConfig }),
     }),
-    Backlink({ BacklinkNodeView }),
+    NoteEmbed({ NoteEmbedNodeView }),
     BlockId,
     CustomPlaceholder,
   ];

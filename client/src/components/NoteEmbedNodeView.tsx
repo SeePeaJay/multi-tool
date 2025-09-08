@@ -5,16 +5,13 @@ import { NavLink } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 import { db } from "../db";
 
-const BacklinkNodeView: React.FC<NodeViewProps> = ({
-  node,
-  editor,
-}) => {
+const NoteEmbedNodeView: React.FC<NodeViewProps> = ({ node, editor }) => {
   const { targetNoteId, targetBlockId } = node.attrs;
 
   const [editorUpdateCounter, setEditorUpdateCounter] = useState(0);
 
   // watch for editor updates
-  // necessary bc sometimes when a backlink ends up at a position occupied by an old node (via dragging or other means), somehow tiptap transmits the properties of the old node to that position
+  // necessary bc sometimes when a note embed ends up at a position occupied by an old node (via dragging or other means), somehow tiptap transmits the properties of the old node to that position
   // a refresh ensures the right data is displayed
   useEffect(() => {
     if (!editor) return;
@@ -83,11 +80,8 @@ const BacklinkNodeView: React.FC<NodeViewProps> = ({
   );
 
   return (
-    <NodeViewWrapper
-      as="div"
-      data-type="backlink"
-    >
-      <NavLink className="backlinkTitle" to={`/app/notes/${targetNoteId}`}>
+    <NodeViewWrapper as="div" data-type="noteEmbed">
+      <NavLink className="note-embed-title" to={`/app/notes/${targetNoteId}`}>
         {targetNoteTitle}
       </NavLink>
       {targetBlockId ? (
@@ -107,4 +101,4 @@ const BacklinkNodeView: React.FC<NodeViewProps> = ({
   );
 };
 
-export default BacklinkNodeView;
+export default NoteEmbedNodeView;

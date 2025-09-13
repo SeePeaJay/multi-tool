@@ -1,8 +1,11 @@
+// import { isChangeOrigin } from "@tiptap/extension-collaboration";
 import Document from "@tiptap/extension-document";
 import Paragraph from "@tiptap/extension-paragraph";
 import Placeholder from "@tiptap/extension-placeholder";
+import UniqueID from "@tiptap/extension-unique-id";
 import { NodeViewProps } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { nanoid } from "nanoid";
 import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import NoteEmbed from "./note-embed.js";
 import BlockId from "./block-id.js";
@@ -76,5 +79,9 @@ export const createContentEditorExtensions = (
     NoteEmbed({ NoteEmbedNodeView }),
     BlockId,
     CustomPlaceholder,
+    UniqueID.configure({
+      types: ["tag"],
+      generateID: () => nanoid(6),
+    }),
   ];
 };

@@ -6,7 +6,6 @@ import { mergeAttributes, Node } from "@tiptap/core";
 import { PluginKey } from "@tiptap/pm/state";
 import { ReactNodeViewRenderer, NodeViewProps } from "@tiptap/react";
 import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
-import { nanoid } from "nanoid";
 
 interface CreateTagParams {
   NoteReferenceNodeView?: React.FC<NodeViewProps>;
@@ -77,7 +76,6 @@ function Tag({ NoteReferenceNodeView }: CreateTagParams) {
                 {
                   type: this.name,
                   attrs: {
-                    id: nanoid(6),
                     ...props,
                   },
                 },
@@ -112,8 +110,8 @@ function Tag({ NoteReferenceNodeView }: CreateTagParams) {
 
     addAttributes() {
       return {
-        id: {
-          default: "",
+        id: { // defining this is what allows html output to include the id, used in queriedNoteEmbeds
+          default: null, // controls the initial value of the attribute internally; if empty string, UniqueID won't work as expected
           parseHTML: (element) => element.getAttribute("id"),
           renderHTML: (attributes) => ({ id: attributes.id }),
         },

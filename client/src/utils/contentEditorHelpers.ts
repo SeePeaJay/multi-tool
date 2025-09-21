@@ -1,77 +1,298 @@
 import { Editor as TiptapEditor } from "@tiptap/react";
 import isEqual from "lodash.isequal";
+import * as Y from "yjs";
+import { db } from "../db";
+import { SetupTempProviderArgs } from "./statelessMessengerHelpers";
+import { setupYdoc } from "./yjs";
 
-interface UpdateNoteEmbedsParams {
-  currentNoteEmbeds: string[] | undefined;
-  editorRef: React.MutableRefObject<TiptapEditor | null>;
+interface SyncNoteEmbedsForFirstVisitParams {
+  noteId: string;
+  editor: TiptapEditor;
+}
+interface SyncNoteEmbedsWithTagsParams {
+  currentNoteId: string;
+  tagsOnDocChange: Set<string>;
+  prevTags: Set<string>;
+  isConnectedToServer: boolean;
+  setupTempProvider: (params: SetupTempProviderArgs) => void;
+  updatePendingNotes: (updateType: "add" | "delete", noteId: string) => void;
+}
+interface InsertNoteEmbedForTagParams {
+  insertedTag: string;
+  taggedNoteId: string;
+  isConnectedToServer: boolean;
+  setupTempProvider: (params: SetupTempProviderArgs) => void;
+  updatePendingNotes: (updateType: "add" | "delete", noteId: string) => void;
+}
+interface RemoveNoteEmbedForTagParams {
+  removedTag: string;
+  untaggedNoteId: string;
+  isConnectedToServer: boolean;
+  setupTempProvider: (params: SetupTempProviderArgs) => void;
+  updatePendingNotes: (updateType: "add" | "delete", noteId: string) => void;
 }
 
-function updateEditorNoteEmbedsIfOutdated({
-  currentNoteEmbeds,
-  editorRef,
-}: UpdateNoteEmbedsParams) {
-  const noteEmbedsFromEditor: Record<
+async function getNoteEmbedsForFirstVisit(noteId: string) {
+  const output: string[] = [];
+
+  // query notes containing the tag
+  const targetNotes = await db.notes
+    .filter(
+      (note) => !!note.contentWords && note.contentWords.includes(`#${noteId}`),
+    )
+    .toArray();
+
+  targetNotes.forEach((note) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(note.content, "text/html");
+    const targetSpans = doc.querySelectorAll(
+      `span.tag[data-type="tag"][data-target-note-id="${noteId}"]`,
+    );
+    const parentElements = Array.from(targetSpans).map(
+      (span) => span.parentElement!,
+    );
+
+    parentElements.forEach((element, index) => {
+      output.push(
+        `${note.id}::${
+          element.classList.contains("frontmatter") ? "" : targetSpans[index].id
+        }`,
+      );
+    });
+  });
+
+  return output;
+}
+
+async function syncNoteEmbedsForFirstVisit({
+  noteId,
+  editor,
+}: SyncNoteEmbedsForFirstVisitParams) {
+  // populate what you have right now
+  const currentNoteEmbeds: Record<
     string,
     Array<{ pos: number; size: number }>
   > = {};
 
-  // populate noteEmbedsFromEditor
-  editorRef.current!.state.doc.descendants((node, pos) => {
+  editor.state.doc.descendants((node, pos) => {
     if (node.type.name === "noteEmbed") {
       const { targetNoteId, targetBlockId } = node.attrs;
 
-      if (!noteEmbedsFromEditor[`${targetNoteId}::${targetBlockId}`]) {
-        noteEmbedsFromEditor[`${targetNoteId}::${targetBlockId}`] = [];
+      if (!currentNoteEmbeds[`${targetNoteId}::${targetBlockId}`]) {
+        currentNoteEmbeds[`${targetNoteId}::${targetBlockId}`] = [];
       }
 
-      noteEmbedsFromEditor[`${targetNoteId}::${targetBlockId}`].push({
+      currentNoteEmbeds[`${targetNoteId}::${targetBlockId}`].push({
         pos,
         size: node.nodeSize,
       });
     }
   });
 
+  // populate what you should have
+  const expectedNoteEmbeds = await getNoteEmbedsForFirstVisit(noteId);
+
   // convert to sets for comparison
-  const [setOfNoteEmbeds, setOfNoteEmbedsFromEditor] = [
-    new Set(currentNoteEmbeds),
-    new Set(Object.keys(noteEmbedsFromEditor)),
+  const [expectedNoteEmbedSet, currentNoteEmbedSet] = [
+    new Set(expectedNoteEmbeds),
+    new Set(Object.keys(currentNoteEmbeds)),
   ];
 
   // diff the sets and create/remove note embeds accordingly
-  if (
-    currentNoteEmbeds && // note embeds can be undefined initially
-    !isEqual(setOfNoteEmbeds, setOfNoteEmbedsFromEditor)
-  ) {
+  if (!isEqual(expectedNoteEmbedSet, currentNoteEmbedSet)) {
     const noteEmbedsToCreate = Array.from(
-      setOfNoteEmbeds.difference(setOfNoteEmbedsFromEditor),
+      expectedNoteEmbedSet.difference(currentNoteEmbedSet),
     );
     const noteEmbedsToRemove = Array.from(
-      setOfNoteEmbedsFromEditor.difference(setOfNoteEmbeds),
+      currentNoteEmbedSet.difference(expectedNoteEmbedSet),
     );
 
     noteEmbedsToRemove.forEach((noteEmbed) => {
-      const posAndSizeOfNoteEmbed = noteEmbedsFromEditor[noteEmbed];
-      const { tr } = editorRef.current!.state;
+      const posAndSizeOfNoteEmbed = currentNoteEmbeds[noteEmbed];
+      const { tr } = editor.state;
 
       posAndSizeOfNoteEmbed.forEach(({ pos, size }) => {
         tr.delete(pos, pos + size);
       });
 
-      editorRef.current!.view.dispatch(tr);
+      tr.setMeta("origin", "syncNoteEmbedsForFirstVisit");
+
+      editor.view.dispatch(tr);
     });
 
     noteEmbedsToCreate.forEach((noteEmbed) => {
       setTimeout(() => {
         const [targetNoteId, targetBlockId] = noteEmbed.split("::");
 
-        const endPosition = editorRef.current!.state.doc.content.size;
-        editorRef.current!.commands.insertContentAt(
-          endPosition,
-          `<div class="note-embed" data-target-note-id="${targetNoteId}" data-target-block-id="${targetBlockId}">${targetBlockId}</div>`,
-        );
+        const endPosition = editor.state.doc.content.size;
+        editor.chain()
+          .insertContentAt(
+            endPosition,
+            `<div class="note-embed" data-target-note-id="${targetNoteId}" data-target-block-id="${targetBlockId}">${targetBlockId}</div>`,
+          )
+          .setMeta("origin", "syncNoteEmbedsForFirstVisit")
+          .run();
       });
     });
   }
 }
 
-export { updateEditorNoteEmbedsIfOutdated };
+function getTagsOnDocChange(currentYdoc: Y.Doc) {
+  const xmlFragment = currentYdoc.getXmlFragment("default");
+  const tagsOnDocChange: Set<string> = new Set();
+
+  for (const tag of xmlFragment.createTreeWalker(
+    (xml) => xml instanceof Y.XmlElement && xml.nodeName === "tag",
+  )) {
+    if (!(tag instanceof Y.XmlElement)) {
+      continue;
+    }
+
+    const { targetNoteId, id } = tag.getAttributes();
+
+    if (!targetNoteId || !id) {
+      console.warn("targetNoteId or id undefined");
+      continue;
+    }
+
+    if (
+      tag.parent instanceof Y.XmlElement &&
+      tag.parent.nodeName === "frontmatter"
+    ) {
+      tagsOnDocChange.add(targetNoteId);
+    } else {
+      tagsOnDocChange.add(`${targetNoteId},${id}`);
+    }
+  }
+
+  console.log(tagsOnDocChange);
+  return tagsOnDocChange;
+}
+
+function syncNoteEmbedsWithTagInsertionOrRemoval({
+  currentNoteId,
+  tagsOnDocChange,
+  prevTags,
+  isConnectedToServer,
+  setupTempProvider,
+  updatePendingNotes,
+}: SyncNoteEmbedsWithTagsParams) {
+  const tagsInserted = tagsOnDocChange.difference(prevTags);
+  const tagsRemoved = prevTags.difference(tagsOnDocChange);
+
+  for (const tag of tagsInserted) {
+    insertNoteEmbedForTag({
+      insertedTag: tag,
+      taggedNoteId: currentNoteId,
+      isConnectedToServer,
+      setupTempProvider,
+      updatePendingNotes,
+    });
+  }
+
+  for (const tag of tagsRemoved) {
+    removeNoteEmbedForTag({
+      removedTag: tag,
+      untaggedNoteId: currentNoteId,
+      isConnectedToServer,
+      setupTempProvider,
+      updatePendingNotes,
+    });
+  }
+}
+
+async function insertNoteEmbedForTag({
+  insertedTag,
+  taggedNoteId,
+  isConnectedToServer,
+  setupTempProvider,
+  updatePendingNotes,
+}: InsertNoteEmbedForTagParams) {
+  const [targetNoteId, tagId] = insertedTag.split(",");
+
+  const ydoc = new Y.Doc();
+  await setupYdoc({ noteId: targetNoteId, ydoc });
+
+  const xmlFragment = ydoc.getXmlFragment("default");
+  let noteEmbedAlreadyExists = false;
+
+  for (let i = 0; i < xmlFragment.length; i++) {
+    const block = xmlFragment.get(i);
+
+    if (
+      block instanceof Y.XmlElement &&
+      block.nodeName === "noteEmbed" &&
+      block.getAttribute("targetNoteId") === taggedNoteId &&
+      (!tagId || // if tagId is not defined, skip this check
+        block.getAttribute("targetBlockId") === tagId)
+    ) {
+      noteEmbedAlreadyExists = true;
+      break;
+    }
+  }
+
+  if (!noteEmbedAlreadyExists) {
+    const noteEmbed = new Y.XmlElement("noteEmbed");
+    noteEmbed.setAttribute("targetNoteId", taggedNoteId);
+    if (tagId) {
+      noteEmbed.setAttribute("targetBlockId", tagId);
+    }
+
+    xmlFragment.push([noteEmbed]);
+
+    if (isConnectedToServer) {
+      setupTempProvider({ noteId: targetNoteId, ydoc, shouldSendMsg: true });
+    } else {
+      updatePendingNotes("add", targetNoteId);
+    }
+  }
+}
+
+async function removeNoteEmbedForTag({
+  removedTag,
+  untaggedNoteId,
+  isConnectedToServer,
+  setupTempProvider,
+  updatePendingNotes,
+}: RemoveNoteEmbedForTagParams) {
+  const [targetNoteId, tagId] = removedTag.split(",");
+
+  const ydoc = new Y.Doc();
+  await setupYdoc({ noteId: targetNoteId, ydoc });
+
+  const xmlFragment = ydoc.getXmlFragment("default");
+  let noteEmbedIsRemoved = false;
+
+  for (let i = xmlFragment.length - 1; i >= 0; i--) {
+    const block = xmlFragment.get(i);
+
+    if (
+      block instanceof Y.XmlElement &&
+      block.nodeName === "noteEmbed" &&
+      block.getAttribute("targetNoteId") === untaggedNoteId &&
+      (!tagId || // if tagId is not defined, skip this check
+        block.getAttribute("targetBlockId") === tagId)
+    ) {
+      xmlFragment.delete(i, 1);
+      noteEmbedIsRemoved = true;
+    }
+  }
+
+  if (!noteEmbedIsRemoved) {
+    return;
+  }
+
+  if (isConnectedToServer) {
+    setupTempProvider({ noteId: targetNoteId, ydoc, shouldSendMsg: true });
+  } else {
+    updatePendingNotes("add", targetNoteId);
+  }
+}
+
+// embeddingNoteId
+
+export {
+  syncNoteEmbedsForFirstVisit,
+  getTagsOnDocChange,
+  syncNoteEmbedsWithTagInsertionOrRemoval,
+};

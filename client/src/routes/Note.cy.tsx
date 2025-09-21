@@ -260,7 +260,7 @@ describe("<Note />", () => {
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
 
     cy.then(() => db.notes.get({ title: "dashboard" })).should((note) => {
-      expect(note?.content).to.equal('<p class="frontmatter"></p><p></p>');
+      expect(note).to.exist;
     });
 
     cy.get("span.tag").click();

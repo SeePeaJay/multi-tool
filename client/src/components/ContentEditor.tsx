@@ -1,14 +1,16 @@
 import Collaboration from "@tiptap/extension-collaboration";
-import { EditorProvider, Editor as TiptapEditor } from "@tiptap/react";
-import { useLiveQuery } from "dexie-react-hooks";
+import { EditorProvider } from "@tiptap/react";
 import { useEffect, useRef, useState } from "react";
 import { createContentEditorExtensions } from "shared";
 import * as Y from "yjs";
-import { db } from "../db";
 import { useSession } from "../contexts/SessionContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
 import { createBaseNoteSuggestionConfig } from "../utils/baseNoteSuggestionConfig";
-import { updateEditorNoteEmbedsIfOutdated } from "../utils/contentEditorHelpers";
+import {
+  getTagsOnDocChange,
+  syncNoteEmbedsWithTagInsertionOrRemoval,
+  syncNoteEmbedsForFirstVisit,
+} from "../utils/contentEditorHelpers";
 import NoteEmbedNodeView from "./NoteEmbedNodeView";
 import NoteReferenceNodeView from "./NoteReferenceNodeView";
 
@@ -21,56 +23,17 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
     statelessMessengerRef,
     currentEditorNoteId,
     updatePendingNotes,
+    setupTempProvider,
     markNoteAsActive,
     markNoteAsInactive,
   } = useStatelessMessenger();
   const { isConnectedToServerRef } = useSession();
 
-  const editorRef = useRef<TiptapEditor | null>(null);
-  const [editorIsReady, setEditorIsReady] = useState(false);
+  const editorContentIsLoadedRef = useRef(false);
 
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null);
 
-  const [noteEmbedsAreUpToDate, setNoteEmbedsAreUpToDate] = useState(false);
-
-  const currentNoteEmbeds = useLiveQuery(async () => {
-    setNoteEmbedsAreUpToDate(false);
-
-    const output: string[] = [];
-
-    // query notes containing the keyword; changes to this result will recompute the live query
-    const targetNotes = await db.notes
-      .filter(
-        (note) =>
-          !!note.contentWords && note.contentWords.includes(`#${noteId}`),
-      )
-      .toArray();
-
-    targetNotes.forEach((note) => {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(note.content, "text/html");
-      const targetSpans = doc.querySelectorAll(
-        `span.tag[data-type="tag"][data-target-note-id="${noteId}"]`,
-      );
-      const parentElements = Array.from(targetSpans).map(
-        (span) => span.parentElement!,
-      );
-
-      parentElements.forEach((element, index) => {
-        output.push(
-          `${note.id}::${
-            element.classList.contains("frontmatter")
-              ? ""
-              : targetSpans[index].id
-          }`,
-        );
-      });
-    });
-
-    setNoteEmbedsAreUpToDate(true);
-
-    return output;
-  }, []);
+  const prevTagsRef = useRef<Set<string> | null>(null);
 
   useEffect(() => {
     currentEditorNoteId.current = noteId;
@@ -97,18 +60,6 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
     };
   }, []);
 
-  // Update note embeds only until editorRef has a value and the note embeds for this noteId are computed
-  useEffect(() => {
-    if (!editorIsReady || !noteEmbedsAreUpToDate) {
-      return;
-    }
-
-    updateEditorNoteEmbedsIfOutdated({
-      currentNoteEmbeds,
-      editorRef,
-    });
-  }, [editorIsReady, noteEmbedsAreUpToDate]);
-
   return ydoc ? ( // only render until ydoc is ready
     <EditorProvider
       extensions={[
@@ -121,20 +72,53 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
           document: ydoc,
         }),
       ]}
-      onCreate={({ editor }) => {
-        editorRef.current = editor;
-        setEditorIsReady(true);
-      }}
-      onUpdate={() => {
+      onUpdate={({ editor }) => {
         // diff(editor.getHTML());
 
-        if (!editorRef.current?.isFocused) {
+        if (!editor.isFocused) {
           return; // onUpdate handler is called once on mount; only execute below when editor is actually being edited
         }
 
         if (!isConnectedToServerRef.current) {
           updatePendingNotes("add", noteId);
         }
+      }}
+      onTransaction={({ transaction, editor }) => {
+        if (!transaction.docChanged) {
+          return;
+        }
+
+        if (transaction.getMeta("origin") === "syncNoteEmbedsForFirstVisit") {
+          console.log(transaction.getMeta("origin"));
+          return;
+        }
+
+        if (!editorContentIsLoadedRef.current) {
+          // editor content has just been loaded
+
+          editorContentIsLoadedRef.current = true;
+
+          syncNoteEmbedsForFirstVisit({ noteId, editor });
+
+          prevTagsRef.current = getTagsOnDocChange(ydoc); // prevTagsRef shouldn't be defined until this line
+        } else {
+          // compare current tags with previous to insert or remove note embeds
+
+          const tagsOnDocChange = getTagsOnDocChange(ydoc);
+
+          syncNoteEmbedsWithTagInsertionOrRemoval({
+            currentNoteId: noteId,
+            tagsOnDocChange,
+            prevTags: prevTagsRef.current!, // ! is fine since it has been set in this case
+            isConnectedToServer: isConnectedToServerRef.current,
+            setupTempProvider,
+            updatePendingNotes,
+          });
+
+          prevTagsRef.current = tagsOnDocChange;
+        }
+
+        // syncTagsWithNoteEmbeds
       }}
     ></EditorProvider>
   ) : null;

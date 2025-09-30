@@ -6,11 +6,7 @@ import * as Y from "yjs";
 import { useSession } from "../contexts/SessionContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
 import { createBaseNoteSuggestionConfig } from "../utils/baseNoteSuggestionConfig";
-import {
-  getTagsOnDocChange,
-  syncNoteEmbedsWithTagInsertionOrRemoval,
-  syncNoteEmbedsForFirstVisit,
-} from "../utils/contentEditorHelpers";
+import { useContentEditorHelpers } from "../hooks/content-editor-helpers";
 import NoteEmbedNodeView from "./NoteEmbedNodeView";
 import NoteReferenceNodeView from "./NoteReferenceNodeView";
 
@@ -23,11 +19,15 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
     statelessMessengerRef,
     currentEditorNoteId,
     updatePendingNotes,
-    setupTempProvider,
     markNoteAsActive,
     markNoteAsInactive,
   } = useStatelessMessenger();
   const { isConnectedToServerRef } = useSession();
+  const {
+    getTagsOnDocChange,
+    syncNoteEmbedsWithTags,
+    syncNoteEmbedsForFirstVisit,
+  } = useContentEditorHelpers();
 
   const editorContentIsLoadedRef = useRef(false);
 
@@ -106,13 +106,10 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
 
           const tagsOnDocChange = getTagsOnDocChange(ydoc);
 
-          syncNoteEmbedsWithTagInsertionOrRemoval({
+          syncNoteEmbedsWithTags({
             currentNoteId: noteId,
             tagsOnDocChange,
             prevTags: prevTagsRef.current!, // ! is fine since it has been set in this case
-            isConnectedToServer: isConnectedToServerRef.current,
-            setupTempProvider,
-            updatePendingNotes,
           });
 
           prevTagsRef.current = tagsOnDocChange;

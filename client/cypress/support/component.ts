@@ -36,15 +36,12 @@ Cypress.Commands.add("mount", mount);
 // Example use:
 // cy.mount(<MyComponent />)
 
-// Before each test, setup `currentUser` to prevent navbar from displaying sign-in button (Cypress clears localstorage before each test by default)
+/*
+  * Before each test, clear dexie data in case data from previous tests linger (Cypress does not clear this automatically), then setup `currentUser` to prevent navbar from displaying sign-in button (Cypress clears localstorage before each test by default)
+  * Clear data beforeEach instead of afterEach because it's possible to restart test suite before afterEach is called, allowing data from previous tests to linger
+*/
 beforeEach(() => {
-  localStorage.setItem("currentUser", "test-user");
-});
-
-// After each test, clear dexie data; otherwise, data from previous tests can linger (Cypress does not clear this automatically)
-afterEach(() => {
-  cy.then(() => {
-    db.notes.clear();
-    db.user.clear();
+  cy.then(() => db.notes.clear().then(() => db.user.clear())).then(() => {
+    localStorage.setItem("currentUser", "test-user");
   });
 });

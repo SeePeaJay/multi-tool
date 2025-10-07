@@ -1,3 +1,4 @@
+import { nanoid } from "nanoid";
 import { Routes, Route, MemoryRouter } from "react-router-dom";
 import * as Y from "yjs";
 import Navbar from "../components/Navbar";
@@ -5,7 +6,8 @@ import { AuthProvider } from "../contexts/AuthContext";
 import { LoadingProvider } from "../contexts/LoadingContext";
 import { SessionProvider } from "../contexts/SessionContext";
 import { StatelessMessengerProvider } from "../contexts/StatelessMessengerContext";
-import { db } from "../db";
+import { setupYdoc } from "../utils/yjs";
+import { db, dbCreateNote } from "../db";
 import Note from "./Note";
 import Notes from "./Notes";
 import "../index.css"; // include tailwind to properly set visibility of more options menu and modal
@@ -26,25 +28,27 @@ function insertNoteReference(
   cy.get("p").eq(pIndex).type("{enter}");
 }
 
-beforeEach(() => {
-  cy.mount(
-    <MemoryRouter initialEntries={["/app/notes/starred"]}>
-      <AuthProvider>
-        <LoadingProvider>
-          <SessionProvider>
-            <StatelessMessengerProvider>
-              <Routes>
-                <Route path="/app/notes/:noteId" element={<Note />} />
-              </Routes>
-            </StatelessMessengerProvider>
-          </SessionProvider>
-        </LoadingProvider>
-      </AuthProvider>
-    </MemoryRouter>,
-  );
-});
+const appComponent = (
+  <MemoryRouter initialEntries={["/app/notes/starred"]}>
+    <AuthProvider>
+      <LoadingProvider>
+        <SessionProvider>
+          <StatelessMessengerProvider>
+            <Routes>
+              <Route path="/app/notes/:noteId" element={<Note />} />
+            </Routes>
+          </StatelessMessengerProvider>
+        </SessionProvider>
+      </LoadingProvider>
+    </AuthProvider>
+  </MemoryRouter>
+);
 
 describe("<Note />", () => {
+  beforeEach(() => {
+    cy.mount(appComponent);
+  });
+
   it("displays, saves, and opens page references correctly", () => {
     insertNoteReference(1, "[[", "test");
 
@@ -147,137 +151,6 @@ describe("<Note />", () => {
     cy.get("span.block-id").should("have.length", 1);
   });
 
-  it("tags in frontmatter correctly (creates a note embed in the tagged note)", () => {
-    insertNoteReference(1, "[[", "test");
-    cy.get("span.note-reference").click();
-    insertNoteReference(0, "#", "Starred");
-    cy.get("span.tag").click();
-
-    cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
-    cy.get('div[data-type="noteEmbed"]').should("have.text", "test");
-    cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
-    cy.then(async () => {
-      const starred = await db.notes.get("starred");
-      const test = await db.notes.get({ title: "test" });
-
-      return { starred, test };
-    }).should(({ starred, test }) => {
-      expect(starred?.content).to.contain(`$ ${test?.id}`);
-    });
-  });
-
-  it("removes tags in frontmatter correctly (removes note embed from previously tagged note)", () => {
-    insertNoteReference(1, "[[", "test");
-    cy.get("span.note-reference").click();
-    insertNoteReference(0, "#", "Starred");
-    cy.get("span.tag").click();
-    cy.get("span.note-reference").click();
-    cy.get("p").eq(0).click().type("{backspace}{backspace}");
-    cy.mount(
-      <MemoryRouter initialEntries={["/app/notes/starred"]}>
-        <AuthProvider>
-          <LoadingProvider>
-            <SessionProvider>
-              <StatelessMessengerProvider>
-                <Routes>
-                  <Route path="/app/notes/:noteId" element={<Note />} />
-                </Routes>
-              </StatelessMessengerProvider>
-            </SessionProvider>
-          </LoadingProvider>
-        </AuthProvider>
-      </MemoryRouter>,
-    );
-    cy.wait(1000); // wait for editor display after remount
-
-    cy.get('div[data-type="noteEmbed"]').should("have.length", 0);
-    cy.then(() => db.notes.get("starred")).should((note) => {
-      expect(note?.content).to.not.contain(`$ `);
-    });
-  });
-
-  it("tags in block correctly (creates a note embed w/ block in the tagged note)", () => {
-    insertNoteReference(1, "[[", "test");
-    cy.get("span.note-reference").click();
-    insertNoteReference(1, "#", "Starred");
-    cy.get("span.tag")
-      .invoke("attr", "id")
-      .then((id) => {
-        cy.wrap(id).as("tagId");
-      });
-    cy.get("span.tag").click();
-
-    cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
-    cy.get('div[data-type="noteEmbed"]').should("include.text", "test");
-    cy.get('div[data-type="noteEmbed"]').should("include.text", "#starred");
-    cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
-    cy.get("@tagId").then((tagId) => {
-      cy.then(async () => {
-        const starred = await db.notes.get("starred");
-        const test = await db.notes.get({ title: "test" });
-
-        return { starred, test };
-      }).should(({ starred, test }) => {
-        expect(starred?.content).to.contain(`$ ${test?.id}::${tagId}`);
-      });
-    });
-  });
-
-  it("removes tags in block correctly (removes note embed w/ block from previously tagged note)", () => {
-    insertNoteReference(1, "[[", "test");
-    cy.get("span.note-reference").click();
-    insertNoteReference(1, "#", "Starred");
-    cy.get("span.tag").click();
-    cy.get("span.note-reference").click();
-    cy.get("p").eq(1).click().type("{backspace}{backspace}");
-    cy.mount(
-      <MemoryRouter initialEntries={["/app/notes/starred"]}>
-        <AuthProvider>
-          <LoadingProvider>
-            <SessionProvider>
-              <StatelessMessengerProvider>
-                <Routes>
-                  <Route path="/app/notes/:noteId" element={<Note />} />
-                </Routes>
-              </StatelessMessengerProvider>
-            </SessionProvider>
-          </LoadingProvider>
-        </AuthProvider>
-      </MemoryRouter>,
-    );
-    cy.wait(1000); // wait for editor display after remount
-
-    cy.get('div[data-type="noteEmbed"]').should("have.length", 0);
-    cy.then(() => db.notes.get("starred")).should((note) => {
-      expect(note?.content).to.not.contain(`$ `);
-    });
-  });
-
-  it("creates a new note by tagging correctly", () => {
-    insertNoteReference(1, "[[", "test");
-    cy.get("span.note-reference").click();
-    insertNoteReference(0, "#", "dashboard");
-    cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
-
-    cy.then(() => db.notes.get({ title: "dashboard" })).should((note) => {
-      expect(note).to.exist;
-    });
-
-    cy.get("span.tag").click();
-
-    cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
-    cy.get('div[data-type="noteEmbed"]').should("have.text", "test");
-    cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
-    cy.then(async () => {
-      const dashboard = await db.notes.get({ title: "dashboard" });
-      const test = await db.notes.get({ title: "test" });
-
-      return { dashboard, test };
-    }).should(({ dashboard, test }) => {
-      expect(dashboard?.content).to.contain(`$ ${test?.id}`);
-    });
-  });
-
   it("deletes correctly (note references display undefined title)", () => {
     cy.mount(
       <MemoryRouter initialEntries={["/app/notes/starred"]}>
@@ -325,5 +198,180 @@ describe("<Note />", () => {
 
       expect(noteIsDeletedFromMetadata).to.equal(true);
     });
+  });
+});
+
+describe("Sync note embeds with tags tests 1", () => {
+  // Tag `Starred` in `test` for below test case
+  beforeEach(() => {
+    cy.then(() => dbCreateNote({ id: "aaaaaa", title: "test" }))
+      .then(async () => {
+        const ydoc = new Y.Doc();
+        await setupYdoc({ noteId: "aaaaaa", ydoc });
+
+        const frontmatter = ydoc
+          .getXmlFragment("default")
+          .toArray()[0] as Y.XmlElement;
+
+        const tag = new Y.XmlElement("tag");
+        tag.setAttribute("targetNoteId", "starred");
+        tag.setAttribute("id", nanoid(6));
+
+        frontmatter.push([tag]);
+      })
+      .then(() => {
+        cy.mount(appComponent);
+      });
+  });
+
+  it("inserts note embed correctly on first visit (repairs correctly)", () => {
+    cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
+    cy.then(async () => {
+      const starred = await db.notes.get("starred");
+      const test = await db.notes.get({ title: "test" });
+
+      return { starred, test };
+    }).should(({ starred, test }) => {
+      expect(starred?.content).to.contain(`$ ${test?.id}`);
+    });
+  });
+});
+
+describe("Sync note embeds with tags tests 2", () => {
+  beforeEach(() => {
+    cy.mount(appComponent);
+  });
+
+  it("inserts page embed correctly after user inserts corresponding tag in frontmatter", () => {
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
+    insertNoteReference(0, "#", "Starred");
+
+    cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
+    cy.then(async () => {
+      const starred = await db.notes.get("starred");
+      const test = await db.notes.get({ title: "test" });
+
+      return { starred, test };
+    }).should(({ starred, test }) => {
+      expect(starred?.content).to.contain(`$ ${test?.id}`);
+    });
+
+    cy.get("span.tag").click();
+
+    cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
+    cy.get('div[data-type="noteEmbed"]').should("have.text", "test");
+  });
+
+  it("removes page embed correctly after user removes corresponding tag in frontmatter", () => {
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
+    insertNoteReference(0, "#", "Starred");
+    cy.get("p").eq(0).click().type("{backspace}{backspace}");
+
+    cy.wait(1000);
+    cy.then(() => db.notes.get("starred")).should((note) => {
+      expect(note?.content).to.not.contain(`$ `);
+    });
+
+    cy.mount(
+      <MemoryRouter initialEntries={["/app/notes/starred"]}>
+        <AuthProvider>
+          <LoadingProvider>
+            <SessionProvider>
+              <StatelessMessengerProvider>
+                <Routes>
+                  <Route path="/app/notes/:noteId" element={<Note />} />
+                </Routes>
+              </StatelessMessengerProvider>
+            </SessionProvider>
+          </LoadingProvider>
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+
+    cy.wait(1000); // wait for editor display after remount
+    cy.get('div[data-type="noteEmbed"]').should("have.length", 0);
+  });
+
+  it("inserts block embed correctly after user inserts corresponding tag in block", () => {
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
+    insertNoteReference(1, "#", "Starred");
+
+    cy.get("span.tag")
+      .invoke("attr", "id")
+      .then((id) => {
+        cy.wrap(id).as("tagId");
+      });
+    cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
+    cy.get("@tagId").then((tagId) => {
+      cy.then(async () => {
+        const starred = await db.notes.get("starred");
+        const test = await db.notes.get({ title: "test" });
+
+        return { starred, test };
+      }).should(({ starred, test }) => {
+        expect(starred?.content).to.contain(`$ ${test?.id}::${tagId}`);
+      });
+    });
+
+    cy.get("span.tag").click();
+
+    cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
+    cy.get('div[data-type="noteEmbed"]').should("include.text", "test");
+    cy.get('div[data-type="noteEmbed"]').should("include.text", "#starred");
+  });
+
+  it("removes block embed correctly after user removes corresponding tag in block", () => {
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
+    insertNoteReference(1, "#", "Starred");
+    cy.get("p").eq(1).click().type("{backspace}{backspace}");
+
+    cy.wait(1000);
+    cy.then(() => db.notes.get("starred")).should((note) => {
+      expect(note?.content).to.not.contain(`$ `);
+    });
+
+    cy.mount(
+      <MemoryRouter initialEntries={["/app/notes/starred"]}>
+        <AuthProvider>
+          <LoadingProvider>
+            <SessionProvider>
+              <StatelessMessengerProvider>
+                <Routes>
+                  <Route path="/app/notes/:noteId" element={<Note />} />
+                </Routes>
+              </StatelessMessengerProvider>
+            </SessionProvider>
+          </LoadingProvider>
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+
+    cy.wait(1000); // wait for editor display after remount
+    cy.get('div[data-type="noteEmbed"]').should("have.length", 0);
+  });
+
+  it("creates a new note correctly by tagging", () => {
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
+    insertNoteReference(0, "#", "dashboard");
+
+    cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
+    cy.then(async () => {
+      const dashboard = await db.notes.get({ title: "dashboard" });
+      const test = await db.notes.get({ title: "test" });
+
+      return { dashboard, test };
+    }).should(({ dashboard, test }) => {
+      expect(dashboard?.content).to.contain(`$ ${test?.id}`);
+    });
+
+    cy.get("span.tag").click();
+
+    cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
+    cy.get('div[data-type="noteEmbed"]').should("have.text", "test");
   });
 });

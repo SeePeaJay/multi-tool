@@ -24,9 +24,10 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
   } = useStatelessMessenger();
   const { isConnectedToServerRef } = useSession();
   const {
-    getTagsOnDocChange,
-    syncNoteEmbedsWithTags,
     syncNoteEmbedsForFirstVisit,
+    getTagsOnDocChange,
+    // getNoteEmbedsOnDocChange,
+    syncNoteEmbedsAndTags,
   } = useContentEditorHelpers();
 
   const editorContentIsLoadedRef = useRef(false);
@@ -34,6 +35,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null);
 
   const prevTagsRef = useRef<Set<string> | null>(null);
+  // const prevNoteEmbedsRef = useRef<Set<string> | null>(null);
 
   useEffect(() => {
     currentEditorNoteId.current = noteId;
@@ -73,8 +75,6 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
         }),
       ]}
       onUpdate={({ editor }) => {
-        // diff(editor.getHTML());
-
         if (!editor.isFocused) {
           return; // onUpdate handler is called once on mount; only execute below when editor is actually being edited
         }
@@ -94,28 +94,27 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
         }
 
         if (!editorContentIsLoadedRef.current) {
-          // editor content has just been loaded
+          // Editor content has just been loaded
 
           editorContentIsLoadedRef.current = true;
 
           syncNoteEmbedsForFirstVisit({ noteId, editor });
 
           prevTagsRef.current = getTagsOnDocChange(ydoc); // prevTagsRef shouldn't be defined until this line
+          // prevNoteEmbedsRef.current = getNoteEmbedsOnDocChange(ydoc);
         } else {
-          // compare current tags with previous to insert or remove note embeds
+          // Compare current tags with previous to insert or remove note embeds
 
           const tagsOnDocChange = getTagsOnDocChange(ydoc);
 
-          syncNoteEmbedsWithTags({
+          syncNoteEmbedsAndTags({
             currentNoteId: noteId,
-            tagsOnDocChange,
             prevTags: prevTagsRef.current!, // ! is fine since it has been set in this case
+            currentTags: tagsOnDocChange,
           });
 
           prevTagsRef.current = tagsOnDocChange;
         }
-
-        // syncTagsWithNoteEmbeds
       }}
     ></EditorProvider>
   ) : null;

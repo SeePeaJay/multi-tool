@@ -1,11 +1,11 @@
 import { Editor as TiptapEditor } from "@tiptap/react";
 import isEqual from "lodash.isequal";
+import { nanoid } from "nanoid";
 import * as Y from "yjs";
 import { db } from "../db";
 import { setupYdoc } from "../utils/yjs";
 import { useSession } from "../contexts/SessionContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
-// import { nanoid } from "nanoid";
 
 interface SyncNoteEmbedsForFirstVisitParams {
   noteId: string;
@@ -15,6 +15,8 @@ interface SyncNoteEmbedsAndTagsArgs {
   currentNoteId: string;
   prevTags: Set<string>;
   currentTags: Set<string>;
+  prevNoteEmbeds: Set<string>;
+  currentNoteEmbeds: Set<string>;
 }
 interface InsertNoteEmbedForTagParams {
   insertedTag: string;
@@ -26,14 +28,16 @@ interface RemoveNoteEmbedForTagParams {
   untaggedNoteId: string;
   tagTargetYdoc: Y.Doc;
 }
-// interface InsertTagForNoteEmbedArgs {
-//   insertedNoteEmbed: string;
-//   embeddingNoteId: string;
-// }
-// interface RemovePageTagForNoteEmbedArgs {
-//   removedNoteEmbed: string;
-//   unembeddingNoteId: string;
-// }
+interface InsertTagForNoteEmbedArgs {
+  insertedNoteEmbed: string;
+  embeddingNoteId: string;
+  noteEmbedTargetYdoc: Y.Doc;
+}
+interface RemovePageTagForNoteEmbedArgs {
+  removedNoteEmbed: string;
+  unembeddingNoteId: string;
+  noteEmbedTargetYdoc: Y.Doc;
+}
 
 export function useContentEditorHelpers() {
   const { isConnectedToServerRef } = useSession();
@@ -204,24 +208,39 @@ export function useContentEditorHelpers() {
     currentNoteId,
     prevTags,
     currentTags,
+    prevNoteEmbeds,
+    currentNoteEmbeds,
   }: SyncNoteEmbedsAndTagsArgs) {
     const insertedTagsByTarget: Record<string, string[]> = {};
     const removedTagsByTarget: Record<string, string[]> = {};
+    const insertedNoteEmbedsByTarget: Record<string, string[]> = {};
+    const removedNoteEmbedsByTarget: Record<string, string[]> = {};
 
     currentTags.difference(prevTags).forEach((insertedTag) => {
       const key = insertedTag.split(",")[0];
       (insertedTagsByTarget[key] ||= []).push(insertedTag);
     });
-
     prevTags.difference(currentTags).forEach((removedTag) => {
       const key = removedTag.split(",")[0];
       (removedTagsByTarget[key] ||= []).push(removedTag);
+    });
+    currentNoteEmbeds
+      .difference(prevNoteEmbeds)
+      .forEach((insertedNoteEmbed) => {
+        const key = insertedNoteEmbed.split("::")[0];
+        (insertedNoteEmbedsByTarget[key] ||= []).push(insertedNoteEmbed);
+      });
+    prevNoteEmbeds.difference(currentNoteEmbeds).forEach((removedNoteEmbed) => {
+      const key = removedNoteEmbed.split("::")[0];
+      (removedNoteEmbedsByTarget[key] ||= []).push(removedNoteEmbed);
     });
 
     const allTargets = [
       ...new Set([
         ...Object.keys(insertedTagsByTarget),
         ...Object.keys(removedTagsByTarget),
+        ...Object.keys(insertedNoteEmbedsByTarget),
+        ...Object.keys(removedNoteEmbedsByTarget),
       ]),
     ];
 
@@ -250,6 +269,30 @@ export function useContentEditorHelpers() {
               removedTag,
               untaggedNoteId: currentNoteId,
               tagTargetYdoc: ydoc,
+            })
+          ) {
+            targetIsModified = true;
+          }
+        }
+
+        for (const insertedNoteEmbed of insertedNoteEmbedsByTarget[target] || []) {
+          if (
+            insertTagForNoteEmbed({
+              insertedNoteEmbed,
+              embeddingNoteId: currentNoteId,
+              noteEmbedTargetYdoc: ydoc,
+            })
+          ) {
+            targetIsModified = true;
+          }
+        }
+
+        for (const removedNoteEmbed of removedNoteEmbedsByTarget[target] || []) {
+          if (
+            removeTagForNoteEmbed({
+              removedNoteEmbed,
+              unembeddingNoteId: currentNoteId,
+              noteEmbedTargetYdoc: ydoc,
             })
           ) {
             targetIsModified = true;
@@ -327,138 +370,120 @@ export function useContentEditorHelpers() {
     return noteEmbedIsRemoved;
   }
 
-  // async function insertTagForNoteEmbed({
-  //   insertedNoteEmbed,
-  //   embeddingNoteId,
-  // }: InsertTagForNoteEmbedArgs) {
-  //   const [noteEmbedTargetPageId, noteEmbedTargetBlockId] =
-  //     insertedNoteEmbed.split("::");
+  function insertTagForNoteEmbed({
+    insertedNoteEmbed,
+    embeddingNoteId,
+    noteEmbedTargetYdoc,
+  }: InsertTagForNoteEmbedArgs) {
+    const [, noteEmbedTargetBlockId] =
+      insertedNoteEmbed.split("::");
 
-  //   const ydoc = new Y.Doc();
-  //   await setupYdoc({ noteId: noteEmbedTargetPageId, ydoc });
+    const createTag = (tagId: string) => {
+      const tag = new Y.XmlElement("tag");
+      tag.setAttribute("targetNoteId", embeddingNoteId);
+      tag.setAttribute("id", tagId);
+      return tag;
+    };
 
-  //   let tagIsInserted = false;
+    if (!noteEmbedTargetBlockId) {
+      const frontmatter = noteEmbedTargetYdoc
+        .getXmlFragment("default")
+        .toArray()[0] as Y.XmlElement;
 
-  //   const createTag = (tagId: string) => {
-  //     const tag = new Y.XmlElement("tag");
-  //     tag.setAttribute("targetNoteId", embeddingNoteId);
-  //     tag.setAttribute("id", tagId);
-  //     return tag;
-  //   };
+      const tagExists = frontmatter
+        .toArray()
+        .some(
+          (child) =>
+            child instanceof Y.XmlElement &&
+            child.nodeName === "tag" &&
+            child.getAttributes().targetNoteId === embeddingNoteId,
+        );
 
-  //   if (!noteEmbedTargetBlockId) {
-  //     const frontmatter = ydoc
-  //       .getXmlFragment("default")
-  //       .toArray()[0] as Y.XmlElement;
+      if (!tagExists) {
+        frontmatter.push([createTag(nanoid(6))]);
+        return true;
+      }
+    } else {
+      const walker = noteEmbedTargetYdoc
+        .getXmlFragment("default")
+        .createTreeWalker(
+          (xml) => xml instanceof Y.XmlElement && xml.nodeName === "blockId",
+        );
 
-  //     const tagExists = frontmatter
-  //       .toArray()
-  //       .some(
-  //         (child) =>
-  //           child instanceof Y.XmlElement &&
-  //           child.nodeName === "tag" &&
-  //           child.getAttributes().targetNoteId === embeddingNoteId,
-  //       );
+      for (const blockIdNode of walker) {
+        if (!(blockIdNode instanceof Y.XmlElement)) continue;
 
-  //     if (!tagExists) {
-  //       frontmatter.push([createTag(nanoid(6))]);
-  //       tagIsInserted = true;
-  //     }
-  //   } else {
-  //     const walker = ydoc
-  //       .getXmlFragment("default")
-  //       .createTreeWalker(
-  //         (xml) => xml instanceof Y.XmlElement && xml.nodeName === "blockId",
-  //       );
+        const blockNode = blockIdNode.parent;
+        if (!(blockNode instanceof Y.XmlElement)) continue;
 
-  //     for (const blockIdNode of walker) {
-  //       if (!(blockIdNode instanceof Y.XmlElement)) continue;
+        const { id: blockId } = blockIdNode.getAttributes();
+        if (blockId !== noteEmbedTargetBlockId) continue;
 
-  //       const blockNode = blockIdNode.parent;
-  //       if (!(blockNode instanceof Y.XmlElement)) continue;
+        const blockIdNodeIndex = blockNode.toArray().indexOf(blockIdNode);
+        blockNode.delete(blockIdNodeIndex, 1);
 
-  //       const { id: blockId } = blockIdNode.getAttributes();
-  //       if (blockId !== noteEmbedTargetBlockId) continue;
+        blockNode.push([createTag(noteEmbedTargetBlockId)]);
 
-  //       const blockIdNodeIndex = blockNode.toArray().indexOf(blockIdNode);
-  //       blockNode.delete(blockIdNodeIndex, 1);
+        return true;
+      }
+    }
 
-  //       blockNode.push([createTag(noteEmbedTargetBlockId)]);
-  //       tagIsInserted = true;
+    return false;
+  }
 
-  //       break;
-  //     }
-  //   }
+  function removeTagForNoteEmbed({
+    removedNoteEmbed,
+    unembeddingNoteId,
+    noteEmbedTargetYdoc,
+  }: RemovePageTagForNoteEmbedArgs) {
+    const [, noteEmbedTargetBlockId] =
+      removedNoteEmbed.split("::");
 
-  //   if (!tagIsInserted) return;
-  // }
+    let tagIsRemoved = false;
 
-  // async function removeTagForNoteEmbed({
-  //   removedNoteEmbed,
-  //   unembeddingNoteId,
-  // }: RemovePageTagForNoteEmbedArgs) {
-  //   const [noteEmbedTargetPageId, noteEmbedTargetBlockId] =
-  //     removedNoteEmbed.split("::");
+    const walker = noteEmbedTargetYdoc
+      .getXmlFragment("default")
+      .createTreeWalker(
+        (xml) => xml instanceof Y.XmlElement && xml.nodeName === "tag",
+      );
 
-  //   const ydoc = new Y.Doc();
-  //   await setupYdoc({ noteId: noteEmbedTargetPageId, ydoc });
+    for (const tag of walker) {
+      if (
+        !(tag instanceof Y.XmlElement) ||
+        !(tag.parent instanceof Y.XmlElement)
+      ) {
+        continue;
+      }
 
-  //   let tagIsRemoved = false;
+      const { targetNoteId: tagTargetNoteId, id: tagId } = tag.getAttributes();
+      if (tagTargetNoteId !== unembeddingNoteId) continue;
 
-  //   const walker = ydoc
-  //     .getXmlFragment("default")
-  //     .createTreeWalker(
-  //       (xml) => xml instanceof Y.XmlElement && xml.nodeName === "tag",
-  //     );
+      const tagIndex = tag.parent.toArray().indexOf(tag);
 
-  //   for (const tag of walker) {
-  //     if (
-  //       !(tag instanceof Y.XmlElement) ||
-  //       !(tag.parent instanceof Y.XmlElement)
-  //     ) {
-  //       continue;
-  //     }
+      // Case 1: removing a page embed
+      if (!noteEmbedTargetBlockId && tag.parent.nodeName === "frontmatter") {
+        tag.parent.delete(tagIndex, 1);
 
-  //     const { targetNoteId: tagTargetNoteId, id: tagId } = tag.getAttributes();
-  //     if (tagTargetNoteId !== unembeddingNoteId) continue;
+        tagIsRemoved = true;
+      }
 
-  //     const tagIndex = tag.parent.toArray().indexOf(tag);
+      // Case 2: removing a block embed
+      if (noteEmbedTargetBlockId && tagId && noteEmbedTargetBlockId === tagId) {
+        tag.parent.delete(tagIndex, 1);
+        tagIsRemoved = true;
 
-  //     console.log(
-  //       "tag found",
-  //       noteEmbedTargetBlockId,
-  //       tag.parent.nodeName,
-  //       tagId,
-  //     );
+        // Replace with placeholder space + blockId marker
+        const space = new Y.XmlText();
+        space.insert(0, " ");
+        const blockId = new Y.XmlElement("blockId");
+        blockId.setAttribute("id", tagId);
 
-  //     // Case 1: removing a page embed
-  //     if (!noteEmbedTargetBlockId && tag.parent.nodeName === "frontmatter") {
-  //       console.log("tag case 1", tag, tagIndex);
+        tag.parent.push([space, blockId]);
+      }
+    }
 
-  //       tag.parent.delete(tagIndex, 1);
-
-  //       tagIsRemoved = true;
-  //     }
-
-  //     // Case 2: removing a block embed
-  //     if (noteEmbedTargetBlockId && tagId && noteEmbedTargetBlockId === tagId) {
-  //       console.log("tag case 2", tag);
-
-  //       tag.parent.delete(tagIndex, 1);
-  //       tagIsRemoved = true;
-
-  //       // Replace with placeholder space + blockId marker
-  //       const space = new Y.XmlText();
-  //       space.insert(0, " ");
-  //       const blockId = new Y.XmlElement("blockId");
-  //       blockId.setAttribute("id", tagId);
-
-  //       tag.parent.push([space, blockId]);
-  //     }
-  //   }
-
-  //   if (!tagIsRemoved) return;
-  // }
+    return tagIsRemoved;
+  }
 
   return {
     syncNoteEmbedsForFirstVisit,

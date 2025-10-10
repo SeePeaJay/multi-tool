@@ -26,7 +26,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
   const {
     syncNoteEmbedsForFirstVisit,
     getTagsOnDocChange,
-    // getNoteEmbedsOnDocChange,
+    getNoteEmbedsOnDocChange,
     syncNoteEmbedsAndTags,
   } = useContentEditorHelpers();
 
@@ -35,7 +35,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null);
 
   const prevTagsRef = useRef<Set<string> | null>(null);
-  // const prevNoteEmbedsRef = useRef<Set<string> | null>(null);
+  const prevNoteEmbedsRef = useRef<Set<string> | null>(null);
 
   useEffect(() => {
     currentEditorNoteId.current = noteId;
@@ -101,19 +101,23 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
           syncNoteEmbedsForFirstVisit({ noteId, editor });
 
           prevTagsRef.current = getTagsOnDocChange(ydoc); // prevTagsRef shouldn't be defined until this line
-          // prevNoteEmbedsRef.current = getNoteEmbedsOnDocChange(ydoc);
+          prevNoteEmbedsRef.current = getNoteEmbedsOnDocChange(ydoc);
         } else {
-          // Compare current tags with previous to insert or remove note embeds
+          // Compare current tags and note embeds with previous to insert or remove note links
 
           const tagsOnDocChange = getTagsOnDocChange(ydoc);
+          const noteEmbedsOnDocChange = getNoteEmbedsOnDocChange(ydoc);
 
           syncNoteEmbedsAndTags({
             currentNoteId: noteId,
             prevTags: prevTagsRef.current!, // ! is fine since it has been set in this case
             currentTags: tagsOnDocChange,
+            prevNoteEmbeds: prevNoteEmbedsRef.current!, // ! is fine since it has been set in this case
+            currentNoteEmbeds: noteEmbedsOnDocChange,
           });
 
           prevTagsRef.current = tagsOnDocChange;
+          prevNoteEmbedsRef.current = noteEmbedsOnDocChange;
         }
       }}
     ></EditorProvider>

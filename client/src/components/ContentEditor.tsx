@@ -45,10 +45,6 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
 
     setYdoc(markNoteAsActive({ noteId }));
 
-    // collabProvider.on('unsyncedChanges', (n: number) => {
-    //   console.log('Number of changes to send to server:', n);
-    // });
-
     // Before component unmounts, mark current note as inactive and inform this change to other clients, so that they can destroy the note provider (assuming no other clients are actively working on the note)
     return () => {
       currentEditorNoteId.current = "";

@@ -7,7 +7,7 @@ import { setupYdoc } from "../utils/yjs";
 import { useSession } from "../contexts/SessionContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
 
-interface SyncNoteEmbedsForFirstVisitParams {
+interface SyncNoteEmbedsForFirstVisitArgs {
   noteId: string;
   editor: TiptapEditor;
 }
@@ -18,12 +18,12 @@ interface SyncNoteEmbedsAndTagsArgs {
   prevNoteEmbeds: Set<string>;
   currentNoteEmbeds: Set<string>;
 }
-interface InsertNoteEmbedForTagParams {
+interface InsertNoteEmbedForTagArgs {
   insertedTag: string;
   taggedNoteId: string;
   tagTargetYdoc: Y.Doc;
 }
-interface RemoveNoteEmbedForTagParams {
+interface RemoveNoteEmbedForTagArgs {
   removedTag: string;
   untaggedNoteId: string;
   tagTargetYdoc: Y.Doc;
@@ -33,7 +33,7 @@ interface InsertTagForNoteEmbedArgs {
   embeddingNoteId: string;
   noteEmbedTargetYdoc: Y.Doc;
 }
-interface RemovePageTagForNoteEmbedArgs {
+interface RemoveTagForNoteEmbedArgs {
   removedNoteEmbed: string;
   unembeddingNoteId: string;
   noteEmbedTargetYdoc: Y.Doc;
@@ -81,7 +81,7 @@ export function useContentEditorHelpers() {
   async function syncNoteEmbedsForFirstVisit({
     noteId,
     editor,
-  }: SyncNoteEmbedsForFirstVisitParams) {
+  }: SyncNoteEmbedsForFirstVisitArgs) {
     // populate what you have right now
     const currentNoteEmbeds: Record<
       string,
@@ -314,7 +314,7 @@ export function useContentEditorHelpers() {
     insertedTag,
     taggedNoteId,
     tagTargetYdoc,
-  }: InsertNoteEmbedForTagParams) {
+  }: InsertNoteEmbedForTagArgs) {
     const [, tagId] = insertedTag.split(",");
     const xmlFragment = tagTargetYdoc.getXmlFragment("default");
 
@@ -347,7 +347,7 @@ export function useContentEditorHelpers() {
     removedTag,
     untaggedNoteId,
     tagTargetYdoc,
-  }: RemoveNoteEmbedForTagParams) {
+  }: RemoveNoteEmbedForTagArgs) {
     const [, tagId] = removedTag.split(",");
     const xmlFragment = tagTargetYdoc.getXmlFragment("default");
     let noteEmbedIsRemoved = false;
@@ -435,7 +435,7 @@ export function useContentEditorHelpers() {
     removedNoteEmbed,
     unembeddingNoteId,
     noteEmbedTargetYdoc,
-  }: RemovePageTagForNoteEmbedArgs) {
+  }: RemoveTagForNoteEmbedArgs) {
     const [, noteEmbedTargetBlockId] =
       removedNoteEmbed.split("::");
 

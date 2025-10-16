@@ -5,10 +5,10 @@ import { createContentEditorExtensions } from "shared";
 import * as Y from "yjs";
 import { useSession } from "../contexts/SessionContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
-import { createBaseNoteSuggestionConfig } from "../utils/baseNoteSuggestionConfig";
+import { noteReferenceSuggestion, tagSuggestion } from "../utils/note-suggestion-helpers";
 import { useContentEditorHelpers } from "../hooks/content-editor-helpers";
 import NoteEmbedNodeView from "./NoteEmbedNodeView";
-import NoteReferenceNodeView from "./NoteReferenceNodeView";
+import InlineNotelinkNodeView from "./InlineNotelinkNodeView";
 
 interface ContentEditorProps {
   noteId: string; // using noteId props means we can call `markNoteAsActive` to setup ydocRef early
@@ -62,9 +62,10 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
     <EditorProvider
       extensions={[
         ...createContentEditorExtensions({
-          NoteReferenceNodeView,
+          InlineNotelinkNodeView,
           NoteEmbedNodeView,
-          baseNoteSuggestionConfig: createBaseNoteSuggestionConfig(),
+          noteReferenceSuggestion,
+          tagSuggestion,
         }),
         Collaboration.configure({
           document: ydoc,

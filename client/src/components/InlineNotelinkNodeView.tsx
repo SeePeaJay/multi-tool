@@ -3,7 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { HashLink } from "react-router-hash-link";
 import { db } from "../db";
 
-const NoteReferenceNodeView: React.FC<NodeViewProps> = ({ node }) => {
+const InlineNotelinkNodeView: React.FC<NodeViewProps> = ({ node }) => {
   const suggestionChar = node.attrs.type === "noteReference" ? "[[" : "#";
   const { targetNoteId, targetBlockId } = node.attrs;
   const note = useLiveQuery(() => db.notes.get(targetNoteId), [targetNoteId]);
@@ -30,4 +30,4 @@ const NoteReferenceNodeView: React.FC<NodeViewProps> = ({ node }) => {
   );
 };
 
-export default NoteReferenceNodeView;
+export default InlineNotelinkNodeView;

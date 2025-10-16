@@ -3,217 +3,154 @@
  */
 
 import { mergeAttributes, Node } from "@tiptap/core";
-import { PluginKey } from "@tiptap/pm/state";
 import { ReactNodeViewRenderer, NodeViewProps } from "@tiptap/react";
 import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
 
-interface CreateTagParams {
-  NoteReferenceNodeView?: React.FC<NodeViewProps>;
-}
-
-interface TagNodeAttrs {
-  /**
-   * The target id to be rendered by the editor. Stored as a `data-target-note-id` attribute.
-   */
-  targetNoteId: string;
-}
-
 // define a type for addOptions below
-type TagOptions<
-  SuggestionItem = any,
-  Attrs extends Record<string, any> = TagNodeAttrs,
-> = {
+type TagOptions = {
   /**
    * Whether to delete the trigger character with backspace.
    * @default true
    */
   deleteTriggerWithBackspace: boolean;
 
-  /**
-   * The suggestion options.
-   * @default {}
-   * @example { char: '@', pluginKey: NoteReferencePluginKey, command: ({ editor, range, props }) => { ... } }
-   */
-  suggestion: Omit<SuggestionOptions<SuggestionItem, Attrs>, "editor">;
+  suggestion: Omit<SuggestionOptions, "editor">;
+
+  TagNodeView?: React.FC<NodeViewProps>;
 };
 
-/**
- * The plugin key for the tag plugin.
- * @default 'tag'
- */
-const TagPluginKey = new PluginKey("tag");
+export const tagNodeName = "tag";
+export const tagTriggerChar = "#";
 
 /**
  * This extension allows you to insert tags into the editor.
  */
-function Tag({ NoteReferenceNodeView }: CreateTagParams) {
-  return Node.create<TagOptions>({
-    name: "tag",
+const Tag = Node.create<TagOptions>({
+  name: tagNodeName,
 
-    priority: 101,
+  priority: 101,
 
-    // to be used for functions below
-    addOptions() {
-      return {
-        deleteTriggerWithBackspace: true,
-        suggestion: {
-          char: "#",
-          pluginKey: TagPluginKey,
-          command: ({ editor, range, props }) => {
-            // increase range.to by one when the next node is of type "text"
-            // and starts with a space character
-            const nodeAfter = editor.view.state.selection.$to.nodeAfter;
-            const overrideSpace = nodeAfter?.text?.startsWith(" ");
+  // to be used for functions below
+  addOptions() {
+    return {
+      deleteTriggerWithBackspace: true,
+      suggestion: {},
+      TagNodeView: undefined,
+    };
+  },
 
-            if (overrideSpace) {
-              range.to += 1;
-            }
+  group: "inline",
 
-            editor
-              .chain()
-              .focus()
-              .insertContentAt(range, [
-                {
-                  type: this.name,
-                  attrs: {
-                    ...props,
-                  },
-                },
-                {
-                  type: "text",
-                  text: " ",
-                },
-              ])
-              .run();
+  inline: true,
 
-            // get reference to `window` object from editor element, to support cross-frame JS usage
-            editor.view.dom.ownerDocument.defaultView
-              ?.getSelection()
-              ?.collapseToEnd();
-          },
-          allow: ({ state, range }) => {
-            const $from = state.doc.resolve(range.from);
-            const type = state.schema.nodes[this.name];
-            const allow = !!$from.parent.type.contentMatch.matchType(type);
+  atom: true,
 
-            return allow;
-          },
+  addAttributes() {
+    return {
+      id: {
+        // defining this is what allows html output to include the id, used in queriedNoteEmbeds
+        default: null, // controls the initial value of the attribute internally; if empty string, UniqueID won't work as expected
+        parseHTML: (element) => element.getAttribute("id"),
+        renderHTML: (attributes) => ({ id: attributes.id }),
+      },
+      type: {
+        default: this.name,
+        parseHTML: () => this.name,
+        renderHTML: () => ({ "data-type": this.name }),
+      },
+      targetNoteId: {
+        default: "",
+        parseHTML: (element) => element.getAttribute("data-target-note-id"),
+        renderHTML: (attributes) => {
+          return {
+            "data-target-note-id": attributes.targetNoteId,
+          };
         },
-      };
-    },
+      },
+    };
+  },
 
-    group: "inline",
+  parseHTML() {
+    return [
+      {
+        tag: `span[data-type="${this.name}"]`,
+      },
+    ];
+  },
 
-    inline: true,
+  renderHTML({ node, HTMLAttributes }) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { ...attributesToRender } = HTMLAttributes;
 
-    atom: true,
-
-    addAttributes() {
-      return {
-        id: { // defining this is what allows html output to include the id, used in queriedNoteEmbeds
-          default: null, // controls the initial value of the attribute internally; if empty string, UniqueID won't work as expected
-          parseHTML: (element) => element.getAttribute("id"),
-          renderHTML: (attributes) => ({ id: attributes.id }),
-        },
-        type: {
-          default: this.name,
-          parseHTML: () => this.name,
-          renderHTML: () => ({ "data-type": this.name }),
-        },
-        targetNoteId: {
-          default: "",
-          parseHTML: (element) => element.getAttribute("data-target-note-id"),
-          renderHTML: (attributes) => {
-            return {
-              "data-target-note-id": attributes.targetNoteId,
-            };
-          },
-        },
-      };
-    },
-
-    parseHTML() {
-      return [
+    return [
+      "span",
+      mergeAttributes(
         {
-          tag: `span[data-type="${this.name}"]`,
+          class: "tag",
         },
-      ];
-    },
+        attributesToRender,
+      ),
+      `${tagTriggerChar}${node.attrs.targetNoteId}`,
+    ];
+  },
 
-    renderHTML({ node, HTMLAttributes }) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { ...attributesToRender } = HTMLAttributes;
+  renderText({ node }) {
+    return `${tagTriggerChar}${node.attrs.targetNoteId}`;
+  },
 
-      return [
-        "span",
-        mergeAttributes(
-          {
-            class: "tag",
-          },
-          attributesToRender,
-        ),
-        `${this.options.suggestion.char}${node.attrs.targetNoteId}`,
-      ];
-    },
+  addKeyboardShortcuts() {
+    return {
+      Backspace: () =>
+        this.editor.commands.command(({ tr, state }) => {
+          let isTag = false;
+          const { selection } = state;
+          const { empty, anchor } = selection;
 
-    renderText({ node }) {
-      return `${this.options.suggestion.char}${node.attrs.targetNoteId}`;
-    },
+          if (!empty) {
+            return false;
+          }
 
-    addKeyboardShortcuts() {
-      return {
-        Backspace: () =>
-          this.editor.commands.command(({ tr, state }) => {
-            let isTag = false;
-            const { selection } = state;
-            const { empty, anchor } = selection;
+          state.doc.nodesBetween(anchor - 1, anchor, (node, pos) => {
+            if (node.type.name === this.name) {
+              isTag = true;
+              tr.insertText(
+                this.options.deleteTriggerWithBackspace
+                  ? ""
+                  : tagTriggerChar || "",
+                pos,
+                pos + node.nodeSize,
+              );
 
-            if (!empty) {
               return false;
             }
+          });
 
-            state.doc.nodesBetween(anchor - 1, anchor, (node, pos) => {
-              if (node.type.name === this.name) {
-                isTag = true;
-                tr.insertText(
-                  this.options.deleteTriggerWithBackspace
-                    ? ""
-                    : this.options.suggestion.char || "",
-                  pos,
-                  pos + node.nodeSize,
-                );
-
-                return false;
-              }
-            });
-
-            return isTag;
-          }),
-      };
-    },
-
-    addProseMirrorPlugins() {
-      return [
-        Suggestion({
-          editor: this.editor,
-          ...this.options.suggestion,
+          return isTag;
         }),
-      ];
-    },
+    };
+  },
 
-    /*
-     * Not adding an input rule for now since it causes weird glitches when you type whitespace
-     */
+  addProseMirrorPlugins() {
+    return [
+      Suggestion({
+        editor: this.editor,
+        ...this.options.suggestion,
+      }),
+    ];
+  },
 
-    /*
-     * This replaces `renderHTML` with a component containing a router link, but doesn't affect the html output
-     */
-    ...(NoteReferenceNodeView && {
-      addNodeView() {
-        return ReactNodeViewRenderer(NoteReferenceNodeView);
-      },
-    }),
-  });
-}
+  /*
+   * Not adding an input rule for now since it causes weird glitches when you type whitespace
+   */
+
+  /*
+   * This replaces `renderHTML` with a component containing a router link, but doesn't affect the html output
+   */
+  addNodeView() {
+    if (!this.options.TagNodeView) return;
+
+    return ReactNodeViewRenderer(this.options.TagNodeView);
+  },
+});
 
 export default Tag;

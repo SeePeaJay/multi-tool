@@ -10,13 +10,15 @@ import GlobalDragHandle from "tiptap-extension-global-drag-handle";
 import NoteEmbed from "./note-embed.js";
 import BlockId from "./block-id.js";
 import Frontmatter from "./frontmatter.js";
-import NoteReference, { NoteReferenceOptions } from "./note-reference.js";
+import NoteReference from "./note-reference.js";
 import Tag from "./tag.js";
+import { SuggestionOptions } from "@tiptap/suggestion";
 
 interface CreateContentEditorExtensionsParams {
-  NoteReferenceNodeView: React.FC<NodeViewProps>;
+  InlineNotelinkNodeView: React.FC<NodeViewProps>;
   NoteEmbedNodeView: React.FC<NodeViewProps>;
-  baseNoteSuggestionConfig: NoteReferenceOptions["suggestion"];
+  noteReferenceSuggestion: Omit<SuggestionOptions, "editor">;
+  tagSuggestion: Omit<SuggestionOptions, "editor">;
 }
 
 const CustomDocument = Document.extend({
@@ -44,8 +46,12 @@ const CustomPlaceholder = Placeholder.configure({
 export const createContentEditorExtensions = (
   params?: CreateContentEditorExtensionsParams,
 ) => {
-  const { NoteReferenceNodeView, NoteEmbedNodeView, baseNoteSuggestionConfig } =
-    params || {};
+  const {
+    InlineNotelinkNodeView,
+    NoteEmbedNodeView,
+    noteReferenceSuggestion,
+    tagSuggestion,
+  } = params || {};
 
   return [
     GlobalDragHandle.configure({
@@ -70,11 +76,13 @@ export const createContentEditorExtensions = (
     CustomDocument,
     Frontmatter,
     CustomParagraph,
-    NoteReference({ NoteReferenceNodeView }).configure({
-      ...(baseNoteSuggestionConfig && { suggestion: baseNoteSuggestionConfig }),
+    NoteReference.configure({
+      ...(noteReferenceSuggestion && { suggestion: noteReferenceSuggestion }),
+      ...(InlineNotelinkNodeView && { NoteReferenceNodeView: InlineNotelinkNodeView }),
     }),
-    Tag({ NoteReferenceNodeView }).configure({
-      ...(baseNoteSuggestionConfig && { suggestion: baseNoteSuggestionConfig }),
+    Tag.configure({
+      ...(tagSuggestion && { suggestion: tagSuggestion }),
+      ...(InlineNotelinkNodeView && { TagNodeView: InlineNotelinkNodeView }),
     }),
     NoteEmbed({ NoteEmbedNodeView }),
     BlockId,

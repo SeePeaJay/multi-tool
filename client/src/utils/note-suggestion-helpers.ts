@@ -12,6 +12,8 @@ import NoteSuggestionMenu, {
 import { SuggestionOptions } from "@tiptap/suggestion";
 import { PluginKey } from "@tiptap/pm/state";
 import {
+  noteEmbedNodeName,
+  noteEmbedTriggerChar,
   noteReferenceNodeName,
   noteReferenceTriggerChar,
   tagNodeName,
@@ -166,6 +168,58 @@ const sharedSuggestionOptions: Omit<SuggestionOptions, "editor"> = {
   },
 };
 
+const getCompleteItemsOption: SuggestionOptions["items"] = async ({
+  query,
+}) => {
+  if (!query) {
+    return Promise.resolve([]);
+  }
+
+  const [titleQuery, blockQuery] = query.split("::");
+  const cachedNote = await db.table("notes").get({ title: titleQuery });
+
+  // if title has exact match and blockquery exists
+  if (cachedNote && blockQuery !== undefined) {
+    return getBlockSuggestionItems(cachedNote, blockQuery);
+  }
+
+  // otherwise, perform standard title search
+  return getTitleSuggestionItems(titleQuery);
+};
+
+export const noteEmbedSuggestion: Omit<SuggestionOptions, "editor"> = {
+  ...sharedSuggestionOptions,
+  pluginKey: new PluginKey("noteEmbedSuggestion"),
+  char: noteEmbedTriggerChar,
+  startOfLine: true,
+  command: ({ editor, range, props }) => {
+    // increase range.to by one when the next node is of type "text"
+    // and starts with a space character
+    const nodeAfter = editor.view.state.selection.$to.nodeAfter;
+    const overrideSpace = nodeAfter?.text?.startsWith(" ");
+
+    if (overrideSpace) {
+      range.to += 1;
+    }
+
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(range, [
+        {
+          type: noteEmbedNodeName,
+          attrs: props,
+        },
+      ])
+      .run();
+
+    // get reference to `window` object from editor element, to support cross-frame JS usage
+    editor.view.dom.ownerDocument.defaultView?.getSelection()?.collapseToEnd();
+  },
+  items: getCompleteItemsOption,
+  // no need for allow like below since $from.parent only allows inline nodes
+};
+
 export const noteReferenceSuggestion: Omit<SuggestionOptions, "editor"> = {
   ...sharedSuggestionOptions,
   pluginKey: new PluginKey("noteReferenceSuggestion"),
@@ -198,23 +252,11 @@ export const noteReferenceSuggestion: Omit<SuggestionOptions, "editor"> = {
     // get reference to `window` object from editor element, to support cross-frame JS usage
     editor.view.dom.ownerDocument.defaultView?.getSelection()?.collapseToEnd();
   },
-  items: async ({ query }): Promise<NoteSuggestion[]> => {
-    if (!query) {
-      return Promise.resolve([]);
-    }
-
-    const [titleQuery, blockQuery] = query.split("::");
-    const cachedNote = await db.table("notes").get({ title: titleQuery });
-
-    // if title has exact match and blockquery exists
-    if (cachedNote && blockQuery !== undefined) {
-      return getBlockSuggestionItems(cachedNote, blockQuery);
-    }
-
-    // otherwise, perform standard title search
-    return getTitleSuggestionItems(titleQuery);
-  },
+  items: getCompleteItemsOption,
   allow: ({ state, range }) => {
+    const query = state.doc.textBetween(range.from + 2, range.to, "\n");
+    if (query.startsWith(" ")) return false;
+
     const $from = state.doc.resolve(range.from);
     const type = state.schema.nodes[noteReferenceNodeName];
     const allow = !!$from.parent.type.contentMatch.matchType(type);

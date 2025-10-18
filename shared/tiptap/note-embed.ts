@@ -4,61 +4,82 @@
 
 import { Node } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewProps } from "@tiptap/react";
+import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
 
-interface CreateNoteEmbedParams {
+// define a type for addOptions below
+interface NoteEmbedOptions {
+  suggestion: Omit<SuggestionOptions, "editor">;
   NoteEmbedNodeView?: React.FC<NodeViewProps>;
 }
 
-function NoteEmbed({ NoteEmbedNodeView }: CreateNoteEmbedParams) {
-  return Node.create({
-    name: "noteEmbed",
+export const noteEmbedNodeName = "noteEmbed";
+export const noteEmbedTriggerChar = "[[ ";
 
-    group: "block",
+const NoteEmbed = Node.create<NoteEmbedOptions>({
+  name: noteEmbedNodeName,
 
-    addAttributes() {
-      return {
-        targetNoteId: {
-          default: "",
-        },
-        // technically, the id of the tag contained by the target block
-        targetBlockId: {
-          default: "",
-        },
-      };
-    },
+  // to be used for functions below
+  addOptions() {
+    return {
+      suggestion: {},
+      NoteEmbedNodeView: undefined,
+    };
+  },
 
-    parseHTML() {
-      return [
-        {
-          tag: "div.note-embed",
-          getAttrs: (element) => ({
-            targetNoteId: element.getAttribute("data-target-note-id"),
-            targetBlockId: element.getAttribute("data-target-block-id"),
-          }),
-        },
-      ];
-    },
+  group: "block",
 
-    renderHTML({ HTMLAttributes }) {
-      const { targetNoteId, targetBlockId } = HTMLAttributes;
-
-      return [
-        "div",
-        {
-          class: "note-embed",
-          "data-target-note-id": targetNoteId,
-          "data-target-block-id": targetBlockId,
-        },
-        `$ ${targetNoteId}${targetBlockId ? `::${targetBlockId}` : ""}`,
-      ];
-    },
-
-    ...(NoteEmbedNodeView && {
-      addNodeView() {
-        return ReactNodeViewRenderer(NoteEmbedNodeView);
+  addAttributes() {
+    return {
+      targetNoteId: {
+        default: "",
       },
-    }),
-  });
-}
+      // technically, the id of the tag contained by the target block
+      targetBlockId: {
+        default: "",
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: "div.note-embed",
+        getAttrs: (element) => ({
+          targetNoteId: element.getAttribute("data-target-note-id"),
+          targetBlockId: element.getAttribute("data-target-block-id"),
+        }),
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    const { targetNoteId, targetBlockId } = HTMLAttributes;
+
+    return [
+      "div",
+      {
+        class: "note-embed",
+        "data-target-note-id": targetNoteId,
+        "data-target-block-id": targetBlockId,
+      },
+      `$ ${targetNoteId}${targetBlockId ? `::${targetBlockId}` : ""}`,
+    ];
+  },
+
+  addProseMirrorPlugins() {
+    return [
+      Suggestion({
+        editor: this.editor,
+        ...this.options.suggestion,
+      }),
+    ];
+  },
+
+  addNodeView() {
+    if (!this.options.NoteEmbedNodeView) return;
+
+    return ReactNodeViewRenderer(this.options.NoteEmbedNodeView);
+  },
+});
 
 export default NoteEmbed;

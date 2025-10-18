@@ -17,6 +17,7 @@ import { SuggestionOptions } from "@tiptap/suggestion";
 interface CreateContentEditorExtensionsParams {
   InlineNotelinkNodeView: React.FC<NodeViewProps>;
   NoteEmbedNodeView: React.FC<NodeViewProps>;
+  noteEmbedSuggestion: Omit<SuggestionOptions, "editor">;
   noteReferenceSuggestion: Omit<SuggestionOptions, "editor">;
   tagSuggestion: Omit<SuggestionOptions, "editor">;
 }
@@ -49,6 +50,7 @@ export const createContentEditorExtensions = (
   const {
     InlineNotelinkNodeView,
     NoteEmbedNodeView,
+    noteEmbedSuggestion,
     noteReferenceSuggestion,
     tagSuggestion,
   } = params || {};
@@ -78,13 +80,18 @@ export const createContentEditorExtensions = (
     CustomParagraph,
     NoteReference.configure({
       ...(noteReferenceSuggestion && { suggestion: noteReferenceSuggestion }),
-      ...(InlineNotelinkNodeView && { NoteReferenceNodeView: InlineNotelinkNodeView }),
+      ...(InlineNotelinkNodeView && {
+        NoteReferenceNodeView: InlineNotelinkNodeView,
+      }),
     }),
     Tag.configure({
       ...(tagSuggestion && { suggestion: tagSuggestion }),
       ...(InlineNotelinkNodeView && { TagNodeView: InlineNotelinkNodeView }),
     }),
-    NoteEmbed({ NoteEmbedNodeView }),
+    NoteEmbed.configure({
+      ...(noteEmbedSuggestion && { suggestion: noteEmbedSuggestion }),
+      ...(NoteEmbedNodeView && { NoteEmbedNodeView }),
+    }),
     BlockId,
     CustomPlaceholder,
     UniqueID.configure({

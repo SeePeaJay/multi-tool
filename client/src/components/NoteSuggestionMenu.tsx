@@ -107,11 +107,11 @@ const NoteSuggestionMenu = forwardRef<
       if (blockIndexForNewBlockId && !targetBlockId) {
         blockId = nanoid(6);
 
-        insertBlockId({
+        await insertBlockId({
           targetNoteId,
           newBlockId: blockId,
           blockIndexForNewBlockId,
-        });
+        }); // await to ensure block id is immediately inserted right after ydoc is set up
       }
 
       selectedNoteReferenceTarget = {

@@ -5,7 +5,11 @@ import { createContentEditorExtensions } from "shared";
 import * as Y from "yjs";
 import { useSession } from "../contexts/SessionContext";
 import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
-import { noteReferenceSuggestion, tagSuggestion } from "../utils/note-suggestion-helpers";
+import {
+  noteEmbedSuggestion,
+  noteReferenceSuggestion,
+  tagSuggestion,
+} from "../utils/note-suggestion-helpers";
 import { useContentEditorHelpers } from "../hooks/content-editor-helpers";
 import NoteEmbedNodeView from "./NoteEmbedNodeView";
 import InlineNotelinkNodeView from "./InlineNotelinkNodeView";
@@ -64,6 +68,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
         ...createContentEditorExtensions({
           InlineNotelinkNodeView,
           NoteEmbedNodeView,
+          noteEmbedSuggestion,
           noteReferenceSuggestion,
           tagSuggestion,
         }),

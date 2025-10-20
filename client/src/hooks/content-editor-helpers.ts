@@ -48,10 +48,12 @@ export function useContentEditorHelpers() {
 
     // query notes containing the tag
     const targetNotes = await db.notes
-      .filter(
-        (note) =>
-          !!note.contentWords && note.contentWords.includes(`#${noteId}`),
-      )
+      .filter((note) => {
+        const doc = new DOMParser().parseFromString(note.content, "text/html");
+        const tagExists = doc.querySelector(`span.tag[data-target-note-id="${noteId}"]`) !== null;
+
+        return tagExists;
+      })
       .toArray();
 
     targetNotes.forEach((note) => {

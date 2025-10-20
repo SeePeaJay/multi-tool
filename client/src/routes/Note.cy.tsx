@@ -381,13 +381,28 @@ describe("Sync tags with note embeds tests", () => {
     cy.mount(appComponent);
   });
 
+  it("inserts frontmatter tag correctly after user inserts corresponding page embed", () => {
+    insertNoteReference(1, "[[ ", "test");
+
+    cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
+    cy.then(async () => {
+      const test = await db.notes.get({ title: "test" });
+
+      return test;
+    }).should((test) => {
+      expect(test?.content).to.contain(`#starred`);
+    });
+
+    cy.get('div[data-type="noteEmbed"]').click("left");
+
+    cy.get("span.tag").should("have.text", "#Starred");
+  });
+
   it("removes frontmatter tag correctly after user removes corresponding page embed", () => {
     insertNoteReference(1, "[[", "test");
-    cy.get("span.note-reference").click();
-    insertNoteReference(0, "#", "Starred");
-    cy.get("span.tag").click();
-    cy.get("p").eq(1).click();
-    cy.get("p").eq(1).type("{del}");
+    cy.get("p").eq(1).type("{enter}");
+    insertNoteReference(2, "[[ ", "test");
+    cy.get("p").eq(2).type("{del}{del}");
 
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
     cy.then(async () => {
@@ -426,64 +441,83 @@ describe("Sync tags with note embeds tests", () => {
     cy.get("span.tag").should("have.length", 0);
   });
 
-  it("removes tag in block correctly (converted to block id) after user removes corresponding block embed", () => {
+  it("inserts tag in block correctly after user inserts corresponding block embed", () => {
     insertNoteReference(1, "[[", "test");
     cy.get("span.note-reference").click();
-    insertNoteReference(1, "#", "Starred");
-    cy.get("span.tag")
-      .invoke("attr", "id")
-      .then((id) => {
-        cy.wrap(id).as("tagId");
+    insertNoteReference(1, "[[", "Starred");
+    cy.get("span.note-reference").click();
+    cy.get("p").eq(1).type("{enter}");
+    insertNoteReference(2, "[[ ", "test", "[[starred]]");
+    cy.get("a.block-embed")
+      .invoke("attr", "href")
+      .then((href) => {
+        const [, tagId] = href!.split("#");
+        cy.wrap(tagId).as("tagId");
       });
-    cy.get("span.tag").click();
-    cy.get("p").eq(1).click();
-    cy.get("p").eq(1).type("{del}");
 
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
-    cy.get("@tagId").then((tagId) => {
+    cy.get<string>("@tagId").then((tagId) => {
       cy.then(async () => {
         const test = await db.notes.get({ title: "test" });
 
         return test;
       }).should((test) => {
-        expect(test?.content).to.not.contain(`#starred`);
-        expect(test?.content).to.contain(`::${tagId}`);
+        const doc = new DOMParser().parseFromString(test!.content, "text/html");
+        const tagExists =
+          doc.querySelector(`span.tag#${CSS.escape(tagId)}`) !== null;
+
+        expect(tagExists).to.be.true;
+      });
+    });
+
+    cy.get("a.block-embed").click();
+    cy.get<string>("@tagId").then((tagId) => {
+      cy.get(`span.tag#${CSS.escape(tagId)}`).should("have.text", "#Starred");
+    });
+  });
+
+  it("removes tag in block correctly (converted to block id) after user removes corresponding block embed", () => {
+    insertNoteReference(1, "[[", "test");
+    cy.get("span.note-reference").click();
+    insertNoteReference(1, "[[", "Starred");
+    cy.get("span.note-reference").click();
+    cy.get("p").eq(1).type("{enter}");
+    insertNoteReference(2, "[[ ", "test", "[[starred]]");
+    cy.get("a.block-embed")
+      .invoke("attr", "href")
+      .then((href) => {
+        const [, tagId] = href!.split("#");
+        cy.wrap(tagId).as("tagId");
+      });
+    cy.get("p").eq(2).type("{del}{del}");
+
+    cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
+    cy.get<string>("@tagId").then((tagId) => {
+      cy.then(async () => {
+        const test = await db.notes.get({ title: "test" });
+
+        return test;
+      }).should((test) => {
+        const doc = new DOMParser().parseFromString(test!.content, "text/html");
+        const tagExists =
+          doc.querySelector(`span.tag#${CSS.escape(tagId)}`) !== null;
+        const blockIdExists =
+          doc.querySelector(`span.block-id#${CSS.escape(tagId)}`) !== null;
+
+        expect(tagExists).to.be.false;
+        expect(blockIdExists).to.be.true;
       });
     });
 
     cy.get("span.note-reference").click();
 
     cy.get("span.tag").should("have.length", 0);
-    cy.get("@tagId").then((tagId) => {
+    cy.get<string>("@tagId").then((tagId) => {
       cy.get("span.block-id").should("have.text", `::${tagId}`);
     });
   });
 
-  it("inserts frontmatter tag correctly after user inserts corresponding page embed", () => {
-    insertNoteReference(1, "[[", "test");
-    cy.get("span.note-reference").click();
-    insertNoteReference(0, "#", "Starred");
-    cy.get("span.tag").click();
-    cy.get("p").eq(1).click();
-    cy.get("p").eq(1).type("{cmd}a{backspace}"); // can't really cut and paste in Cypress but this should do
-    cy.wait(1000); // wait for db update
-    cy.get("p").eq(1).type("{cmd}z");
-
-    cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
-    cy.then(async () => {
-      const test = await db.notes.get({ title: "test" });
-
-      return test;
-    }).should((test) => {
-      expect(test?.content).to.contain(`#starred`);
-    });
-
-    cy.get("span.note-reference").click();
-
-    cy.get("span.tag").should("have.text", "#Starred");
-  });
-
-  it("inserts tag in block correctly (converts block id back to tag) after user inserts corresponding block embed", () => {
+  it("converts block id back to tag correctly after user cut and pasted corresponding block embed", () => {
     insertNoteReference(1, "[[", "test");
     cy.get("span.note-reference").click();
     insertNoteReference(1, "#", "Starred");
@@ -498,14 +532,20 @@ describe("Sync tags with note embeds tests", () => {
     cy.get("p").eq(1).type("{cmd}z");
 
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
-    cy.get("@tagId").then((tagId) => {
+    cy.get<string>("@tagId").then((tagId) => {
       cy.then(async () => {
         const test = await db.notes.get({ title: "test" });
 
         return test;
       }).should((test) => {
-        expect(test?.content).to.contain(`#starred`);
-        expect(test?.content).to.not.contain(`::${tagId}`);
+        const doc = new DOMParser().parseFromString(test!.content, "text/html");
+        const tagExists =
+          doc.querySelector(`span.tag#${CSS.escape(tagId)}`) !== null;
+        const blockIdExists =
+          doc.querySelector(`span.block-id#${CSS.escape(tagId)}`) !== null;
+
+        expect(tagExists).to.be.true;
+        expect(blockIdExists).to.be.false;
       });
     });
 

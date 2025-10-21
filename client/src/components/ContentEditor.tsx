@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createContentEditorExtensions } from "shared";
 import * as Y from "yjs";
 import { useSession } from "../contexts/SessionContext";
-import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
+import { useCollabResources } from "../contexts/CollabResourcesContext";
 import {
   noteEmbedSuggestion,
   noteReferenceSuggestion,
@@ -20,12 +20,12 @@ interface ContentEditorProps {
 
 const ContentEditor = ({ noteId }: ContentEditorProps) => {
   const {
-    statelessMessengerRef,
+    metadataProviderRef,
     currentEditorNoteId,
     updatePendingNotes,
     markNoteAsActive,
     markNoteAsInactive,
-  } = useStatelessMessenger();
+  } = useCollabResources();
   const { isConnectedToServerRef } = useSession();
   const {
     syncNoteEmbedsForFirstVisit,
@@ -45,7 +45,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
     currentEditorNoteId.current = noteId;
 
     // Inform other clients that this note is active so they can set up their own note provider to get updates
-    statelessMessengerRef.current?.setAwarenessField("currentNote", noteId);
+    metadataProviderRef.current?.setAwarenessField("currentNote", noteId);
 
     setYdoc(markNoteAsActive({ noteId }));
 
@@ -53,10 +53,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
     return () => {
       currentEditorNoteId.current = "";
 
-      statelessMessengerRef.current?.setAwarenessField(
-        "currentNote",
-        undefined,
-      ); // ref value is not a node, so we can ignore warning
+      metadataProviderRef.current?.setAwarenessField("currentNote", undefined); // ref value is not a node, so we can ignore warning
 
       markNoteAsInactive({ noteId });
     };

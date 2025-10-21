@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { db } from "../db";
 import DeleteIcon from "./icons/DeleteIcon";
-import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
+import { useCollabResources } from "../contexts/CollabResourcesContext";
 
 function MoreOptionsButton() {
   const { pathname } = useLocation(); // need location instead of params bc params are actually not dynamic
@@ -12,7 +12,7 @@ function MoreOptionsButton() {
   const modalRef = useRef(null);
   const [shouldShowMenu, setShouldShowMenu] = useState(false);
   const [shouldShowModal, setShouldShowModal] = useState(false);
-  const { metadataYdocRef } = useStatelessMessenger();
+  const { metadataYdocRef } = useCollabResources();
 
   const displayedNoteTitle = useLiveQuery(async () => {
     if (pathname === "/app") {

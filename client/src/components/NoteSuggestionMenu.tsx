@@ -8,7 +8,7 @@ import { nanoid } from "nanoid";
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import * as Y from "yjs";
 import { useSession } from "../contexts/SessionContext";
-import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
+import { useCollabResources } from "../contexts/CollabResourcesContext";
 import { NoteReferenceNodeAttrs } from "shared/tiptap/note-reference";
 import { setupYdoc } from "../utils/yjs";
 
@@ -49,7 +49,7 @@ const NoteSuggestionMenu = forwardRef<
   const { isConnectedToServerRef } = useSession();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const { metadataYdocRef, updatePendingNotes, setupTempProvider } =
-    useStatelessMessenger();
+    useCollabResources();
 
   // Add a new note entry to metadata ydoc, which on change will create note
   const createNote = async ({ newNoteId, titleToCreate }: CreateNoteParams) => {

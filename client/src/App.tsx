@@ -5,7 +5,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { LoadingProvider } from "./contexts/LoadingContext";
 import Navbar from "./components/Navbar";
 import { SessionProvider } from "./contexts/SessionContext";
-import { StatelessMessengerProvider } from "./contexts/StatelessMessengerContext";
+import { CollabResourcesProvider } from "./contexts/CollabResourcesContext";
 import "react-toastify/dist/ReactToastify.min.css";
 
 function App() {
@@ -14,7 +14,7 @@ function App() {
       <LoadingProvider>
         <SessionProvider>
           <GoogleOAuthProvider clientId={import.meta.env.VITE_CLIENT_ID}>
-            <StatelessMessengerProvider>
+            <CollabResourcesProvider>
               <>
                 <ToastContainer
                   position="top-center"
@@ -31,7 +31,7 @@ function App() {
                 <Navbar />
                 <Outlet />
               </>
-            </StatelessMessengerProvider>
+            </CollabResourcesProvider>
           </GoogleOAuthProvider>
         </SessionProvider>
       </LoadingProvider>

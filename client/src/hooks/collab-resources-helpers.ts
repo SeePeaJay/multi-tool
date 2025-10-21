@@ -8,9 +8,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { useSession } from "../contexts/SessionContext";
 import {
   CurrentAwarenessState,
-  StatelessMessengerContextType,
-} from "../contexts/StatelessMessengerContext";
-import { useAuthFetch } from "../hooks/AuthFetch";
+  CollabResourcesContextType,
+} from "../contexts/CollabResourcesContext";
+import { useAuthFetch } from "./AuthFetch";
 import { setupYdoc } from "../utils/yjs";
 
 /**
@@ -51,10 +51,10 @@ type DestroyCollabResourcesForDeletedNoteArgs = {
   noteId: string;
 };
 
-export const useStatelessMessengerHelpers = (
+export const useCollabResourcesHelpers = (
   props: Pick<
-    StatelessMessengerContextType,
-    | "statelessMessengerRef"
+    CollabResourcesContextType,
+    | "metadataProviderRef"
     | "metadataYdocRef"
     | "activeYdocResourcesRef"
     | "currentEditorNoteId"
@@ -157,12 +157,11 @@ export const useStatelessMessengerHelpers = (
         document: ydoc,
         onSynced() {
           if (shouldSendMsg) {
-            props.statelessMessengerRef?.current?.sendStateless(
+            props.metadataProviderRef?.current?.sendStateless(
               JSON.stringify({
                 type: "temp",
                 noteId: noteId,
-                clientId:
-                  props.statelessMessengerRef?.current?.document.clientID,
+                clientId: props.metadataProviderRef?.current?.document.clientID,
               }),
             );
           }
@@ -181,7 +180,7 @@ export const useStatelessMessengerHelpers = (
     );
   }
 
-  function setupCollabProviders() {
+  function setupMetadataProvider() {
     const metadataProvider = new HocuspocusProvider({
       name: currentUser,
       url: "ws://localhost:5173/collaboration",
@@ -232,7 +231,7 @@ export const useStatelessMessengerHelpers = (
             token: "notoken", // your JWT token
             document: activeYdocResource.ydoc,
           });
-          props.statelessMessengerRef.current?.setAwarenessField(
+          props.metadataProviderRef.current?.setAwarenessField(
             "currentNote",
             props.currentEditorNoteId.current,
           );
@@ -278,12 +277,6 @@ export const useStatelessMessengerHelpers = (
           {},
         );
 
-        // console.log(
-        //   "awareness change: ",
-        //   props.currentAwarenessStateRef.current,
-        //   updatedAwarenessState,
-        // );
-
         const allClientIds = new Set([
           ...Object.keys(props.currentAwarenessStateRef.current),
           ...Object.keys(updatedAwarenessState),
@@ -323,7 +316,7 @@ export const useStatelessMessengerHelpers = (
       },
     });
 
-    props.statelessMessengerRef.current = metadataProvider;
+    props.metadataProviderRef.current = metadataProvider;
   }
 
   // Convert existing temp providers to noteIdsWithPendingUpdate if they should send stateless
@@ -349,8 +342,8 @@ export const useStatelessMessengerHelpers = (
       ? activeYdocResources[props.currentEditorNoteId.current].provider
       : null;
 
-    props.statelessMessengerRef.current?.destroy();
-    props.statelessMessengerRef.current = null;
+    props.metadataProviderRef.current?.destroy();
+    props.metadataProviderRef.current = null;
 
     props.currentAwarenessStateRef.current = {};
 
@@ -563,7 +556,7 @@ export const useStatelessMessengerHelpers = (
     markNoteAsInactive,
     setupMetadataYdoc,
     setupTempProvider,
-    setupCollabProviders,
+    setupMetadataProvider,
     destroyCollabResources,
     destroyCollabResourcesForDeletedNote,
     ensureStarredExists,

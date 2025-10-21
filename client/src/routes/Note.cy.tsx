@@ -5,7 +5,7 @@ import Navbar from "../components/Navbar";
 import { AuthProvider } from "../contexts/AuthContext";
 import { LoadingProvider } from "../contexts/LoadingContext";
 import { SessionProvider } from "../contexts/SessionContext";
-import { StatelessMessengerProvider } from "../contexts/StatelessMessengerContext";
+import { CollabResourcesProvider } from "../contexts/CollabResourcesContext";
 import { setupYdoc } from "../utils/yjs";
 import { db, dbCreateNote } from "../db";
 import Note from "./Note";
@@ -33,11 +33,11 @@ const appComponent = (
     <AuthProvider>
       <LoadingProvider>
         <SessionProvider>
-          <StatelessMessengerProvider>
+          <CollabResourcesProvider>
             <Routes>
               <Route path="/app/notes/:noteId" element={<Note />} />
             </Routes>
-          </StatelessMessengerProvider>
+          </CollabResourcesProvider>
         </SessionProvider>
       </LoadingProvider>
     </AuthProvider>
@@ -157,13 +157,13 @@ describe("<Note />", () => {
         <AuthProvider>
           <LoadingProvider>
             <SessionProvider>
-              <StatelessMessengerProvider>
+              <CollabResourcesProvider>
                 <Navbar />
                 <Routes>
                   <Route path="/app/notes/:noteId" element={<Note />} />
                   <Route path="/app/notes" element={<Notes />} />
                 </Routes>
-              </StatelessMessengerProvider>
+              </CollabResourcesProvider>
             </SessionProvider>
           </LoadingProvider>
         </AuthProvider>
@@ -279,11 +279,11 @@ describe("Sync note embeds with tags tests 2", () => {
         <AuthProvider>
           <LoadingProvider>
             <SessionProvider>
-              <StatelessMessengerProvider>
+              <CollabResourcesProvider>
                 <Routes>
                   <Route path="/app/notes/:noteId" element={<Note />} />
                 </Routes>
-              </StatelessMessengerProvider>
+              </CollabResourcesProvider>
             </SessionProvider>
           </LoadingProvider>
         </AuthProvider>
@@ -339,11 +339,11 @@ describe("Sync note embeds with tags tests 2", () => {
         <AuthProvider>
           <LoadingProvider>
             <SessionProvider>
-              <StatelessMessengerProvider>
+              <CollabResourcesProvider>
                 <Routes>
                   <Route path="/app/notes/:noteId" element={<Note />} />
                 </Routes>
-              </StatelessMessengerProvider>
+              </CollabResourcesProvider>
             </SessionProvider>
           </LoadingProvider>
         </AuthProvider>

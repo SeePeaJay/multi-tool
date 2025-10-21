@@ -2,7 +2,7 @@ import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "../contexts/AuthContext";
 import { LoadingProvider } from "../contexts/LoadingContext";
 import { SessionProvider } from "../contexts/SessionContext";
-import { StatelessMessengerProvider } from "../contexts/StatelessMessengerContext";
+import { CollabResourcesProvider } from "../contexts/CollabResourcesContext";
 import { db } from "../db";
 import Editor from "./Editor";
 
@@ -12,9 +12,9 @@ beforeEach(() => {
       <AuthProvider>
         <LoadingProvider>
           <SessionProvider>
-            <StatelessMessengerProvider>
+            <CollabResourcesProvider>
               <Editor noteId="starred" />
-            </StatelessMessengerProvider>
+            </CollabResourcesProvider>
           </SessionProvider>
         </LoadingProvider>
       </AuthProvider>

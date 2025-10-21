@@ -5,7 +5,7 @@ import * as Y from "yjs";
 import { db } from "../db";
 import { setupYdoc } from "../utils/yjs";
 import { useSession } from "../contexts/SessionContext";
-import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
+import { useCollabResources } from "../contexts/CollabResourcesContext";
 
 interface SyncNoteEmbedsForFirstVisitArgs {
   noteId: string;
@@ -41,7 +41,7 @@ interface RemoveTagForNoteEmbedArgs {
 
 export function useContentEditorHelpers() {
   const { isConnectedToServerRef } = useSession();
-  const { setupTempProvider, updatePendingNotes } = useStatelessMessenger();
+  const { setupTempProvider, updatePendingNotes } = useCollabResources();
 
   async function getNoteEmbedsForFirstVisit(noteId: string) {
     const output: string[] = [];
@@ -50,7 +50,9 @@ export function useContentEditorHelpers() {
     const targetNotes = await db.notes
       .filter((note) => {
         const doc = new DOMParser().parseFromString(note.content, "text/html");
-        const tagExists = doc.querySelector(`span.tag[data-target-note-id="${noteId}"]`) !== null;
+        const tagExists =
+          doc.querySelector(`span.tag[data-target-note-id="${noteId}"]`) !==
+          null;
 
         return tagExists;
       })
@@ -277,7 +279,8 @@ export function useContentEditorHelpers() {
           }
         }
 
-        for (const insertedNoteEmbed of insertedNoteEmbedsByTarget[target] || []) {
+        for (const insertedNoteEmbed of insertedNoteEmbedsByTarget[target] ||
+          []) {
           if (
             insertTagForNoteEmbed({
               insertedNoteEmbed,
@@ -289,7 +292,8 @@ export function useContentEditorHelpers() {
           }
         }
 
-        for (const removedNoteEmbed of removedNoteEmbedsByTarget[target] || []) {
+        for (const removedNoteEmbed of removedNoteEmbedsByTarget[target] ||
+          []) {
           if (
             removeTagForNoteEmbed({
               removedNoteEmbed,
@@ -377,8 +381,7 @@ export function useContentEditorHelpers() {
     embeddingNoteId,
     noteEmbedTargetYdoc,
   }: InsertTagForNoteEmbedArgs) {
-    const [, noteEmbedTargetBlockId] =
-      insertedNoteEmbed.split("::");
+    const [, noteEmbedTargetBlockId] = insertedNoteEmbed.split("::");
 
     const createTag = (tagId: string) => {
       const tag = new Y.XmlElement("tag");
@@ -438,8 +441,7 @@ export function useContentEditorHelpers() {
     unembeddingNoteId,
     noteEmbedTargetYdoc,
   }: RemoveTagForNoteEmbedArgs) {
-    const [, noteEmbedTargetBlockId] =
-      removedNoteEmbed.split("::");
+    const [, noteEmbedTargetBlockId] = removedNoteEmbed.split("::");
 
     let tagIsRemoved = false;
 

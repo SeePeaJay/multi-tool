@@ -4,22 +4,20 @@ import { db, dbCreateNote } from "../db";
 import { AuthProvider } from "../contexts/AuthContext";
 import { LoadingProvider } from "../contexts/LoadingContext";
 import { SessionProvider } from "../contexts/SessionContext";
-import { StatelessMessengerProvider } from "../contexts/StatelessMessengerContext";
+import { CollabResourcesProvider } from "../contexts/CollabResourcesContext";
 import TitleEditor from "./TitleEditor";
 
 it("renames correctly", () => {
-  cy.then(() =>
-    dbCreateNote({ id: "bbbbbb", title: "test" }),
-  );
+  cy.then(() => dbCreateNote({ id: "bbbbbb", title: "test" }));
 
   cy.mount(
     <MemoryRouter initialEntries={["/app/notes/bbbbbb"]}>
       <AuthProvider>
         <LoadingProvider>
           <SessionProvider>
-            <StatelessMessengerProvider>
+            <CollabResourcesProvider>
               <TitleEditor noteId="bbbbbb" />
-            </StatelessMessengerProvider>
+            </CollabResourcesProvider>
           </SessionProvider>
         </LoadingProvider>
       </AuthProvider>

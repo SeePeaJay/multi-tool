@@ -1,11 +1,11 @@
 import { useParams } from "react-router-dom";
 import Editor from "../components/Editor";
 import InitialLoadingScreen from "../components/InitialLoadingScreen";
-import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
+import { useCollabResources } from "../contexts/CollabResourcesContext";
 
 function Note() {
   const { noteId: noteIdParam } = useParams();
-  const { starredAndMetadataAreReady } = useStatelessMessenger();
+  const { starredAndMetadataAreReady } = useCollabResources();
 
   const noteId = noteIdParam || "starred";
 

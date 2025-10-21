@@ -5,7 +5,7 @@ import Text from "@tiptap/extension-text";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useRef } from "react";
 import { db } from "../db";
-import { useStatelessMessenger } from "../contexts/StatelessMessengerContext";
+import { useCollabResources } from "../contexts/CollabResourcesContext";
 import Title from "../utils/title";
 
 interface TitleEditorProps {
@@ -13,7 +13,7 @@ interface TitleEditorProps {
 }
 
 const TitleEditor = ({ noteId }: TitleEditorProps) => {
-  const { metadataYdocRef } = useStatelessMessenger();
+  const { metadataYdocRef } = useCollabResources();
   const editorRef = useRef<TiptapEditor | null>(null);
   const previousTitleRef = useRef(""); // a copy of the last set title value, used to reset when rename fails
 

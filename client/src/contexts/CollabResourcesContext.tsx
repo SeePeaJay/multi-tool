@@ -12,12 +12,12 @@ import {
   MarkNoteAsActiveArgs,
   MarkNoteAsInactiveArgs,
   SetupTempProviderArgs,
-  useStatelessMessengerHelpers,
-} from "../utils/statelessMessengerHelpers";
+  useCollabResourcesHelpers,
+} from "../hooks/collab-resources-helpers";
 import { useAuth } from "./AuthContext";
 
-export interface StatelessMessengerContextType {
-  statelessMessengerRef: React.MutableRefObject<HocuspocusProvider | null>;
+export interface CollabResourcesContextType {
+  metadataProviderRef: React.MutableRefObject<HocuspocusProvider | null>;
   metadataYdocRef: React.MutableRefObject<Y.Doc>;
   activeYdocResourcesRef: React.MutableRefObject<ActiveYdocResources>;
   currentAwarenessStateRef: React.MutableRefObject<CurrentAwarenessState>;
@@ -29,7 +29,7 @@ export interface StatelessMessengerContextType {
   markNoteAsActive: (params: MarkNoteAsActiveArgs) => Y.Doc;
   markNoteAsInactive: (params: MarkNoteAsInactiveArgs) => void;
   setupTempProvider: (params: SetupTempProviderArgs) => void;
-  setupCollabProviders: () => void;
+  setupMetadataProvider: () => void;
 }
 export interface CurrentAwarenessState {
   [key: string]: string;
@@ -60,17 +60,17 @@ export interface TempProviderResources {
   }>;
 }
 
-const StatelessMessengerContext = createContext<
-  StatelessMessengerContextType | undefined
+const CollabResourcesContext = createContext<
+  CollabResourcesContextType | undefined
 >(undefined);
 
-export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
+export const CollabResourcesProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const { currentUser } = useAuth();
 
   // A global provider (one per client) that handles stateless messages and awareness updates.
-  const statelessMessengerRef = useRef<HocuspocusProvider | null>(null);
+  const metadataProviderRef = useRef<HocuspocusProvider | null>(null);
 
   const metadataYdocRef = useRef<Y.Doc>(new Y.Doc());
 
@@ -118,11 +118,11 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
     markNoteAsInactive,
     setupMetadataYdoc,
     setupTempProvider,
-    setupCollabProviders,
+    setupMetadataProvider,
     destroyCollabResources,
     ensureStarredExists,
-  } = useStatelessMessengerHelpers({
-    statelessMessengerRef,
+  } = useCollabResourcesHelpers({
+    metadataProviderRef,
     metadataYdocRef,
     activeYdocResourcesRef,
     currentEditorNoteId,
@@ -152,7 +152,7 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
       return;
     }
 
-    setupCollabProviders();
+    setupMetadataProvider();
 
     window.addEventListener("beforeunload", destroyCollabResources);
 
@@ -163,9 +163,9 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
   }, [currentUser]);
 
   return (
-    <StatelessMessengerContext.Provider
+    <CollabResourcesContext.Provider
       value={{
-        statelessMessengerRef,
+        metadataProviderRef,
         metadataYdocRef,
         activeYdocResourcesRef,
         currentAwarenessStateRef,
@@ -177,20 +177,20 @@ export const StatelessMessengerProvider: React.FC<{ children: ReactNode }> = ({
         markNoteAsActive,
         markNoteAsInactive,
         setupTempProvider,
-        setupCollabProviders,
+        setupMetadataProvider,
       }}
     >
       {children}
-    </StatelessMessengerContext.Provider>
+    </CollabResourcesContext.Provider>
   );
 };
 
 // custom hook to use the Hocuspocus context
-export const useStatelessMessenger = () => {
-  const context = useContext(StatelessMessengerContext);
+export const useCollabResources = () => {
+  const context = useContext(CollabResourcesContext);
   if (!context) {
     throw new Error(
-      "useStatelessMessenger must be used within a StatelessMessengerProvider",
+      "useCollabResources must be used within a CollabResourcesProvider",
     );
   }
   return context;

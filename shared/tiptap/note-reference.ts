@@ -56,11 +56,6 @@ const NoteReference = Node.create<NoteReferenceOptions>({
 
   addAttributes() {
     return {
-      type: {
-        default: this.name,
-        parseHTML: () => this.name,
-        renderHTML: () => ({ "data-type": this.name }),
-      },
       targetNoteId: {
         default: "",
         parseHTML: (element) => element.getAttribute("data-target-note-id"),
@@ -89,7 +84,7 @@ const NoteReference = Node.create<NoteReferenceOptions>({
   parseHTML() {
     return [
       {
-        tag: `span[data-type="${this.name}"]`,
+        tag: `span.note-reference`,
       },
     ];
   },

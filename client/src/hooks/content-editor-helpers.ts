@@ -62,7 +62,7 @@ export function useContentEditorHelpers() {
       const parser = new DOMParser();
       const doc = parser.parseFromString(note.content, "text/html");
       const targetSpans = doc.querySelectorAll(
-        `span.tag[data-type="tag"][data-target-note-id="${noteId}"]`,
+        `span.tag[data-target-note-id="${noteId}"]`,
       );
       const parentElements = Array.from(targetSpans).map(
         (span) => span.parentElement!,

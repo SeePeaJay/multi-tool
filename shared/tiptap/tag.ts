@@ -53,11 +53,6 @@ const Tag = Node.create<TagOptions>({
         parseHTML: (element) => element.getAttribute("id"),
         renderHTML: (attributes) => ({ id: attributes.id }),
       },
-      type: {
-        default: this.name,
-        parseHTML: () => this.name,
-        renderHTML: () => ({ "data-type": this.name }),
-      },
       targetNoteId: {
         default: "",
         parseHTML: (element) => element.getAttribute("data-target-note-id"),
@@ -73,7 +68,7 @@ const Tag = Node.create<TagOptions>({
   parseHTML() {
     return [
       {
-        tag: `span[data-type="${this.name}"]`,
+        tag: `span.tag`,
       },
     ];
   },

@@ -4,7 +4,7 @@ import { HashLink } from "react-router-hash-link";
 import { db } from "../db";
 
 const InlineNotelinkNodeView: React.FC<NodeViewProps> = ({ node }) => {
-  const suggestionChar = node.attrs.type === "noteReference" ? "[[" : "#";
+  const suggestionChar = node.type.name === "noteReference" ? "[[" : "#";
   const { targetNoteId, targetBlockId } = node.attrs;
   const note = useLiveQuery(() => db.notes.get(targetNoteId), [targetNoteId]);
 
@@ -12,8 +12,8 @@ const InlineNotelinkNodeView: React.FC<NodeViewProps> = ({ node }) => {
     <NodeViewWrapper
       as="span"
       // only display id if current node is a tag; used to target a block in a note embed
-      id={node.attrs.type === "tag" ? node.attrs.id : ""}
-      className={`${node.attrs.type === "noteReference" ? "note-reference" : "tag"} ${!note ? "text-blue-100" : ""}`}
+      id={node.type.name === "tag" ? node.attrs.id : ""}
+      className={`${node.type.name === "noteReference" ? "note-reference" : "tag"} ${!note ? "text-blue-100" : ""}`}
     >
       {!note ? (
         <>Cannot find note with id "{targetNoteId}"</>

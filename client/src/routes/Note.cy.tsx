@@ -385,11 +385,7 @@ describe("Sync tags with note embeds tests", () => {
     insertNoteReference(1, "[[ ", "test");
 
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
-    cy.then(async () => {
-      const test = await db.notes.get({ title: "test" });
-
-      return test;
-    }).should((test) => {
+    cy.then(() => db.notes.get({ title: "test" })).should((test) => {
       expect(test?.content).to.contain(`#starred`);
     });
 
@@ -405,11 +401,7 @@ describe("Sync tags with note embeds tests", () => {
     cy.get("p").eq(2).type("{del}{del}");
 
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
-    cy.then(async () => {
-      const test = await db.notes.get({ title: "test" });
-
-      return test;
-    }).should((test) => {
+    cy.then(() => db.notes.get({ title: "test" })).should((test) => {
       expect(test?.content).to.not.contain(`#starred`);
     });
 
@@ -428,11 +420,7 @@ describe("Sync tags with note embeds tests", () => {
     cy.get("p").eq(1).type("{del}");
 
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
-    cy.then(async () => {
-      const test = await db.notes.get({ title: "test" });
-
-      return test;
-    }).should((test) => {
+    cy.then(() => db.notes.get({ title: "test" })).should((test) => {
       expect(test?.content).to.not.contain(`#starred`);
     });
 
@@ -457,11 +445,7 @@ describe("Sync tags with note embeds tests", () => {
 
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
     cy.get<string>("@tagId").then((tagId) => {
-      cy.then(async () => {
-        const test = await db.notes.get({ title: "test" });
-
-        return test;
-      }).should((test) => {
+      cy.then(() => db.notes.get({ title: "test" })).should((test) => {
         const doc = new DOMParser().parseFromString(test!.content, "text/html");
         const tagExists =
           doc.querySelector(`span.tag#${CSS.escape(tagId)}`) !== null;
@@ -493,11 +477,7 @@ describe("Sync tags with note embeds tests", () => {
 
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
     cy.get<string>("@tagId").then((tagId) => {
-      cy.then(async () => {
-        const test = await db.notes.get({ title: "test" });
-
-        return test;
-      }).should((test) => {
+      cy.then(() => db.notes.get({ title: "test" })).should((test) => {
         const doc = new DOMParser().parseFromString(test!.content, "text/html");
         const tagExists =
           doc.querySelector(`span.tag#${CSS.escape(tagId)}`) !== null;
@@ -533,11 +513,7 @@ describe("Sync tags with note embeds tests", () => {
 
     cy.wait(1000); // wait for db update; below is not designed to rerun when assertion fails
     cy.get<string>("@tagId").then((tagId) => {
-      cy.then(async () => {
-        const test = await db.notes.get({ title: "test" });
-
-        return test;
-      }).should((test) => {
+      cy.then(() => db.notes.get({ title: "test" })).should((test) => {
         const doc = new DOMParser().parseFromString(test!.content, "text/html");
         const tagExists =
           doc.querySelector(`span.tag#${CSS.escape(tagId)}`) !== null;

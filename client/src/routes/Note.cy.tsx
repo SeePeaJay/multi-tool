@@ -225,7 +225,7 @@ describe("Sync note embeds with tags tests 1", () => {
   });
 
   it("inserts note embed correctly on first visit (repairs correctly)", () => {
-    cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
+    cy.get('div.note-embed').should("have.length", 1);
     cy.then(async () => {
       const starred = await db.notes.get("starred");
       const test = await db.notes.get({ title: "test" });
@@ -259,8 +259,8 @@ describe("Sync note embeds with tags tests 2", () => {
 
     cy.get("span.tag").click();
 
-    cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
-    cy.get('div[data-type="noteEmbed"]').should("have.text", "test");
+    cy.get('div.note-embed').should("have.length", 1);
+    cy.get('div.note-embed').should("have.text", "test");
   });
 
   it("removes page embed correctly after user removes corresponding tag in frontmatter", () => {
@@ -291,7 +291,7 @@ describe("Sync note embeds with tags tests 2", () => {
     );
 
     cy.wait(1000); // wait for editor display after remount
-    cy.get('div[data-type="noteEmbed"]').should("have.length", 0);
+    cy.get('div.note-embed').should("have.length", 0);
   });
 
   it("inserts block embed correctly after user inserts corresponding tag in block", () => {
@@ -318,9 +318,9 @@ describe("Sync note embeds with tags tests 2", () => {
 
     cy.get("span.tag").click();
 
-    cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
-    cy.get('div[data-type="noteEmbed"]').should("include.text", "test");
-    cy.get('div[data-type="noteEmbed"]').should("include.text", "#starred");
+    cy.get('div.note-embed').should("have.length", 1);
+    cy.get('div.note-embed').should("include.text", "test");
+    cy.get('div.note-embed').should("include.text", "#starred");
   });
 
   it("removes block embed correctly after user removes corresponding tag in block", () => {
@@ -351,7 +351,7 @@ describe("Sync note embeds with tags tests 2", () => {
     );
 
     cy.wait(1000); // wait for editor display after remount
-    cy.get('div[data-type="noteEmbed"]').should("have.length", 0);
+    cy.get('div.note-embed').should("have.length", 0);
   });
 
   it("creates a new note correctly by tagging", () => {
@@ -371,8 +371,8 @@ describe("Sync note embeds with tags tests 2", () => {
 
     cy.get("span.tag").click();
 
-    cy.get('div[data-type="noteEmbed"]').should("have.length", 1);
-    cy.get('div[data-type="noteEmbed"]').should("have.text", "test");
+    cy.get('div.note-embed').should("have.length", 1);
+    cy.get('div.note-embed').should("have.text", "test");
   });
 });
 
@@ -393,7 +393,7 @@ describe("Sync tags with note embeds tests", () => {
       expect(test?.content).to.contain(`#starred`);
     });
 
-    cy.get('div[data-type="noteEmbed"]').click("left");
+    cy.get('div.note-embed').click("left");
 
     cy.get("span.tag").should("have.text", "#Starred");
   });

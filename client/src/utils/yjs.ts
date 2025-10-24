@@ -22,7 +22,6 @@ function getHtmlFromYdoc({ ydoc }: { ydoc: Y.Doc }) {
       "*": [
         "id",
         "class",
-        "data-type",
         "data-target-note-id",
         "data-target-block-id",
       ],

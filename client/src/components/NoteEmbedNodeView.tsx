@@ -80,7 +80,7 @@ const NoteEmbedNodeView: React.FC<NodeViewProps> = ({ node, editor }) => {
   );
 
   return (
-    <NodeViewWrapper as="div" data-type="noteEmbed">
+    <NodeViewWrapper as="div" className="note-embed">
       <NavLink className="note-embed-title" to={`/app/notes/${targetNoteId}`}>
         {targetNoteTitle}
       </NavLink>

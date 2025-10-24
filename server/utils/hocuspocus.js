@@ -104,7 +104,6 @@ export function getHocuspocusServer() {
               "*": [
                 "id",
                 "class",
-                "data-type",
                 "data-target-note-id",
                 "data-target-block-id",
               ],

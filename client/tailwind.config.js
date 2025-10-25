@@ -10,4 +10,5 @@ export default {
       // by default seems to prefer system appearance (does it have dark mode enabled)
       // having one item sets it as the theme; more theme presets at https://daisyui.com/docs/themes/
   },
+  safelist: ["drag-handle"] // ensure drag-handle isn't purged when it hasn't been rendered yet
 };

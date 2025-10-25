@@ -2,7 +2,6 @@ import { useLoading } from "../contexts/LoadingContext";
 import SkeletonEditor from "./SkeletonEditor";
 import TitleEditor from "./TitleEditor";
 import ContentEditor from "./ContentEditor";
-import "./Editor.css";
 
 interface EditorProps {
   noteId: string;

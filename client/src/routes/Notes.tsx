@@ -24,7 +24,7 @@ function Notes() {
   };
 
   return (
-    <div className="mx-auto w-[90vw] p-8 lg:w-[50vw]">
+    <div className="page-container">
       <h1>All Notes</h1>
 
       <input

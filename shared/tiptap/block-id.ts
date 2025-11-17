@@ -1,8 +1,6 @@
 import { mergeAttributes, Node } from "@tiptap/core";
 
-/**
- * This extension allows you to insert block ids into the editor.
- */
+/* This extension allows you to insert block ids into the editor. */
 const BlockId = Node.create({
   name: "blockId",
 

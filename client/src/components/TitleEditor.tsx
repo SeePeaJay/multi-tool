@@ -15,7 +15,9 @@ interface TitleEditorProps {
 const TitleEditor = ({ noteId }: TitleEditorProps) => {
   const { metadataYdocRef } = useCollabResources();
   const editorRef = useRef<TiptapEditor | null>(null);
-  const previousTitleRef = useRef(""); // a copy of the last set title value, used to reset when rename fails
+
+  /* A copy of the last set title value, used to reset when rename fails */
+  const previousTitleRef = useRef("");
 
   const noteTitleToDisplay = useLiveQuery(async () => {
     const note = await db.notes.get(noteId);
@@ -36,7 +38,8 @@ const TitleEditor = ({ noteId }: TitleEditorProps) => {
         console.error("An error occurred while renaming:", error);
       }
     } else {
-      // reset
+      /* Reset */
+
       setTimeout(() => {
         editorRef.current!.commands.setContent(
           `<h1 class="title">${previousTitleRef.current}</h1>`,
@@ -45,14 +48,14 @@ const TitleEditor = ({ noteId }: TitleEditorProps) => {
     }
   };
 
-  // Update editable status whenever title to display changes
+  /* Update editable status whenever the title to display changes */
   useEffect(() => {
     if (editorRef.current) {
       editorRef.current.setEditable(noteTitleToDisplay !== "Starred");
     }
   }, [noteTitleToDisplay]);
 
-  // Dynamically update editor content when the query changes, due to other tabs having renamed current note, but current editor hasn't been updated yet
+  /* Dynamically update editor content when the query changes, due to other tabs having renamed current note, but current editor hasn't been updated yet */
   useEffect(() => {
     async function updateEditorDisplayIfOutdated() {
       if (editorRef.current && noteTitleToDisplay) {

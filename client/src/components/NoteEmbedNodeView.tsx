@@ -10,9 +10,11 @@ const NoteEmbedNodeView: React.FC<NodeViewProps> = ({ node, editor }) => {
 
   const [editorUpdateCounter, setEditorUpdateCounter] = useState(0);
 
-  // watch for editor updates
-  // necessary bc sometimes when a note embed ends up at a position occupied by an old node (via dragging or other means), somehow tiptap transmits the properties of the old node to that position
-  // a refresh ensures the right data is displayed
+  /* 
+   * Watch for editor updates
+   * Necessary bc sometimes when a note embed ends up at a position occupied by an old node (via dragging or other means), somehow tiptap transmits the properties of the old node to that position
+   * A refresh here ensures the right data is displayed
+  */
   useEffect(() => {
     if (!editor) return;
 
@@ -61,10 +63,10 @@ const NoteEmbedNodeView: React.FC<NodeViewProps> = ({ node, editor }) => {
         return `Cannot find tag with id "${targetBlockId}`;
       }
 
-      // remove id to make anchor jumping more consistent
+      /* Remove id to make anchor jumping more consistent */
       targetTag.removeAttribute("id");
 
-      // find the block
+      /* Find the block */
       let rootElement: HTMLElement | null = targetTag;
       while (
         rootElement &&

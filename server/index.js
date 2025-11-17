@@ -114,8 +114,6 @@ app.get("/api/notes", authCheck, async (req, res) => {
         ]),
       );
 
-      // console.log(resultObject);
-
       res.status(200).json(resultObject);
     },
   );
@@ -136,7 +134,7 @@ app.listen(port, () => {
   console.log(`Server app listening on port ${port}`);
 });
 
-// close db connection when the app terminates to prevent resource leakage
+/* Close db connection when the app terminates to prevent resource leakage */
 process.on("SIGINT", () => {
   db.close(() => {
     console.log("Database connection closed");

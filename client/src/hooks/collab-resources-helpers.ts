@@ -13,19 +13,13 @@ import {
 import { useAuthFetch } from "./AuthFetch";
 import { setupYdoc } from "../utils/yjs";
 
-/**
- * @param {number} noteId - The id of the note.
- * @param {number} isFromEditor - Whether the caller is the current editor component.
- */
 export type MarkNoteAsActiveArgs = {
+  /* The id of the note. */
   noteId: string;
 };
 
-/**
- * @param {number} noteId - The id of the note.
- * @param {number} isFromEditor - Whether the caller is the current editor component.
- */
 export type MarkNoteAsInactiveArgs = {
+  /* The id of the note. */
   noteId: string;
 };
 
@@ -70,12 +64,12 @@ export const useCollabResourcesHelpers = (
   const navigate = useNavigate();
   const { isConnectedToServerRef } = useSession();
 
-  // A copy of location pathname to avoid stale closure below
+  /* A copy of location pathname to avoid stale closure below */
   const locationPathnameRef = useRef(location.pathname);
 
-  // Marks a note as active (some client's editor is editting the note).
+  /* Mark a note as active (some client's editor is editting the note). */
   const markNoteAsActive = ({ noteId }: MarkNoteAsActiveArgs) => {
-    // If note isn't marked as active yet, mark it as active, and return ydoc (in case it's for editor)
+    /* If note isn't marked as active yet, mark it as active, and return ydoc (in case it's for editor) */
     if (!props.activeYdocResourcesRef.current[noteId]) {
       const ydoc = new Y.Doc();
 
@@ -94,35 +88,23 @@ export const useCollabResourcesHelpers = (
         activeClientCount: 1,
       };
 
-      // console.log(
-      //   `marked note ${noteId} as active for the first time: `,
-      //   activeYdocResourcesRef.current,
-      // );
-
       return ydoc;
     }
 
-    // Increment count for number of connected clients actively editting the note.
+    /* Increment count for number of connected clients actively editting the note. */
     props.activeYdocResourcesRef.current[noteId].activeClientCount++;
-
-    // console.log(
-    //   `incrementing active count for note ${noteId}: `,
-    //   activeYdocResourcesRef.current,
-    // );
 
     return props.activeYdocResourcesRef.current[noteId].ydoc;
   };
 
   const markNoteAsInactive = ({ noteId }: MarkNoteAsInactiveArgs) => {
     // It's possible to call this when resource is already deleted (due to deleting a note), so simply return
-    if (!props.activeYdocResourcesRef.current[noteId]) {
-      return;
-    }
+    if (!props.activeYdocResourcesRef.current[noteId]) return;
 
-    // Decrement count for number of connected clients actively editting the note.
+    /* Decrement count for number of connected clients actively editting the note. */
     props.activeYdocResourcesRef.current[noteId].activeClientCount--;
 
-    // If there are no connected clients editting the note, then we can safely destroy and delete the provider.
+    /* If there are no connected clients editting the note, then we can safely destroy and delete the provider. */
     if (props.activeYdocResourcesRef.current[noteId].activeClientCount === 0) {
       if (isConnectedToServerRef.current) {
         setupTempProvider({
@@ -137,11 +119,6 @@ export const useCollabResourcesHelpers = (
       props.activeYdocResourcesRef.current[noteId].provider?.destroy();
       delete props.activeYdocResourcesRef.current[noteId];
     }
-
-    // console.log(
-    //   `note ${noteId} marked as inactive: `,
-    //   activeYdocResourcesRef.current,
-    // );
   };
 
   function setupTempProvider({
@@ -319,7 +296,7 @@ export const useCollabResourcesHelpers = (
     props.metadataProviderRef.current = metadataProvider;
   }
 
-  // Convert existing temp providers to noteIdsWithPendingUpdate if they should send stateless
+  /* Convert existing temp providers to noteIdsWithPendingUpdate if they should send stateless */
   function processTempProvidersOnDisconnect() {
     for (const [noteId, set] of Object.entries(
       props.tempProviderResourcesRef.current,
@@ -402,7 +379,7 @@ export const useCollabResourcesHelpers = (
 
     Y.applyUpdate(metadataYdoc, new Uint8Array(ydocArray));
 
-    // set up persistence
+    /* Setup persistence */
     metadataYdoc.on("update", () => {
       db.user.update(0, {
         metadataYdocArray: Array.from(Y.encodeStateAsUpdate(metadataYdoc)),
@@ -412,7 +389,7 @@ export const useCollabResourcesHelpers = (
     const ymap = metadataYdoc.getMap("noteMetadata");
     const FIX_DUPLICATE_TITLE_ORIGIN = "metadata-autofix";
 
-    // If duplicate titles detected, resolve them first
+    /* If duplicate titles detected, resolve them first */
     if (ymap.size > new Set(ymap.values()).size) {
       const titleToKeys = getTitleToKeys(ymap);
 
@@ -512,7 +489,7 @@ export const useCollabResourcesHelpers = (
     const uniqueTitle = getUniqueTitle(duplicateTitle, allNoteTitles);
 
     if (existingNoteId > incomingNoteId) {
-      // rename existing note
+      /* Rename existing note */
 
       metadataYdoc.transact(() => {
         ymap.set(existingNoteId, uniqueTitle);
@@ -522,7 +499,7 @@ export const useCollabResourcesHelpers = (
         title: uniqueTitle,
       }); // has to await to ensure below db call doesn't run in uniqueness error
     } else {
-      // rename incoming note in ydoc before continuing to next part
+      /* Rename incoming note in ydoc before continuing to next part */
       metadataYdoc.transact(() => {
         ymap.set(incomingNoteId, uniqueTitle);
       }, TRANSACTION_ORIGIN);

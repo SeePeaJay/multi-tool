@@ -1,6 +1,4 @@
-/*
- * This file defines a custom tag node, based on Tiptap's mention.ts.
- */
+/* This file defines a custom tag node, based on Tiptap's mention.ts. */
 
 import { mergeAttributes, Node } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewProps } from "@tiptap/react";
@@ -8,10 +6,7 @@ import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
 
 // define a type for addOptions below
 type TagOptions = {
-  /**
-   * Whether to delete the trigger character with backspace.
-   * @default true
-   */
+  /* Whether to delete the trigger character with backspace. */
   deleteTriggerWithBackspace: boolean;
 
   suggestion: Omit<SuggestionOptions, "editor">;
@@ -22,9 +17,7 @@ type TagOptions = {
 export const tagNodeName = "tag";
 export const tagTriggerChar = "#";
 
-/**
- * This extension allows you to insert tags into the editor.
- */
+/* This extension allows you to insert tags into the editor. */
 const Tag = Node.create<TagOptions>({
   name: tagNodeName,
 
@@ -134,13 +127,9 @@ const Tag = Node.create<TagOptions>({
     ];
   },
 
-  /*
-   * Not adding an input rule for now since it causes weird glitches when you type whitespace
-   */
+  /* Not adding an input rule for now since it causes weird glitches when you type whitespace */
 
-  /*
-   * This replaces `renderHTML` with a component containing a router link, but doesn't affect the html output
-   */
+  /* This replaces `renderHTML` with a component containing a router link, but doesn't affect the html output */
   addNodeView() {
     if (!this.options.TagNodeView) return;
 

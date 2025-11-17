@@ -1,26 +1,19 @@
-/*
- * This file defines a custom note reference node, based on Tiptap's mention.ts.
- */
+/* This file defines a custom note reference node, based on Tiptap's mention.ts. */
 
 import { mergeAttributes, Node } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewProps } from "@tiptap/react";
 import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
 
 export interface NoteReferenceNodeAttrs {
-  /**
-   * The target id to be rendered by the editor. Stored as a `data-target-note-id` attribute.
-   */
+  /* The target id to be rendered by the editor. Stored as a `data-target-note-id` attribute. */
   targetNoteId: string;
 
   targetBlockId?: string | null;
 }
 
-// define a type for addOptions below
+/* Define a type for addOptions below */
 export type NoteReferenceOptions = {
-  /**
-   * Whether to delete the trigger character with backspace.
-   * @default true
-   */
+  /* Whether to delete the trigger character with backspace. */
   deleteTriggerWithBackspace: boolean;
 
   suggestion: Omit<SuggestionOptions, "editor">;
@@ -31,9 +24,7 @@ export type NoteReferenceOptions = {
 export const noteReferenceNodeName = "noteReference";
 export const noteReferenceTriggerChar = "[[";
 
-/**
- * This extension allows you to insert note references into the editor.
- */
+/* This extension allows you to insert note references into the editor. */
 const NoteReference = Node.create<NoteReferenceOptions>({
   name: noteReferenceNodeName,
 
@@ -150,9 +141,7 @@ const NoteReference = Node.create<NoteReferenceOptions>({
     ];
   },
 
-  /*
-   * This replaces `renderHTML` with a component containing a router link, but doesn't affect the html output
-   */
+  /* This replaces `renderHTML` with a component containing a router link, but doesn't affect the html output */
   addNodeView() {
     if (!this.options.NoteReferenceNodeView) return;
 

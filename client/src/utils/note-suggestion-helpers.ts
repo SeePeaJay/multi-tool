@@ -39,7 +39,7 @@ async function getBlockSuggestionItems(
   cachedNote: { id: string; title: string; content: string },
   blockQuery: string,
 ): Promise<NoteSuggestion[]> {
-  // convert into list of blocks
+  /* Convert into list of blocks */
   const document = parser.parseFromString(cachedNote.content, "text/html");
   const elements = Array.from(document.body.children);
   const storedBlocks = elements.map((element) => element.outerHTML);
@@ -156,11 +156,13 @@ const sharedSuggestionOptions: Omit<SuggestionOptions, "editor"> = {
         popup?.destroy();
         component?.destroy();
 
-        // Remove references to the old popup and component upon destruction/exit.
-        // (This should prevent redundant calls to `popup.destroy()`, which Tippy
-        // warns in the console is a sign of a memory leak, as the `suggestion`
-        // plugin seems to call `onExit` both when a suggestion menu is closed after
-        // a user chooses an option, *and* when the editor itself is destroyed.)
+        /*
+         * Remove references to the old popup and component upon destruction/exit.
+         * (This should prevent redundant calls to `popup.destroy()`, which Tippy
+         * warns in the console is a sign of a memory leak, as the `suggestion`
+         * plugin seems to call `onExit` both when a suggestion menu is closed after
+         * a user chooses an option, *and* when the editor itself is destroyed.)
+         */
         popup = undefined;
         component = undefined;
       },
@@ -178,12 +180,12 @@ const getCompleteItemsOption: SuggestionOptions["items"] = async ({
   const [titleQuery, blockQuery] = query.split("::");
   const cachedNote = await db.table("notes").get({ title: titleQuery });
 
-  // if title has exact match and blockquery exists
+  /* If title has exact match and blockquery exists */
   if (cachedNote && blockQuery !== undefined) {
     return getBlockSuggestionItems(cachedNote, blockQuery);
   }
 
-  // otherwise, perform standard title search
+  /* Otherwise, perform standard title search */
   return getTitleSuggestionItems(titleQuery);
 };
 
@@ -193,8 +195,8 @@ export const noteEmbedSuggestion: Omit<SuggestionOptions, "editor"> = {
   char: noteEmbedTriggerChar,
   startOfLine: true,
   command: ({ editor, range, props }) => {
-    // increase range.to by one when the next node is of type "text"
-    // and starts with a space character
+    /* Increase range.to by one when the next node is of type "text" and starts with a space character */
+
     const nodeAfter = editor.view.state.selection.$to.nodeAfter;
     const overrideSpace = nodeAfter?.text?.startsWith(" ");
 
@@ -213,7 +215,7 @@ export const noteEmbedSuggestion: Omit<SuggestionOptions, "editor"> = {
       ])
       .run();
 
-    // get reference to `window` object from editor element, to support cross-frame JS usage
+    /* Get reference to `window` object from editor element, to support cross-frame JS usage */
     editor.view.dom.ownerDocument.defaultView?.getSelection()?.collapseToEnd();
   },
   items: getCompleteItemsOption,
@@ -225,8 +227,8 @@ export const noteReferenceSuggestion: Omit<SuggestionOptions, "editor"> = {
   pluginKey: new PluginKey("noteReferenceSuggestion"),
   char: noteReferenceTriggerChar,
   command: ({ editor, range, props }) => {
-    // increase range.to by one when the next node is of type "text"
-    // and starts with a space character
+    /* Increase range.to by one when the next node is of type "text" and starts with a space character */
+
     const nodeAfter = editor.view.state.selection.$to.nodeAfter;
     const overrideSpace = nodeAfter?.text?.startsWith(" ");
 
@@ -249,7 +251,7 @@ export const noteReferenceSuggestion: Omit<SuggestionOptions, "editor"> = {
       ])
       .run();
 
-    // get reference to `window` object from editor element, to support cross-frame JS usage
+    /* Get reference to `window` object from editor element, to support cross-frame JS usage */
     editor.view.dom.ownerDocument.defaultView?.getSelection()?.collapseToEnd();
   },
   items: getCompleteItemsOption,
@@ -270,8 +272,8 @@ export const tagSuggestion: Omit<SuggestionOptions, "editor"> = {
   pluginKey: new PluginKey("tagSuggestion"),
   char: tagTriggerChar,
   command: ({ editor, range, props }) => {
-    // increase range.to by one when the next node is of type "text"
-    // and starts with a space character
+    /* Increase range.to by one when the next node is of type "text" and starts with a space character */
+
     const nodeAfter = editor.view.state.selection.$to.nodeAfter;
     const overrideSpace = nodeAfter?.text?.startsWith(" ");
 
@@ -296,7 +298,7 @@ export const tagSuggestion: Omit<SuggestionOptions, "editor"> = {
       ])
       .run();
 
-    // get reference to `window` object from editor element, to support cross-frame JS usage
+    /* Get reference to `window` object from editor element, to support cross-frame JS usage */
     editor.view.dom.ownerDocument.defaultView?.getSelection()?.collapseToEnd();
   },
   items: async ({ query }): Promise<NoteSuggestion[]> => {

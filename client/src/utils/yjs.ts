@@ -14,7 +14,7 @@ function getHtmlFromYdoc({ ydoc }: { ydoc: Y.Doc }) {
   const editorExtensions = createContentEditorExtensions();
   const json = TiptapTransformer.fromYdoc(
     ydoc,
-    "default", // The field used in Tiptap
+    "default", // the field used in Tiptap
   );
   const html = generateHTML(json, editorExtensions);
   const sanitizedHtml = sanitizeHtml(html, {
@@ -35,8 +35,6 @@ async function setupYdoc({ noteId, ydoc }: InitializeYDocArgs) {
   const ydocArray = (await db.notes.get(noteId))?.ydocArray; // hydrate from persisted state if available
   let update;
 
-  // console.log("init ydoc for: ", noteId);
-
   if (ydocArray) {
     update = new Uint8Array(ydocArray);
   } else {
@@ -54,7 +52,7 @@ async function setupYdoc({ noteId, ydoc }: InitializeYDocArgs) {
 
   Y.applyUpdate(ydoc, update);
 
-  // set up persistence
+  /* Set up persistence */
   ydoc.on("update", () => {
     const html = getHtmlFromYdoc({ ydoc });
 
@@ -63,8 +61,6 @@ async function setupYdoc({ noteId, ydoc }: InitializeYDocArgs) {
       content: html,
       contentWords: turndownService.turndown(html).split(/\s+/),
     });
-
-    // console.log("persisted: ", noteId, getHtmlFromYdoc({ ydoc }));
   });
 }
 

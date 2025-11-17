@@ -53,8 +53,8 @@ function Navbar() {
           </span>
         ) : (
           <div className="mr-2 mt-2">
-            {" "}
             {/* create space for button */}
+            {" "}
             <LoginButton />
           </div>
         )}

@@ -1,12 +1,10 @@
-/*
- * This file defines a custom note embed node.
- */
+/* This file defines a custom note embed node. */
 
 import { Node } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewProps } from "@tiptap/react";
 import Suggestion, { SuggestionOptions } from "@tiptap/suggestion";
 
-// define a type for addOptions below
+/* Define a type for addOptions below */
 interface NoteEmbedOptions {
   suggestion: Omit<SuggestionOptions, "editor">;
   NoteEmbedNodeView?: React.FC<NodeViewProps>;

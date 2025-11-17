@@ -6,26 +6,23 @@ import {
   ReactNode,
 } from "react";
 
-// define shape of context
 interface AuthContextType {
   currentUser: string;
   setCurrentUser: (currentUser: string) => void;
 }
 
-// create context object
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// define provider component
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  // init state from localStorage to persist auth status across refreshes
+  /* Init state from localStorage to persist auth status across refreshes */
   const [currentUser, setCurrentUser] = useState(() => {
     const storedAuthState = localStorage.getItem("currentUser");
     return storedAuthState || "";
   });
 
-  // keep localstorage/dexie up to date when currentUser changes
+  /* Keep localstorage/dexie up to date when currentUser changes */
   useEffect(() => {
     const saveAuthState = async () => {
       if (currentUser) {
@@ -47,7 +44,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-// custom hook to use AuthContext
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {

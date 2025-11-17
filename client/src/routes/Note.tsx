@@ -13,8 +13,8 @@ function Note() {
     <>
       {starredAndMetadataAreReady ? (
         <div className="page-container">
-          <Editor key={noteId} noteId={noteId} />{" "}
           {/* Using a key is the only reliable way to force the editor to remount when noteId changes. We remount to initialize the content editor with a new ydoc */}
+          <Editor key={noteId} noteId={noteId} />{" "}
         </div>
       ) : (
         <InitialLoadingScreen />

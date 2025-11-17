@@ -9,8 +9,6 @@ const LoginButton = () => {
     flow: "auth-code",
     scope: "https://www.googleapis.com/auth/drive.file",
     onSuccess: async (credentialResponse) => {
-      // console.log("Login success:", credentialResponse);
-
       const response = await fetch(
         `/api/auth?code=${credentialResponse.code}`,
         { credentials: "include" }, // include cookies with request; required for cookie session to function

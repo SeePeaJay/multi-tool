@@ -1,15 +1,12 @@
 import { createContext, useState, useContext, ReactNode } from "react";
 
-// define shape of context
 interface LoadingContextType {
   isLoading: boolean;
   setIsLoading: (isLoading: boolean) => void;
 }
 
-// create context object
 const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
 
-// define provider component
 export const LoadingProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
@@ -22,7 +19,6 @@ export const LoadingProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-// custom hook to use LoadingContext
 export const useLoading = (): LoadingContextType => {
   const context = useContext(LoadingContext);
   if (!context) {

@@ -11,7 +11,7 @@ const InlineNotelinkNodeView: React.FC<NodeViewProps> = ({ node }) => {
   return (
     <NodeViewWrapper
       as="span"
-      // only display id if current node is a tag; used to target a block in a note embed
+      // only display id if current node is a tag
       id={node.type.name === "tag" ? node.attrs.id : ""}
       className={`${node.type.name === "noteReference" ? "note-reference" : "tag"} ${!note ? "text-blue-100" : ""}`}
     >

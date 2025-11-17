@@ -44,12 +44,12 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
   useEffect(() => {
     currentEditorNoteId.current = noteId;
 
-    // Inform other clients that this note is active so they can set up their own note provider to get updates
+    /* Inform other clients that this note is active so they can set up their own note provider to get updates */
     metadataProviderRef.current?.setAwarenessField("currentNote", noteId);
 
     setYdoc(markNoteAsActive({ noteId }));
 
-    // Before component unmounts, mark current note as inactive and inform this change to other clients, so that they can destroy the note provider (assuming no other clients are actively working on the note)
+    /* Before component unmounts, mark current note as inactive and inform this change to other clients, so that they can destroy the note provider (assuming no other clients are actively working on the note) */
     return () => {
       currentEditorNoteId.current = "";
 
@@ -74,9 +74,9 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
         }),
       ]}
       onUpdate={({ editor }) => {
-        if (!editor.isFocused) {
-          return; // onUpdate handler is called once on mount; only execute below when editor is actually being edited
-        }
+        // onUpdate handler is called once on mount; only execute the rest when editor is actually being edited
+        
+        if (!editor.isFocused) return; 
 
         if (!isConnectedToServerRef.current) {
           updatePendingNotes("add", noteId);
@@ -93,7 +93,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
         }
 
         if (!editorContentIsLoadedRef.current) {
-          // Editor content has just been loaded
+          /* Editor content has just been loaded (first visit) */
 
           editorContentIsLoadedRef.current = true;
 
@@ -102,7 +102,7 @@ const ContentEditor = ({ noteId }: ContentEditorProps) => {
           prevTagsRef.current = getTagsOnDocChange(ydoc); // prevTagsRef shouldn't be defined until this line
           prevNoteEmbedsRef.current = getNoteEmbedsOnDocChange(ydoc);
         } else {
-          // Compare current tags and note embeds with previous to insert or remove note links
+          /* Compare current tags and note embeds with previous to insert or remove note links */
 
           const tagsOnDocChange = getTagsOnDocChange(ydoc);
           const noteEmbedsOnDocChange = getNoteEmbedsOnDocChange(ydoc);

@@ -46,7 +46,7 @@ export function useContentEditorHelpers() {
   async function getNoteEmbedsForFirstVisit(noteId: string) {
     const output: string[] = [];
 
-    // query notes containing the tag
+    /* Query notes containing the tag */
     const targetNotes = await db.notes
       .filter((note) => {
         const doc = new DOMParser().parseFromString(note.content, "text/html");
@@ -86,7 +86,7 @@ export function useContentEditorHelpers() {
     noteId,
     editor,
   }: SyncNoteEmbedsForFirstVisitArgs) {
-    // populate what you have right now
+    /* Populate what you have right now */
     const currentNoteEmbeds: Record<
       string,
       Array<{ pos: number; size: number }>
@@ -107,16 +107,16 @@ export function useContentEditorHelpers() {
       }
     });
 
-    // populate what you should have
+    /* Populate what you should have */
     const expectedNoteEmbeds = await getNoteEmbedsForFirstVisit(noteId);
 
-    // convert to sets for comparison
+    /* Convert to sets for comparison */
     const [expectedNoteEmbedSet, currentNoteEmbedSet] = [
       new Set(expectedNoteEmbeds),
       new Set(Object.keys(currentNoteEmbeds)),
     ];
 
-    // diff the sets and create/remove note embeds accordingly
+    /* Diff the sets and create/remove note embeds accordingly */
     if (!isEqual(expectedNoteEmbedSet, currentNoteEmbedSet)) {
       const noteEmbedsToCreate = Array.from(
         expectedNoteEmbedSet.difference(currentNoteEmbedSet),
@@ -464,19 +464,19 @@ export function useContentEditorHelpers() {
 
       const tagIndex = tag.parent.toArray().indexOf(tag);
 
-      // Case 1: removing a page embed
+      /* Case 1: removing a page embed */
       if (!noteEmbedTargetBlockId && tag.parent.nodeName === "frontmatter") {
         tag.parent.delete(tagIndex, 1);
 
         tagIsRemoved = true;
       }
 
-      // Case 2: removing a block embed
+      /* Case 2: removing a block embed */
       if (noteEmbedTargetBlockId && tagId && noteEmbedTargetBlockId === tagId) {
         tag.parent.delete(tagIndex, 1);
         tagIsRemoved = true;
 
-        // Replace with placeholder space + blockId marker
+        /* Replace with placeholder space + blockId marker */
         const space = new Y.XmlText();
         space.insert(0, " ");
         const blockId = new Y.XmlElement("blockId");

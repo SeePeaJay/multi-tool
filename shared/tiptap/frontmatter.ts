@@ -1,6 +1,4 @@
-/**
- * This file defines a custom frontmatter node.
- */
+/* This file defines a custom frontmatter node. */
 
 import { Node } from "@tiptap/core";
 

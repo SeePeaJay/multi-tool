@@ -51,7 +51,7 @@ const NoteSuggestionMenu = forwardRef<
   const { metadataYdocRef, updatePendingNotes, setupTempProvider } =
     useCollabResources();
 
-  // Add a new note entry to metadata ydoc, which on change will create note
+  /* Add a new note entry to metadata ydoc, which on change will create note */
   const createNote = async ({ newNoteId, titleToCreate }: CreateNoteParams) => {
     const noteMetadata = metadataYdocRef.current.getMap("noteMetadata");
     noteMetadata.set(newNoteId, titleToCreate);
@@ -65,7 +65,7 @@ const NoteSuggestionMenu = forwardRef<
     const ydoc = new Y.Doc();
     await setupYdoc({ noteId: targetNoteId, ydoc });
 
-    // Insert block id into ydoc
+    /* Insert block id node into ydoc */
     const xmlFragment = ydoc.getXmlFragment("default");
     const targetElement = xmlFragment.toArray()[
       blockIndexForNewBlockId
@@ -84,14 +84,12 @@ const NoteSuggestionMenu = forwardRef<
   };
 
   const selectItem = async (index: number) => {
-    if (index >= props.items.length) {
-      /*
-       * Make sure we actually have enough items to select the given index.
-       * For instance, if a user presses "Enter" when there are no options, the index will
-       * be 0 but there won't be any items, so just ignore the callback here
-       */
-      return;
-    }
+    /*
+     * Make sure we actually have enough items to select the given index.
+     * For instance, if a user presses "Enter" when there are no options, the index will
+     * be 0 but there won't be any items, so just ignore the callback here
+     */
+    if (index >= props.items.length) return;
 
     const {
       targetNoteId,
@@ -178,8 +176,8 @@ const NoteSuggestionMenu = forwardRef<
             key={index}
             onClick={() => selectItem(index)}
           >
-            <span dangerouslySetInnerHTML={{ __html: item.suggestionLabel }} />
             {/* this should be ok; content should already be sanitized server-side before being used here */}
+            <span dangerouslySetInnerHTML={{ __html: item.suggestionLabel }} />
           </button>
         ))
       ) : (

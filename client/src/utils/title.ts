@@ -1,15 +1,11 @@
 import { Node } from "@tiptap/core";
 
-// Define a type for HTML attributes including contenteditable
 interface HTMLAttributes {
   class: string;
   contenteditable?: string;
 }
 
-/**
- * This extension allows you to create title, copied from ...
- * @see https://www.tiptap.dev/api/nodes/heading
- */
+/* This extension creates a title, based on https://www.tiptap.dev/api/nodes/heading */
 const Title = Node.create({
   name: "title",
 
@@ -39,7 +35,7 @@ const Title = Node.create({
   renderHTML({ node }) {
     const attrs: HTMLAttributes = { class: "title" };
 
-    // don't make title editable if it is "Starred"
+    /* Don't make title editable if it is "Starred" */
     if (node.attrs.title === "Starred") {
       attrs.contenteditable = "false";
     }

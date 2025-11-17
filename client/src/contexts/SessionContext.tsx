@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "./AuthContext";
 
-// define shape of context
 interface SessionContextType {
   isConnectedToServerRef: React.MutableRefObject<boolean>;
   logout: (logoutMessage?: string) => void;
@@ -69,10 +68,10 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     }
 
-    // start polling
+    /* Start polling */
     intervalRef.current = setInterval(checkSession, 10000);
 
-    // clean up on logout/unmount
+    /* Clean up on logout/unmount */
     return () => clearInterval(intervalRef.current);
   }, [currentUser]);
 

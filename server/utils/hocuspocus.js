@@ -95,8 +95,8 @@ export function getHocuspocusServer() {
           const editorExtensions = createContentEditorExtensions();
           const json = TiptapTransformer.fromYdoc(
             data.document,
-            "default", // The field used in Tiptap
-            editorExtensions, // Your editor extensions
+            "default", // the field used in Tiptap
+            editorExtensions, // your editor extensions
           );
           const html = generateHTML(json, editorExtensions);
           const sanitizedHtml = sanitizeHtml(html, {
@@ -126,8 +126,6 @@ export function getHocuspocusServer() {
       }
     },
     async onStateless({ payload, document }) {
-      // console.log(`server has received a stateless message "${payload}"!`);
-
       document.broadcastStateless(payload);
     },
     onConnect(data) {

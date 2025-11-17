@@ -35,27 +35,22 @@ export interface CurrentAwarenessState {
   [key: string]: string;
 }
 
-/**
- * @property {Y.Doc} ydoc - The ydoc that represents the current note.
- * @property {TiptapCollabProvider} provider - The provider instance responsible for syncing with the server.
- * @property {number} activeClientCount - The number of connected clients actively editting the current note.
- */
 export interface ActiveYdocResources {
   [key: string]: {
+    /* The ydoc that represents the current note. */
     ydoc: Y.Doc;
+    /* The provider instance responsible for syncing with the server. */
     provider: TiptapCollabProvider | null;
+    /* The number of connected clients actively editting the current note. */
     activeClientCount: number;
   };
 }
 
-/**
- * @property {TiptapCollabProvider} provider - The provider instance responsible for syncing with the server.
- * @property {boolean} providerWillSendMsg - Indicates whether the provider will send a "temp" stateless message on
- * sync. This will prompt other clients to create their own temp providers to receive the update from the server.
- */
 export interface TempProviderResources {
   [key: string]: Set<{
+    /* The provider instance responsible for syncing with the server. */
     provider: TiptapCollabProvider;
+    /* Indicates whether the provider will send a "temp" stateless message on sync. This will prompt other clients to create their own temp providers to receive the update from the server. */
     providerWillSendMsg: boolean;
   }>;
 }
@@ -69,19 +64,21 @@ export const CollabResourcesProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const { currentUser } = useAuth();
 
-  // A global provider (one per client) that handles stateless messages and awareness updates.
+  /* A global provider (one per client) that handles stateless messages and awareness updates. */
   const metadataProviderRef = useRef<HocuspocusProvider | null>(null);
 
   const metadataYdocRef = useRef<Y.Doc>(new Y.Doc());
 
-  // The latest snapshot of the awareness state, mapping each client to the id of the note they're working on.
+  /* The latest snapshot of the awareness state, mapping each client to the id of the note they're working on. */
   const currentAwarenessStateRef = useRef<CurrentAwarenessState>({});
 
-  // A ref holding resources for all notes that are currently being edited by at least one connected client.
+  /* A ref holding resources for all notes that are currently being edited by at least one connected client. */
   const activeYdocResourcesRef = useRef<ActiveYdocResources>({});
 
-  // A ref storing temporary providers for notes.
-  // Each provider is destroyed (and removed from this object) once synchronization with the server is complete.
+  /*
+   * A ref storing temporary providers for notes.
+   * Each provider is destroyed (and removed from this object) once synchronization with the server is complete.
+   */
   const tempProviderResourcesRef = useRef<TempProviderResources>({});
 
   const pendingNotesRef = useRef<Set<string>>(
@@ -105,11 +102,13 @@ export const CollabResourcesProvider: React.FC<{ children: ReactNode }> = ({
     );
   }
 
-  // The most recent snapshot of the id for the note that the current editor is working on.
-  // This is used to determine whether the editor is making the first `markNoteAsActive` call for that note.
+  /*
+   * The most recent snapshot of the id for the note that the current editor is working on.
+   * This is used to determine whether the editor is making the first `markNoteAsActive` call for that note.
+   */
   const currentEditorNoteId = useRef("");
 
-  // a variable that prevents editor from rendering until default note data are init
+  /* A variable that prevents editor from rendering until default note data are init */
   const [starredAndMetadataAreReady, setStarredAndMetadataAreReady] =
     useState(false);
 
@@ -146,7 +145,7 @@ export const CollabResourcesProvider: React.FC<{ children: ReactNode }> = ({
     setupStarredAndMetadata();
   }, []);
 
-  // After above effect is completed, setup providers if currentUser is defined
+  /* After above effect is completed, setup providers if currentUser is defined */
   useEffect(() => {
     if (!currentUser) {
       return;
@@ -185,7 +184,6 @@ export const CollabResourcesProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
-// custom hook to use the Hocuspocus context
 export const useCollabResources = () => {
   const context = useContext(CollabResourcesContext);
   if (!context) {

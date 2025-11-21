@@ -80,7 +80,7 @@ export const useCollabResourcesHelpers = (
         provider: isConnectedToServerRef.current
           ? new TiptapCollabProvider({
               name: `${currentUser}/${noteId}`, // unique document identifier for syncing
-              baseUrl: "ws://localhost:5173/collaboration",
+              baseUrl: import.meta.env.VITE_COLLAB_URL,
               token: "notoken", // your JWT token
               document: ydoc,
             })
@@ -129,7 +129,7 @@ export const useCollabResourcesHelpers = (
     const tempProviderResource = {
       provider: new TiptapCollabProvider({
         name: `${currentUser}/${noteId}`, // unique document identifier for syncing
-        baseUrl: "ws://localhost:5173/collaboration",
+        baseUrl: import.meta.env.VITE_COLLAB_URL,
         token: "notoken",
         document: ydoc,
         onSynced() {
@@ -160,7 +160,7 @@ export const useCollabResourcesHelpers = (
   function setupMetadataProvider() {
     const metadataProvider = new HocuspocusProvider({
       name: currentUser,
-      url: "ws://localhost:5173/collaboration",
+      url: import.meta.env.VITE_COLLAB_URL,
       token: "notoken", // your JWT token
       document: props.metadataYdocRef.current,
       onAuthenticated() {
@@ -204,7 +204,7 @@ export const useCollabResourcesHelpers = (
         if (props.currentEditorNoteId.current && !activeYdocResource.provider) {
           activeYdocResource.provider = new TiptapCollabProvider({
             name: `${currentUser}/${props.currentEditorNoteId.current}`, // unique document identifier for syncing
-            baseUrl: "ws://localhost:5173/collaboration",
+            baseUrl: import.meta.env.VITE_COLLAB_URL,
             token: "notoken", // your JWT token
             document: activeYdocResource.ydoc,
           });

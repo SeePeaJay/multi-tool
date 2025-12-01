@@ -11,142 +11,145 @@ export interface NoteReferenceNodeAttrs {
   targetBlockId?: string | null;
 }
 
+interface NoteReferenceArgs {
+  NoteReferenceNodeView?: React.FC<NodeViewProps>;
+}
+
 /* Define a type for addOptions below */
 export type NoteReferenceOptions = {
   /* Whether to delete the trigger character with backspace. */
   deleteTriggerWithBackspace: boolean;
 
   suggestion: Omit<SuggestionOptions, "editor">;
-
-  NoteReferenceNodeView?: React.FC<NodeViewProps>;
 };
 
 export const noteReferenceNodeName = "noteReference";
 export const noteReferenceTriggerChar = "[[";
 
 /* This extension allows you to insert note references into the editor. */
-const NoteReference = Node.create<NoteReferenceOptions>({
-  name: noteReferenceNodeName,
+function NoteReference({ NoteReferenceNodeView }: NoteReferenceArgs) {
+  return Node.create<NoteReferenceOptions>({
+    name: noteReferenceNodeName,
 
-  priority: 101,
+    priority: 101,
 
-  // to be used for functions below
-  addOptions() {
-    return {
-      deleteTriggerWithBackspace: true,
-      suggestion: {},
-      NoteReferenceNodeView: undefined,
-    };
-  },
+    // to be used for functions below
+    addOptions() {
+      return {
+        deleteTriggerWithBackspace: true,
+        suggestion: {},
+      };
+    },
 
-  group: "inline",
+    group: "inline",
 
-  inline: true,
+    inline: true,
 
-  atom: true,
+    atom: true,
 
-  addAttributes() {
-    return {
-      targetNoteId: {
-        default: "",
-        parseHTML: (element) => element.getAttribute("data-target-note-id"),
-        renderHTML: (attributes) => {
-          return {
-            "data-target-note-id": attributes.targetNoteId,
-          };
+    addAttributes() {
+      return {
+        targetNoteId: {
+          default: "",
+          parseHTML: (element) => element.getAttribute("data-target-note-id"),
+          renderHTML: (attributes) => {
+            return {
+              "data-target-note-id": attributes.targetNoteId,
+            };
+          },
         },
-      },
-      targetBlockId: {
-        default: null,
-        parseHTML: (element) => element.getAttribute("data-target-block-id"),
-        renderHTML: (attributes) => {
-          if (!attributes.targetBlockId) {
-            return {};
-          }
+        targetBlockId: {
+          default: null,
+          parseHTML: (element) => element.getAttribute("data-target-block-id"),
+          renderHTML: (attributes) => {
+            if (!attributes.targetBlockId) {
+              return {};
+            }
 
-          return {
-            "data-target-block-id": attributes.targetBlockId,
-          };
+            return {
+              "data-target-block-id": attributes.targetBlockId,
+            };
+          },
         },
-      },
-    };
-  },
+      };
+    },
 
-  parseHTML() {
-    return [
-      {
-        tag: `span.note-reference`,
-      },
-    ];
-  },
-
-  renderHTML({ node, HTMLAttributes }) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { ...attributesToRender } = HTMLAttributes;
-
-    return [
-      "span",
-      mergeAttributes(
+    parseHTML() {
+      return [
         {
-          class: "note-reference",
+          tag: `span.note-reference`,
         },
-        attributesToRender,
-      ),
-      `[[${node.attrs.targetNoteId}${node.attrs.targetBlockId ? `::${node.attrs.targetBlockId}` : ""}]]`,
-    ];
-  },
+      ];
+    },
 
-  renderText({ node }) {
-    return `[[${node.attrs.targetNoteId}${node.attrs.targetBlockId ? `::${node.attrs.targetBlockId}` : ""}]]`;
-  },
+    renderHTML({ node, HTMLAttributes }) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { ...attributesToRender } = HTMLAttributes;
 
-  addKeyboardShortcuts() {
-    return {
-      Backspace: () =>
-        this.editor.commands.command(({ tr, state }) => {
-          let isNoteReference = false;
-          const { selection } = state;
-          const { empty, anchor } = selection;
+      return [
+        "span",
+        mergeAttributes(
+          {
+            class: "note-reference",
+          },
+          attributesToRender,
+        ),
+        `[[${node.attrs.targetNoteId}${node.attrs.targetBlockId ? `::${node.attrs.targetBlockId}` : ""}]]`,
+      ];
+    },
 
-          if (!empty) {
-            return false;
-          }
+    renderText({ node }) {
+      return `[[${node.attrs.targetNoteId}${node.attrs.targetBlockId ? `::${node.attrs.targetBlockId}` : ""}]]`;
+    },
 
-          state.doc.nodesBetween(anchor - 1, anchor, (node, pos) => {
-            if (node.type.name === this.name) {
-              isNoteReference = true;
-              tr.insertText(
-                this.options.deleteTriggerWithBackspace
-                  ? ""
-                  : noteReferenceTriggerChar || "",
-                pos,
-                pos + node.nodeSize,
-              );
+    addKeyboardShortcuts() {
+      return {
+        Backspace: () =>
+          this.editor.commands.command(({ tr, state }) => {
+            let isNoteReference = false;
+            const { selection } = state;
+            const { empty, anchor } = selection;
 
+            if (!empty) {
               return false;
             }
-          });
 
-          return isNoteReference;
+            state.doc.nodesBetween(anchor - 1, anchor, (node, pos) => {
+              if (node.type.name === this.name) {
+                isNoteReference = true;
+                tr.insertText(
+                  this.options.deleteTriggerWithBackspace
+                    ? ""
+                    : noteReferenceTriggerChar || "",
+                  pos,
+                  pos + node.nodeSize,
+                );
+
+                return false;
+              }
+            });
+
+            return isNoteReference;
+          }),
+      };
+    },
+
+    addProseMirrorPlugins() {
+      return [
+        Suggestion({
+          editor: this.editor,
+          ...this.options.suggestion,
         }),
-    };
-  },
+      ];
+    },
 
-  addProseMirrorPlugins() {
-    return [
-      Suggestion({
-        editor: this.editor,
-        ...this.options.suggestion,
-      }),
-    ];
-  },
-
-  /* This replaces `renderHTML` with a component containing a router link, but doesn't affect the html output */
-  addNodeView() {
-    if (!this.options.NoteReferenceNodeView) return;
-
-    return ReactNodeViewRenderer(this.options.NoteReferenceNodeView);
-  },
-});
+    /* This replaces `renderHTML` with a component containing a router link, but doesn't affect the html output */
+    ...(NoteReferenceNodeView && {
+      addNodeView() {
+        return ReactNodeViewRenderer(NoteReferenceNodeView);
+      },
+    }),
+  });
+}
 
 export default NoteReference;

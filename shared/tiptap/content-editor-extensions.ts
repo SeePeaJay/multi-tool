@@ -78,19 +78,14 @@ export const createContentEditorExtensions = (
     CustomDocument,
     Frontmatter,
     CustomParagraph,
-    NoteReference.configure({
+    NoteReference({ NoteReferenceNodeView: InlineNotelinkNodeView }).configure({
       ...(noteReferenceSuggestion && { suggestion: noteReferenceSuggestion }),
-      ...(InlineNotelinkNodeView && {
-        NoteReferenceNodeView: InlineNotelinkNodeView,
-      }),
     }),
-    Tag.configure({
+    Tag({ TagNodeView: InlineNotelinkNodeView }).configure({
       ...(tagSuggestion && { suggestion: tagSuggestion }),
-      ...(InlineNotelinkNodeView && { TagNodeView: InlineNotelinkNodeView }),
     }),
-    NoteEmbed.configure({
+    NoteEmbed({ NoteEmbedNodeView }).configure({
       ...(noteEmbedSuggestion && { suggestion: noteEmbedSuggestion }),
-      ...(NoteEmbedNodeView && { NoteEmbedNodeView }),
     }),
     BlockId,
     CustomPlaceholder,

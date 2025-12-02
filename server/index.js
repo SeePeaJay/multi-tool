@@ -7,7 +7,9 @@ import expressWs from "express-ws";
 import { OAuth2Client } from "google-auth-library";
 import { google } from "googleapis";
 import { nanoid } from "nanoid";
+import path from "path";
 import { getDefaultYdocUpdate, getDefaultMetadataYdocArray } from "shared";
+import { fileURLToPath } from "url";
 import db, { dbRun } from "./utils/db.js";
 import { getHocuspocusServer } from "./utils/hocuspocus.js";
 
@@ -38,6 +40,11 @@ app.use(
     maxAge: 1 * 10 * 60 * 1000,
   }),
 );
+
+/* Serve static files from frontend build */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, "dist")));
 
 app.get("/api", authCheck, async (req, res) => {
   res.status(200).send("ok");
@@ -128,6 +135,10 @@ app.post("/api/logout", (req, res) => {
 app.ws("/collaboration", (ws, req) => {
   console.log("/collaboration", req.session);
   hocuspocusServer.handleConnection(ws, req);
+});
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
 app.listen(port, () => {

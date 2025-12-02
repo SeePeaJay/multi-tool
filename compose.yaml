@@ -1,0 +1,16 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Build‑time variables for frontend (Vite)
+        VITE_CLIENT_ID: 736880120177-vb0qi9nlfvagde6dm79r58cb2g3g6j28.apps.googleusercontent.com
+        VITE_COLLAB_URL: ws://localhost:3000/collaboration
+    env_file:
+      # .env file for backend
+      - ./server/.env
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./server/data:/app/server/data

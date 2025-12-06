@@ -1,0 +1,33 @@
+name: Run tests on main commit
+
+on:
+  push:
+    branches: [ main, setup-ci ]
+  pull_request:
+    branches: [ main, setup-ci ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      # Install dependencies for all workspaces
+      - name: Install dependencies
+        run: npm install
+
+      # Build shared package before test
+      - name: Build shared package
+        run: npm run build --workspace shared
+
+      # Run Cypress tests specifically in the client workspace (need to pass dummy env var else it fails)
+      - name: Run Cypress component tests
+        working-directory: client
+        run: VITE_COLLAB_URL=ws://fake npx cypress run --component
